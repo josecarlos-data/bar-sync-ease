@@ -413,6 +413,11 @@ function GuestPage() {
             {(bill ?? []).map((order, index) => (
               <article key={order.id} className="rounded-xl border border-border bg-card p-4">
                 <p className="mb-2 text-sm font-bold text-muted-foreground">
+                  {awaiting && (
+                    <span className="mb-1 block w-fit rounded-full bg-warning px-2 py-0.5 text-xs font-bold text-warning-foreground">
+                      Pendiente de confirmar
+                    </span>
+                  )}
                   Comanda {index + 1} ·{" "}
                   {new Date(order.created_at).toLocaleTimeString("es-ES", {
                     hour: "2-digit",
@@ -489,7 +494,7 @@ function GuestPage() {
               )}
             </div>
             <button
-              disabled={blocked}
+              disabled={sending}
               onClick={() => setConfirming(true)}
               className="flex items-center gap-2 rounded-lg bg-primary px-5 py-3 font-semibold text-primary-foreground disabled:opacity-50"
             >
