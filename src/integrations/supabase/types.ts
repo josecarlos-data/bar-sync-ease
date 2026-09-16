@@ -431,10 +431,14 @@ export type Database = {
           bar_id: string
           closed_at: string | null
           closed_by: string | null
+          decided_at: string | null
+          decided_by: string | null
+          decision: string | null
           id: string
           last_activity_at: string
           nickname: string | null
           opened_at: string
+          released_at: string | null
           status: Database["public"]["Enums"]["session_status"]
           table_id: string
         }
@@ -442,10 +446,14 @@ export type Database = {
           bar_id: string
           closed_at?: string | null
           closed_by?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          decision?: string | null
           id?: string
           last_activity_at?: string
           nickname?: string | null
           opened_at?: string
+          released_at?: string | null
           status?: Database["public"]["Enums"]["session_status"]
           table_id: string
         }
@@ -453,10 +461,14 @@ export type Database = {
           bar_id?: string
           closed_at?: string | null
           closed_by?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          decision?: string | null
           id?: string
           last_activity_at?: string
           nickname?: string | null
           opened_at?: string
+          released_at?: string | null
           status?: Database["public"]["Enums"]["session_status"]
           table_id?: string
         }
@@ -553,6 +565,10 @@ export type Database = {
     }
     Functions: {
       can_view_bar: { Args: { _bar_id: string }; Returns: boolean }
+      decide_session: {
+        Args: { _decision: string; _merge?: boolean; _session_id: string }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _bar_id: string
