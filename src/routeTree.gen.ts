@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedBarraRouteImport } from './routes/_authenticated/barra'
 import { Route as AuthenticatedCamareroRouteImport } from './routes/_authenticated/camarero'
 import { Route as AuthenticatedCocinaRouteImport } from './routes/_authenticated/cocina'
+import { Route as AuthenticatedHistorialRouteImport } from './routes/_authenticated/historial'
 import { Route as MTokenRouteImport } from './routes/m.$token'
 import { Route as AuthenticatedAdminAjustesRouteImport } from './routes/_authenticated/admin.ajustes'
 import { Route as AuthenticatedAdminArticulosRouteImport } from './routes/_authenticated/admin.articulos'
@@ -48,6 +49,11 @@ const AuthenticatedCamareroRoute = AuthenticatedCamareroRouteImport.update({
 const AuthenticatedCocinaRoute = AuthenticatedCocinaRouteImport.update({
   id: '/cocina',
   path: '/cocina',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedHistorialRoute = AuthenticatedHistorialRouteImport.update({
+  id: '/historial',
+  path: '/historial',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const MTokenRoute = MTokenRouteImport.update({
@@ -85,6 +91,7 @@ export interface FileRoutesByFullPath {
   '/barra': typeof AuthenticatedBarraRoute
   '/camarero': typeof AuthenticatedCamareroRoute
   '/cocina': typeof AuthenticatedCocinaRoute
+  '/historial': typeof AuthenticatedHistorialRoute
   '/m/$token': typeof MTokenRoute
   '/admin/ajustes': typeof AuthenticatedAdminAjustesRoute
   '/admin/articulos': typeof AuthenticatedAdminArticulosRoute
@@ -97,6 +104,7 @@ export interface FileRoutesByTo {
   '/barra': typeof AuthenticatedBarraRoute
   '/camarero': typeof AuthenticatedCamareroRoute
   '/cocina': typeof AuthenticatedCocinaRoute
+  '/historial': typeof AuthenticatedHistorialRoute
   '/m/$token': typeof MTokenRoute
   '/admin/ajustes': typeof AuthenticatedAdminAjustesRoute
   '/admin/articulos': typeof AuthenticatedAdminArticulosRoute
@@ -111,6 +119,7 @@ export interface FileRoutesById {
   '/_authenticated/barra': typeof AuthenticatedBarraRoute
   '/_authenticated/camarero': typeof AuthenticatedCamareroRoute
   '/_authenticated/cocina': typeof AuthenticatedCocinaRoute
+  '/_authenticated/historial': typeof AuthenticatedHistorialRoute
   '/m/$token': typeof MTokenRoute
   '/_authenticated/admin/ajustes': typeof AuthenticatedAdminAjustesRoute
   '/_authenticated/admin/articulos': typeof AuthenticatedAdminArticulosRoute
@@ -125,6 +134,7 @@ export interface FileRouteTypes {
     | '/barra'
     | '/camarero'
     | '/cocina'
+    | '/historial'
     | '/m/$token'
     | '/admin/ajustes'
     | '/admin/articulos'
@@ -137,6 +147,7 @@ export interface FileRouteTypes {
     | '/barra'
     | '/camarero'
     | '/cocina'
+    | '/historial'
     | '/m/$token'
     | '/admin/ajustes'
     | '/admin/articulos'
@@ -150,6 +161,7 @@ export interface FileRouteTypes {
     | '/_authenticated/barra'
     | '/_authenticated/camarero'
     | '/_authenticated/cocina'
+    | '/_authenticated/historial'
     | '/m/$token'
     | '/_authenticated/admin/ajustes'
     | '/_authenticated/admin/articulos'
@@ -208,6 +220,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCocinaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/historial': {
+      id: '/_authenticated/historial'
+      path: '/historial'
+      fullPath: '/historial'
+      preLoaderRoute: typeof AuthenticatedHistorialRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/m/$token': {
       id: '/m/$token'
       path: '/m/$token'
@@ -250,6 +269,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedBarraRoute: typeof AuthenticatedBarraRoute
   AuthenticatedCamareroRoute: typeof AuthenticatedCamareroRoute
   AuthenticatedCocinaRoute: typeof AuthenticatedCocinaRoute
+  AuthenticatedHistorialRoute: typeof AuthenticatedHistorialRoute
   AuthenticatedAdminAjustesRoute: typeof AuthenticatedAdminAjustesRoute
   AuthenticatedAdminArticulosRoute: typeof AuthenticatedAdminArticulosRoute
   AuthenticatedAdminMesasRoute: typeof AuthenticatedAdminMesasRoute
@@ -260,6 +280,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBarraRoute: AuthenticatedBarraRoute,
   AuthenticatedCamareroRoute: AuthenticatedCamareroRoute,
   AuthenticatedCocinaRoute: AuthenticatedCocinaRoute,
+  AuthenticatedHistorialRoute: AuthenticatedHistorialRoute,
   AuthenticatedAdminAjustesRoute: AuthenticatedAdminAjustesRoute,
   AuthenticatedAdminArticulosRoute: AuthenticatedAdminArticulosRoute,
   AuthenticatedAdminMesasRoute: AuthenticatedAdminMesasRoute,

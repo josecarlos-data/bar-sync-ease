@@ -40,11 +40,6 @@ const TOGGLES: { key: keyof BarSettings; label: string; help: string }[] = [
     label: "Pasarela de pago",
     help: "Puedes activarla y desactivarla cuando quieras (fase 3).",
   },
-  {
-    key: "require_session_approval",
-    label: "Aceptar la mesa antes de pedir",
-    help: "La mesa queda pendiente hasta que el personal la acepta.",
-  },
 ];
 
 function SettingsPage() {
