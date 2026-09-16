@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedBarraRouteImport } from './routes/_authenticated/barra'
 import { Route as AuthenticatedCamareroRouteImport } from './routes/_authenticated/camarero'
 import { Route as AuthenticatedCocinaRouteImport } from './routes/_authenticated/cocina'
+import { Route as MTokenRouteImport } from './routes/m.$token'
 import { Route as AuthenticatedAdminAjustesRouteImport } from './routes/_authenticated/admin.ajustes'
 import { Route as AuthenticatedAdminArticulosRouteImport } from './routes/_authenticated/admin.articulos'
 import { Route as AuthenticatedAdminMesasRouteImport } from './routes/_authenticated/admin.mesas'
@@ -49,6 +50,11 @@ const AuthenticatedCocinaRoute = AuthenticatedCocinaRouteImport.update({
   path: '/cocina',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const MTokenRoute = MTokenRouteImport.update({
+  id: '/m/$token',
+  path: '/m/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAdminAjustesRoute =
   AuthenticatedAdminAjustesRouteImport.update({
     id: '/admin/ajustes',
@@ -79,6 +85,7 @@ export interface FileRoutesByFullPath {
   '/barra': typeof AuthenticatedBarraRoute
   '/camarero': typeof AuthenticatedCamareroRoute
   '/cocina': typeof AuthenticatedCocinaRoute
+  '/m/$token': typeof MTokenRoute
   '/admin/ajustes': typeof AuthenticatedAdminAjustesRoute
   '/admin/articulos': typeof AuthenticatedAdminArticulosRoute
   '/admin/mesas': typeof AuthenticatedAdminMesasRoute
@@ -90,6 +97,7 @@ export interface FileRoutesByTo {
   '/barra': typeof AuthenticatedBarraRoute
   '/camarero': typeof AuthenticatedCamareroRoute
   '/cocina': typeof AuthenticatedCocinaRoute
+  '/m/$token': typeof MTokenRoute
   '/admin/ajustes': typeof AuthenticatedAdminAjustesRoute
   '/admin/articulos': typeof AuthenticatedAdminArticulosRoute
   '/admin/mesas': typeof AuthenticatedAdminMesasRoute
@@ -103,6 +111,7 @@ export interface FileRoutesById {
   '/_authenticated/barra': typeof AuthenticatedBarraRoute
   '/_authenticated/camarero': typeof AuthenticatedCamareroRoute
   '/_authenticated/cocina': typeof AuthenticatedCocinaRoute
+  '/m/$token': typeof MTokenRoute
   '/_authenticated/admin/ajustes': typeof AuthenticatedAdminAjustesRoute
   '/_authenticated/admin/articulos': typeof AuthenticatedAdminArticulosRoute
   '/_authenticated/admin/mesas': typeof AuthenticatedAdminMesasRoute
@@ -116,6 +125,7 @@ export interface FileRouteTypes {
     | '/barra'
     | '/camarero'
     | '/cocina'
+    | '/m/$token'
     | '/admin/ajustes'
     | '/admin/articulos'
     | '/admin/mesas'
@@ -127,6 +137,7 @@ export interface FileRouteTypes {
     | '/barra'
     | '/camarero'
     | '/cocina'
+    | '/m/$token'
     | '/admin/ajustes'
     | '/admin/articulos'
     | '/admin/mesas'
@@ -139,6 +150,7 @@ export interface FileRouteTypes {
     | '/_authenticated/barra'
     | '/_authenticated/camarero'
     | '/_authenticated/cocina'
+    | '/m/$token'
     | '/_authenticated/admin/ajustes'
     | '/_authenticated/admin/articulos'
     | '/_authenticated/admin/mesas'
@@ -149,6 +161,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  MTokenRoute: typeof MTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -194,6 +207,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/cocina'
       preLoaderRoute: typeof AuthenticatedCocinaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/m/$token': {
+      id: '/m/$token'
+      path: '/m/$token'
+      fullPath: '/m/$token'
+      preLoaderRoute: typeof MTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/admin/ajustes': {
       id: '/_authenticated/admin/ajustes'
@@ -253,6 +273,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  MTokenRoute: MTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
