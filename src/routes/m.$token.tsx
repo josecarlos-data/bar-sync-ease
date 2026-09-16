@@ -36,7 +36,7 @@ export const Route = createFileRoute("/m/$token")({
 type Joined = {
   sessionId: string;
   barId: string;
-  status: "pending" | "open";
+  status: "pending" | "open" | "rejected";
   nickname: string | null;
   table: { number: number; name: string | null };
 };
@@ -109,6 +109,19 @@ function GuestPage() {
         items: (items.data ?? []) as Item[],
         settings: (settings.data ?? null) as BarSettings | null,
       };
+    },
+  });
+
+  const { data: liveStatus } = useQuery({
+    queryKey: ["guest-session-status", session?.sessionId],
+    enabled: !!session,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("table_sessions")
+        .select("status")
+        .eq("id", session!.sessionId)
+        .maybeSingle();
+      return (data?.status ?? session!.status) as "pending" | "open" | "rejected" | "closed";
     },
   });
 
