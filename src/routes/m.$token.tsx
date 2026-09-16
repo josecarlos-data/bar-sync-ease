@@ -344,9 +344,10 @@ function GuestPage() {
         </div>
       </header>
 
-      {blocked && (
+      {awaiting && (
         <p className="m-4 rounded-lg bg-warning px-4 py-3 text-sm font-semibold text-warning-foreground">
-          Esperando a que el personal acepte vuestra mesa. Podéis ir mirando la carta.
+          Podéis pedir ya. Vuestras comandas quedan pendientes de confirmar: llegarán a barra y
+          cocina en cuanto el camarero acepte la mesa.
         </p>
       )}
 
