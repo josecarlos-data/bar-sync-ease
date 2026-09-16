@@ -79,6 +79,34 @@ function SettingsPage() {
           ))}
 
           <div className="rounded-xl border border-border bg-card p-4">
+            <p className="font-semibold">Aprobación de mesas</p>
+            <p className="text-sm text-muted-foreground">
+              En automática la mesa se abre sola. En manual el camarero acepta cada mesa y sus
+              comandas esperan hasta entonces. Se aplica a las mesas nuevas.
+            </p>
+            <div className="mt-2 flex gap-2">
+              {(
+                [
+                  [false, "Automática"],
+                  [true, "Manual"],
+                ] as const
+              ).map(([value, label]) => (
+                <button
+                  key={label}
+                  onClick={() => update({ require_session_approval: value })}
+                  className={`rounded-full px-4 py-1.5 text-sm font-semibold ${
+                    settings.require_session_approval === value
+                      ? "bg-primary text-primary-foreground"
+                      : "border border-border text-muted-foreground"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-border bg-card p-4">
             <p className="font-semibold">Orden de la cola</p>
             <div className="mt-2 flex gap-2">
               {(
