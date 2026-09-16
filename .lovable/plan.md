@@ -1,90 +1,45 @@
-# Bar Orders — Modelo de datos y Fase 1
+# Aprobación de mesas: comandas retenidas, ventana bloqueante e histórico
 
-App web móvil (PWA) para pedidos en bares, con Lovable Cloud como backend. Base multi-bar desde el inicio: **todas las tablas llevan `bar_id`**.
+Sustituye el bloqueo actual: hoy una mesa "pendiente" no deja enviar comandas. Pasará a dejar pedir, reteniendo las comandas hasta que el personal decida.
 
-## Roles
+## 1. Cliente con mesa pendiente
 
-- **Administrador, camarero, barra, cocina**: entran con email y contraseña.
-- **Cliente**: sin registro, entra escaneando el QR de su mesa (token largo no adivinable).
+- Puede enviar comandas con normalidad desde el primer momento.
+- Sus comandas se muestran con la etiqueta "Pendiente de confirmar" y un aviso de que aún no han llegado a barra ni cocina.
+- Si la mesa se rechaza, ve un mensaje claro: "Esta mesa no ha sido aceptada. Avisa al camarero." y no puede seguir pidiendo.
 
-## Modelo de datos
+## 2. Barra y cocina
 
-```text
-bars                 id, name, slug, created_at
-bar_settings         bar_id, show_prices(true), split_bar_kitchen(true),
-                     waiter_can_order(true), free_tapa_with_drink(false),
-                     payments_enabled(false), queue_sort('arrival')
-profiles             id(=usuario), bar_id, full_name
-user_roles           id, bar_id, user_id, role(admin|waiter|bar|kitchen)
-categories           id, bar_id, name, position
-items                id, bar_id, category_id, name, price, image_url,
-                     allergens[], available, destination(bar|kitchen), is_tapa
-tables               id, bar_id, number, name, qr_token(único), active
-table_sessions       id, bar_id, table_id, nickname, status(open|closed),
-                     opened_at, closed_at, closed_by
-orders (comandas)    id, bar_id, session_id, created_at, created_by_role,
-                     client_tag
-order_items (líneas) id, bar_id, order_id, item_id, name_snapshot,
-                     price_snapshot, qty, note, destination,
-                     status(pending|ready|served), ready_at, served_at,
-                     deleted_at, deleted_by
-service_calls        id, bar_id, session_id, type(waiter|bill), status, created_at
-```
+Sólo reciben líneas de mesas aceptadas. Al aceptar una mesa, todas sus comandas retenidas entran en la cola respetando su orden de envío original.
 
-Notas:
-- Precio y nombre se copian en la línea (`_snapshot`) para que la cuenta no cambie si luego se edita el artículo.
-- Las líneas no se borran físicamente: se marcan con `deleted_at` + `deleted_by` (registro de quién y cuándo).
-- Fase 2 añadirá `bill_splits` / `split_groups`; el modelo ya lo admite sin cambios.
+## 3. Ventana de aprobación en la vista de camarero
 
-## Seguridad de accesos
+Cada mesa pendiente abre una ventana a pantalla completa que bloquea la pantalla, con: número de mesa, apodo del grupo, hora de apertura y el detalle de las comandas enviadas. Botones:
 
-- Personal: acceso a los datos de **su** bar según su rol (roles en tabla aparte, nunca en el perfil).
-- Cliente: sólo puede leer y escribir en la sesión de mesa abierta cuyo token de QR posee; no ve datos de otras mesas ni del panel.
+- **Aceptar**: la mesa pasa a abierta y sus comandas entran en cola.
+- **Posponer 30 s / 60 s**: se cierra y reaparece pasado ese tiempo (sólo en ese dispositivo).
+- **Rechazar**: pide confirmación con el texto "Si rechazas esta mesa, sus comandas no llegarán a barra ni cocina. ¿Confirmar?".
 
-## Fase 1 — qué se construye
+Con varios camareros, la primera decisión se propaga en tiempo real y la ventana desaparece en el resto. Con varias mesas pendientes, se muestran en cola, una tras otra (la más antigua primero).
 
-**Panel administrador**
-- Artículos: crear/editar con nombre, categoría, precio, imagen (subida propia), alérgenos, disponible/agotado, destino barra o cocina.
-- Categorías con orden.
-- Mesas: crear mesa, generar QR único descargable/imprimible por mesa.
-- Configuración del bar: mostrar precios, barra/cocina juntas o separadas, camarero puede pedir, tapa con bebida, pasarela (interruptores; los dos últimos se usan en fases 2 y 3).
+## 4. Histórico de sesiones
 
-**Sesión de mesa (cliente)**
-- Al escanear: si no hay sesión abierta, se pide apodo del grupo ("Mesa 4 - Ayuntamiento"); si ya hay, se une a ella.
-- Varios clientes a la vez en la misma mesa, viendo todos las mismas comandas en tiempo real.
-- La sesión se cierra al cobrar o cuando la cierra el camarero; el apodo se reinicia.
-
-**Interfaz cliente**
-- Catálogo por categorías; disponibles arriba, agotados en bloque aparte en gris con etiqueta "Agotado" (no seleccionables).
-- Alérgenos visibles, cantidad y nota por línea.
-- Resumen abajo + "Enviar comanda" con modal de confirmación (confirmar o vaciar).
-- Varias comandas por sesión; no puede eliminar líneas ya enviadas.
-- Botón "Llamar al camarero".
-- Aviso cuando su pedido está listo.
-- Vista de cuenta: total, agrupado por comandas y por artículos.
-
-**Barra y cocina**
-- Pantallas en tiempo real con las líneas de su destino (o una sola cola si está configurado así).
-- Orden por llegada (defecto), por mesa o por producto.
-- Cada línea: cantidad grande, mesa (número + apodo) destacada, nota visible.
-- Marcar listo por línea o comanda completa.
-
-**Base técnica**
-- PWA instalable (Fase 1 sólo instalación; offline completo en Fase 3).
-- Tiempo real en pantallas de barra, cocina y cliente.
-
-## Fuera de Fase 1
-
-Interfaz de camarero, división de cuenta, tapa gratis con bebida, avisos push (Fase 2); pagos online y offline completo (Fase 3).
+Nueva pantalla accesible desde camarero y desde administración: mesas rechazadas y cerradas con mesa, apodo, fecha, quién decidió y sus comandas. En una mesa rechazada, botón **Restablecer y aprobar**: pasa a abierta y sus comandas entran en cola en ese momento.
 
 ## Detalles técnicos
 
-- Lovable Cloud (Postgres + auth + storage + realtime), RLS en todas las tablas, rol resuelto por función de seguridad.
-- `qr_token`: aleatorio de 32 caracteres, ruta pública `/m/$token`.
-- Realtime por canal de bar/sesión para comandas y líneas.
-- Imágenes de artículos en almacenamiento del bar, con miniatura.
-- Rutas: `/` (acceso personal), `/m/$token` (cliente), `/admin/*`, `/bar`, `/cocina`.
+Base de datos (migración sin pérdida de datos, sólo añade):
 
-## Antes de construir
+- `session_status` gana el valor `rejected` (ALTER TYPE ADD VALUE; queda `pending | open | rejected | closed`).
+- `table_sessions`: nuevas columnas `decided_by uuid`, `decided_at timestamptz`, `decision text CHECK (decision IN ('approved','rejected','restored'))`, `released_at timestamptz` (momento en que las comandas retenidas se liberan a la cola).
+- `session_is_open(_session_id)` pasa a devolver true para `pending` y `open` (permite pedir estando pendiente) y false para `rejected`/`closed`. Las políticas de `orders`, `order_items` y `service_calls` no cambian de texto: heredan la nueva semántica.
+- Las políticas de lectura del personal ya cubren el histórico (`is_staff_of(bar_id)`); no hacen falta políticas nuevas. La actualización de la sesión sigue reservada al personal del bar.
+- `bar_settings.require_session_approval` se mantiene: si está desactivado, la sesión nace `open` y no hay ventana.
 
-Al aprobar, propondré 3 direcciones visuales para elegir el estilo de la app.
+Frontend:
+
+- `QueueBoard` (barra/cocina) filtra por `table_sessions.status = 'open'` en el join; el orden por llegada sigue siendo `order_items.created_at`, por lo que las comandas retenidas conservan su orden al liberarse.
+- Nuevo `SessionApprovalDialog` montado en `/camarero`, alimentado por las sesiones `pending` del bar vía realtime, con cola local y mapa de "posponer hasta" en estado del componente.
+- `/m/$token`: se elimina el bloqueo por `status === 'pending'`; se añade etiqueta por comanda y pantalla de mesa rechazada.
+- Nueva ruta `/_authenticated/historial` con el listado y el botón Restablecer y aprobar; enlace en la navegación del personal para camarero y administrador.
+- Aceptar / rechazar / restablecer escriben `status`, `decision`, `decided_by`, `decided_at` y (al aceptar o restablecer) `released_at` en una sola actualización.
