@@ -16,6 +16,8 @@ import { Route as AuthenticatedBarraRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedCamareroRouteImport } from './routes/_authenticated/camarero'
 import { Route as AuthenticatedCocinaRouteImport } from './routes/_authenticated/cocina'
 import { Route as AuthenticatedAdminAjustesRouteImport } from './routes/_authenticated/admin.ajustes'
+import { Route as AuthenticatedAdminArticulosRouteImport } from './routes/_authenticated/admin.articulos'
+import { Route as AuthenticatedAdminMesasRouteImport } from './routes/_authenticated/admin.mesas'
 import { Route as AuthenticatedAdminPersonalRouteImport } from './routes/_authenticated/admin.personal'
 
 const IndexRoute = IndexRouteImport.update({
@@ -53,6 +55,17 @@ const AuthenticatedAdminAjustesRoute =
     path: '/admin/ajustes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminArticulosRoute =
+  AuthenticatedAdminArticulosRouteImport.update({
+    id: '/admin/articulos',
+    path: '/admin/articulos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminMesasRoute = AuthenticatedAdminMesasRouteImport.update({
+  id: '/admin/mesas',
+  path: '/admin/mesas',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAdminPersonalRoute =
   AuthenticatedAdminPersonalRouteImport.update({
     id: '/admin/personal',
@@ -67,6 +80,8 @@ export interface FileRoutesByFullPath {
   '/camarero': typeof AuthenticatedCamareroRoute
   '/cocina': typeof AuthenticatedCocinaRoute
   '/admin/ajustes': typeof AuthenticatedAdminAjustesRoute
+  '/admin/articulos': typeof AuthenticatedAdminArticulosRoute
+  '/admin/mesas': typeof AuthenticatedAdminMesasRoute
   '/admin/personal': typeof AuthenticatedAdminPersonalRoute
 }
 export interface FileRoutesByTo {
@@ -76,6 +91,8 @@ export interface FileRoutesByTo {
   '/camarero': typeof AuthenticatedCamareroRoute
   '/cocina': typeof AuthenticatedCocinaRoute
   '/admin/ajustes': typeof AuthenticatedAdminAjustesRoute
+  '/admin/articulos': typeof AuthenticatedAdminArticulosRoute
+  '/admin/mesas': typeof AuthenticatedAdminMesasRoute
   '/admin/personal': typeof AuthenticatedAdminPersonalRoute
 }
 export interface FileRoutesById {
@@ -87,6 +104,8 @@ export interface FileRoutesById {
   '/_authenticated/camarero': typeof AuthenticatedCamareroRoute
   '/_authenticated/cocina': typeof AuthenticatedCocinaRoute
   '/_authenticated/admin/ajustes': typeof AuthenticatedAdminAjustesRoute
+  '/_authenticated/admin/articulos': typeof AuthenticatedAdminArticulosRoute
+  '/_authenticated/admin/mesas': typeof AuthenticatedAdminMesasRoute
   '/_authenticated/admin/personal': typeof AuthenticatedAdminPersonalRoute
 }
 export interface FileRouteTypes {
@@ -98,6 +117,8 @@ export interface FileRouteTypes {
     | '/camarero'
     | '/cocina'
     | '/admin/ajustes'
+    | '/admin/articulos'
+    | '/admin/mesas'
     | '/admin/personal'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -107,6 +128,8 @@ export interface FileRouteTypes {
     | '/camarero'
     | '/cocina'
     | '/admin/ajustes'
+    | '/admin/articulos'
+    | '/admin/mesas'
     | '/admin/personal'
   id:
     | '__root__'
@@ -117,6 +140,8 @@ export interface FileRouteTypes {
     | '/_authenticated/camarero'
     | '/_authenticated/cocina'
     | '/_authenticated/admin/ajustes'
+    | '/_authenticated/admin/articulos'
+    | '/_authenticated/admin/mesas'
     | '/_authenticated/admin/personal'
   fileRoutesById: FileRoutesById
 }
@@ -177,6 +202,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminAjustesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/articulos': {
+      id: '/_authenticated/admin/articulos'
+      path: '/admin/articulos'
+      fullPath: '/admin/articulos'
+      preLoaderRoute: typeof AuthenticatedAdminArticulosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/mesas': {
+      id: '/_authenticated/admin/mesas'
+      path: '/admin/mesas'
+      fullPath: '/admin/mesas'
+      preLoaderRoute: typeof AuthenticatedAdminMesasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/personal': {
       id: '/_authenticated/admin/personal'
       path: '/admin/personal'
@@ -192,6 +231,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCamareroRoute: typeof AuthenticatedCamareroRoute
   AuthenticatedCocinaRoute: typeof AuthenticatedCocinaRoute
   AuthenticatedAdminAjustesRoute: typeof AuthenticatedAdminAjustesRoute
+  AuthenticatedAdminArticulosRoute: typeof AuthenticatedAdminArticulosRoute
+  AuthenticatedAdminMesasRoute: typeof AuthenticatedAdminMesasRoute
   AuthenticatedAdminPersonalRoute: typeof AuthenticatedAdminPersonalRoute
 }
 
@@ -200,6 +241,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCamareroRoute: AuthenticatedCamareroRoute,
   AuthenticatedCocinaRoute: AuthenticatedCocinaRoute,
   AuthenticatedAdminAjustesRoute: AuthenticatedAdminAjustesRoute,
+  AuthenticatedAdminArticulosRoute: AuthenticatedAdminArticulosRoute,
+  AuthenticatedAdminMesasRoute: AuthenticatedAdminMesasRoute,
   AuthenticatedAdminPersonalRoute: AuthenticatedAdminPersonalRoute,
 }
 
