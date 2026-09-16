@@ -68,7 +68,7 @@ function GuestPage() {
         return;
       }
     }
-    const result = (await join({ data: { token, nickname: nick } })) as
+    const result = (await join({ data: nick ? { token, nickname: nick } : { token } })) as
       | Joined
       | { error: string }
       | { needsNickname: true; table: { number: number; name: string | null } };
