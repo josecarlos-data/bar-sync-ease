@@ -589,7 +589,7 @@ export type Database = {
       item_destination: "bar" | "kitchen"
       line_status: "pending" | "ready" | "served"
       queue_sort: "arrival" | "table" | "product"
-      session_status: "pending" | "open" | "closed"
+      session_status: "pending" | "open" | "closed" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -739,7 +739,7 @@ export const Constants = {
       item_destination: ["bar", "kitchen"],
       line_status: ["pending", "ready", "served"],
       queue_sort: ["arrival", "table", "product"],
-      session_status: ["pending", "open", "closed"],
+      session_status: ["pending", "open", "closed", "rejected"],
     },
   },
 } as const
