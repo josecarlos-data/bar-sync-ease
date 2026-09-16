@@ -74,7 +74,7 @@ function ItemsPage() {
     const { error } = await supabase
       .from("categories")
       .insert({ bar_id: barId!, name, position: categories.length });
-    if (error) return toast.error("No se pudo crear la categoría");
+    if (error) { toast.error("No se pudo crear la categoría"); return; }
     queryClient.invalidateQueries();
   }
 
@@ -83,7 +83,7 @@ function ItemsPage() {
       .from("items")
       .update({ available: !item.available })
       .eq("id", item.id);
-    if (error) return toast.error("No se pudo actualizar");
+    if (error) { toast.error("No se pudo actualizar"); return; }
     queryClient.invalidateQueries();
   }
 
@@ -99,7 +99,7 @@ function ItemsPage() {
   }
 
   async function save() {
-    if (!draft?.name.trim()) return toast.error("Ponle un nombre al artículo");
+    if (!draft?.name.trim()) { toast.error("Ponle un nombre al artículo"); return; }
     setSaving(true);
     const payload = {
       bar_id: barId!,
@@ -119,7 +119,7 @@ function ItemsPage() {
       ? await supabase.from("items").update(payload).eq("id", draft.id)
       : await supabase.from("items").insert({ ...payload, position: items.length });
     setSaving(false);
-    if (error) return toast.error("No se pudo guardar el artículo");
+    if (error) { toast.error("No se pudo guardar el artículo"); return; }
     toast.success("Artículo guardado");
     setDraft(null);
     queryClient.invalidateQueries();

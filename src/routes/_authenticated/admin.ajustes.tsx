@@ -57,7 +57,7 @@ function SettingsPage() {
       .from("bar_settings")
       .update({ ...patch, updated_at: new Date().toISOString() })
       .eq("bar_id", staff!.barId!);
-    if (error) return toast.error("No se pudo guardar");
+    if (error) { toast.error("No se pudo guardar"); return; }
     toast.success("Guardado");
     queryClient.invalidateQueries();
   }

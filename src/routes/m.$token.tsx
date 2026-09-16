@@ -243,7 +243,7 @@ function GuestPage() {
       session_id: session.sessionId,
       type,
     });
-    if (error) return toast.error("No se pudo avisar al camarero");
+    if (error) { toast.error("No se pudo avisar al camarero"); return; }
     toast.success(type === "bill" ? "Hemos pedido la cuenta" : "Avisamos al camarero");
   }
 

@@ -48,7 +48,7 @@ function TablesPage() {
     const { error } = await supabase
       .from("tables")
       .insert({ bar_id: barId!, number: next, qr_token: randomToken(), active: true });
-    if (error) return toast.error("No se pudo crear la mesa");
+    if (error) { toast.error("No se pudo crear la mesa"); return; }
     queryClient.invalidateQueries();
   }
 
@@ -57,7 +57,7 @@ function TablesPage() {
       .from("tables")
       .update({ qr_token: randomToken() })
       .eq("id", table.id);
-    if (error) return toast.error("No se pudo renovar el código");
+    if (error) { toast.error("No se pudo renovar el código"); return; }
     toast.success("Código renovado: imprime el QR nuevo");
     queryClient.invalidateQueries();
   }

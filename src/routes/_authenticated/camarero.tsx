@@ -89,7 +89,7 @@ function WaiterPage() {
       .from("table_sessions")
       .update({ status: "open", last_activity_at: new Date().toISOString() })
       .eq("id", sessionId);
-    if (error) return toast.error("No se pudo aceptar la mesa");
+    if (error) { toast.error("No se pudo aceptar la mesa"); return; }
     toast.success("Mesa aceptada");
     queryClient.invalidateQueries();
   }
@@ -103,7 +103,7 @@ function WaiterPage() {
         closed_by: staff?.userId ?? null,
       })
       .eq("id", sessionId);
-    if (error) return toast.error("No se pudo cerrar la mesa");
+    if (error) { toast.error("No se pudo cerrar la mesa"); return; }
     toast.success("Mesa cerrada");
     queryClient.invalidateQueries();
   }
@@ -117,7 +117,7 @@ function WaiterPage() {
         handled_by: staff?.userId ?? null,
       })
       .eq("id", callId);
-    if (error) return toast.error("No se pudo marcar la llamada");
+    if (error) { toast.error("No se pudo marcar la llamada"); return; }
     queryClient.invalidateQueries();
   }
 

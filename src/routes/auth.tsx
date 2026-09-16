@@ -62,7 +62,7 @@ function AuthPage() {
         toast.info("Revisa tu correo para confirmar la cuenta.");
         return;
       }
-      await ensureProfile({ data: { fullName: fullName || undefined } });
+      await ensureProfile({ data: fullName ? { fullName } : {} });
       navigate({ to: "/camarero", replace: true });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "No se pudo entrar");

@@ -65,12 +65,12 @@ function StaffPage() {
         .eq("bar_id", barId!)
         .eq("user_id", userId)
         .eq("role", role);
-      if (error) return toast.error("No se pudo quitar el rol");
+      if (error) { toast.error("No se pudo quitar el rol"); return; }
     } else {
       const { error } = await supabase
         .from("user_roles")
         .insert({ bar_id: barId!, user_id: userId, role });
-      if (error) return toast.error("No se pudo asignar el rol");
+      if (error) { toast.error("No se pudo asignar el rol"); return; }
     }
     queryClient.invalidateQueries();
   }
