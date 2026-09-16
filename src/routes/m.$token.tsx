@@ -296,7 +296,21 @@ function GuestPage() {
 
   const available = items.filter((i) => i.available);
   const soldOut = items.filter((i) => !i.available);
-  const blocked = session?.status === "pending";
+  const status = liveStatus ?? session?.status ?? "open";
+  const awaiting = status === "pending";
+
+  if (status === "rejected") {
+    return (
+      <Centered>
+        <div className="max-w-sm space-y-2">
+          <h1 className="font-display text-2xl font-extrabold">Mesa no aceptada</h1>
+          <p className="text-muted-foreground">
+            Esta mesa no ha sido aceptada. Avisa al camarero.
+          </p>
+        </div>
+      </Centered>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-36">
