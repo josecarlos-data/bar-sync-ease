@@ -45,9 +45,10 @@ export function QueueBoard({ destination }: { destination: Destination }) {
       let query = supabase
         .from("order_items")
         .select(
-          "id, name_snapshot, qty, note, destination, created_at, order_id, orders!inner(created_at, table_sessions!inner(nickname, tables!inner(number, name)))",
+          "id, name_snapshot, qty, note, destination, created_at, order_id, orders!inner(created_at, session_id, table_sessions!inner(status, nickname, tables!inner(number, name)))",
         )
         .eq("bar_id", barId!)
+        .eq("orders.table_sessions.status", "open")
         .eq("status", "pending")
         .is("deleted_at", null)
         .order("created_at", { ascending: true });

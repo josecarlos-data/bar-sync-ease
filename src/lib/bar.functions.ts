@@ -42,7 +42,7 @@ export const joinTable = createServerFn({ method: "POST" })
       .from("table_sessions")
       .select("id, nickname, status")
       .eq("table_id", table.id)
-      .neq("status", "closed")
+      .in("status", ["pending", "open"])
       .maybeSingle();
 
     let session = existing;
