@@ -1,3 +1,5 @@
+import type { AllergenValue } from "@/lib/allergens";
+
 export type Destination = "bar" | "kitchen";
 export type SessionStatus = "pending" | "open" | "closed";
 export type LineStatus = "pending" | "ready" | "served";
@@ -24,7 +26,7 @@ export type Item = {
   price: number;
   tax_rate: number;
   image_url: string | null;
-  allergens: string[];
+  allergens: AllergenValue[];
   available: boolean;
   destination: Destination;
   is_drink: boolean;
