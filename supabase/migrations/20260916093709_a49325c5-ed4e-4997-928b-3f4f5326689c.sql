@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.auto_approve_on_staff_order() FROM public, anon, authenticated;
