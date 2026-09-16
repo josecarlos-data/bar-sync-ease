@@ -130,6 +130,10 @@ function WaiterPage() {
 
   return (
     <StaffShell title="Mesas">
+      <div className="mb-3">
+        <SoundUnlockButton />
+      </div>
+      <SessionApprovalDialog barId={barId} />
       <div className="grid gap-3 sm:grid-cols-2">
         {tables.map((table) => {
           const session = data?.sessions.find((s) => s.table_id === table.id);
