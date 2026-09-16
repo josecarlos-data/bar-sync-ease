@@ -13,7 +13,10 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedBarraRouteImport } from './routes/_authenticated/barra'
+import { Route as AuthenticatedCamareroRouteImport } from './routes/_authenticated/camarero'
 import { Route as AuthenticatedCocinaRouteImport } from './routes/_authenticated/cocina'
+import { Route as AuthenticatedAdminAjustesRouteImport } from './routes/_authenticated/admin.ajustes'
+import { Route as AuthenticatedAdminPersonalRouteImport } from './routes/_authenticated/admin.personal'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,23 +37,46 @@ const AuthenticatedBarraRoute = AuthenticatedBarraRouteImport.update({
   path: '/barra',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCamareroRoute = AuthenticatedCamareroRouteImport.update({
+  id: '/camarero',
+  path: '/camarero',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedCocinaRoute = AuthenticatedCocinaRouteImport.update({
   id: '/cocina',
   path: '/cocina',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAdminAjustesRoute =
+  AuthenticatedAdminAjustesRouteImport.update({
+    id: '/admin/ajustes',
+    path: '/admin/ajustes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminPersonalRoute =
+  AuthenticatedAdminPersonalRouteImport.update({
+    id: '/admin/personal',
+    path: '/admin/personal',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/barra': typeof AuthenticatedBarraRoute
+  '/camarero': typeof AuthenticatedCamareroRoute
   '/cocina': typeof AuthenticatedCocinaRoute
+  '/admin/ajustes': typeof AuthenticatedAdminAjustesRoute
+  '/admin/personal': typeof AuthenticatedAdminPersonalRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/barra': typeof AuthenticatedBarraRoute
+  '/camarero': typeof AuthenticatedCamareroRoute
   '/cocina': typeof AuthenticatedCocinaRoute
+  '/admin/ajustes': typeof AuthenticatedAdminAjustesRoute
+  '/admin/personal': typeof AuthenticatedAdminPersonalRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -58,20 +84,40 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/barra': typeof AuthenticatedBarraRoute
+  '/_authenticated/camarero': typeof AuthenticatedCamareroRoute
   '/_authenticated/cocina': typeof AuthenticatedCocinaRoute
+  '/_authenticated/admin/ajustes': typeof AuthenticatedAdminAjustesRoute
+  '/_authenticated/admin/personal': typeof AuthenticatedAdminPersonalRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/barra' | '/cocina'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/barra'
+    | '/camarero'
+    | '/cocina'
+    | '/admin/ajustes'
+    | '/admin/personal'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/barra' | '/cocina'
+  to:
+    | '/'
+    | '/auth'
+    | '/barra'
+    | '/camarero'
+    | '/cocina'
+    | '/admin/ajustes'
+    | '/admin/personal'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/barra'
+    | '/_authenticated/camarero'
     | '/_authenticated/cocina'
+    | '/_authenticated/admin/ajustes'
+    | '/_authenticated/admin/personal'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -110,6 +156,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBarraRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/camarero': {
+      id: '/_authenticated/camarero'
+      path: '/camarero'
+      fullPath: '/camarero'
+      preLoaderRoute: typeof AuthenticatedCamareroRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/cocina': {
       id: '/_authenticated/cocina'
       path: '/cocina'
@@ -117,17 +170,37 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCocinaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/ajustes': {
+      id: '/_authenticated/admin/ajustes'
+      path: '/admin/ajustes'
+      fullPath: '/admin/ajustes'
+      preLoaderRoute: typeof AuthenticatedAdminAjustesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/personal': {
+      id: '/_authenticated/admin/personal'
+      path: '/admin/personal'
+      fullPath: '/admin/personal'
+      preLoaderRoute: typeof AuthenticatedAdminPersonalRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedBarraRoute: typeof AuthenticatedBarraRoute
+  AuthenticatedCamareroRoute: typeof AuthenticatedCamareroRoute
   AuthenticatedCocinaRoute: typeof AuthenticatedCocinaRoute
+  AuthenticatedAdminAjustesRoute: typeof AuthenticatedAdminAjustesRoute
+  AuthenticatedAdminPersonalRoute: typeof AuthenticatedAdminPersonalRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBarraRoute: AuthenticatedBarraRoute,
+  AuthenticatedCamareroRoute: AuthenticatedCamareroRoute,
   AuthenticatedCocinaRoute: AuthenticatedCocinaRoute,
+  AuthenticatedAdminAjustesRoute: AuthenticatedAdminAjustesRoute,
+  AuthenticatedAdminPersonalRoute: AuthenticatedAdminPersonalRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
