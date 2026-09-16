@@ -36,7 +36,7 @@ export const Route = createFileRoute("/m/$token")({
 type Joined = {
   sessionId: string;
   barId: string;
-  status: "pending" | "open";
+  status: "pending" | "open" | "rejected";
   nickname: string | null;
   table: { number: number; name: string | null };
 };
@@ -109,6 +109,19 @@ function GuestPage() {
         items: (items.data ?? []) as Item[],
         settings: (settings.data ?? null) as BarSettings | null,
       };
+    },
+  });
+
+  const { data: liveStatus } = useQuery({
+    queryKey: ["guest-session-status", session?.sessionId],
+    enabled: !!session,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("table_sessions")
+        .select("status")
+        .eq("id", session!.sessionId)
+        .maybeSingle();
+      return (data?.status ?? session!.status) as "pending" | "open" | "rejected" | "closed";
     },
   });
 
@@ -283,7 +296,21 @@ function GuestPage() {
 
   const available = items.filter((i) => i.available);
   const soldOut = items.filter((i) => !i.available);
-  const blocked = session?.status === "pending";
+  const status = liveStatus ?? session?.status ?? "open";
+  const awaiting = status === "pending";
+
+  if (status === "rejected") {
+    return (
+      <Centered>
+        <div className="max-w-sm space-y-2">
+          <h1 className="font-display text-2xl font-extrabold">Mesa no aceptada</h1>
+          <p className="text-muted-foreground">
+            Esta mesa no ha sido aceptada. Avisa al camarero.
+          </p>
+        </div>
+      </Centered>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-36">
@@ -317,9 +344,10 @@ function GuestPage() {
         </div>
       </header>
 
-      {blocked && (
+      {awaiting && (
         <p className="m-4 rounded-lg bg-warning px-4 py-3 text-sm font-semibold text-warning-foreground">
-          Esperando a que el personal acepte vuestra mesa. Podéis ir mirando la carta.
+          Podéis pedir ya. Vuestras comandas quedan pendientes de confirmar: llegarán a barra y
+          cocina en cuanto el camarero acepte la mesa.
         </p>
       )}
 
@@ -385,6 +413,11 @@ function GuestPage() {
             {(bill ?? []).map((order, index) => (
               <article key={order.id} className="rounded-xl border border-border bg-card p-4">
                 <p className="mb-2 text-sm font-bold text-muted-foreground">
+                  {awaiting && (
+                    <span className="mb-1 block w-fit rounded-full bg-warning px-2 py-0.5 text-xs font-bold text-warning-foreground">
+                      Pendiente de confirmar
+                    </span>
+                  )}
                   Comanda {index + 1} ·{" "}
                   {new Date(order.created_at).toLocaleTimeString("es-ES", {
                     hour: "2-digit",
@@ -461,7 +494,7 @@ function GuestPage() {
               )}
             </div>
             <button
-              disabled={blocked}
+              disabled={sending}
               onClick={() => setConfirming(true)}
               className="flex items-center gap-2 rounded-lg bg-primary px-5 py-3 font-semibold text-primary-foreground disabled:opacity-50"
             >

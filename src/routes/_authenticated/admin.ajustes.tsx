@@ -40,11 +40,6 @@ const TOGGLES: { key: keyof BarSettings; label: string; help: string }[] = [
     label: "Pasarela de pago",
     help: "Puedes activarla y desactivarla cuando quieras (fase 3).",
   },
-  {
-    key: "require_session_approval",
-    label: "Aceptar la mesa antes de pedir",
-    help: "La mesa queda pendiente hasta que el personal la acepta.",
-  },
 ];
 
 function SettingsPage() {
@@ -82,6 +77,34 @@ function SettingsPage() {
               />
             </label>
           ))}
+
+          <div className="rounded-xl border border-border bg-card p-4">
+            <p className="font-semibold">Aprobación de mesas</p>
+            <p className="text-sm text-muted-foreground">
+              En automática la mesa se abre sola. En manual el camarero acepta cada mesa y sus
+              comandas esperan hasta entonces. Se aplica a las mesas nuevas.
+            </p>
+            <div className="mt-2 flex gap-2">
+              {(
+                [
+                  [false, "Automática"],
+                  [true, "Manual"],
+                ] as const
+              ).map(([value, label]) => (
+                <button
+                  key={label}
+                  onClick={() => update({ require_session_approval: value })}
+                  className={`rounded-full px-4 py-1.5 text-sm font-semibold ${
+                    settings.require_session_approval === value
+                      ? "bg-primary text-primary-foreground"
+                      : "border border-border text-muted-foreground"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
 
           <div className="rounded-xl border border-border bg-card p-4">
             <p className="font-semibold">Orden de la cola</p>

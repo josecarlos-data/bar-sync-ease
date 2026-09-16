@@ -3,6 +3,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { BellRing, Check, Receipt, X } from "lucide-react";
 import { StaffShell } from "@/components/StaffShell";
+import { SessionApprovalDialog } from "@/components/SessionApprovalDialog";
+import { SoundUnlockButton } from "@/components/SoundUnlockButton";
 import { supabase } from "@/integrations/supabase/client";
 import { useStaff } from "@/hooks/useStaff";
 import { useRealtime } from "@/hooks/useRealtime";
@@ -85,12 +87,15 @@ function WaiterPage() {
   });
 
   async function approve(sessionId: string) {
-    const { error } = await supabase
-      .from("table_sessions")
-      .update({ status: "open", last_activity_at: new Date().toISOString() })
-      .eq("id", sessionId);
+    const { data: result, error } = await supabase.rpc("decide_session", {
+      _session_id: sessionId,
+      _decision: "approved",
+    });
     if (error) { toast.error("No se pudo aceptar la mesa"); return; }
-    toast.success("Mesa aceptada");
+    const res = (result ?? null) as { ok?: boolean } | null;
+    toast[res?.ok === false ? "info" : "success"](
+      res?.ok === false ? "Otro compañero ya ha decidido" : "Mesa aceptada",
+    );
     queryClient.invalidateQueries();
   }
 
@@ -125,6 +130,10 @@ function WaiterPage() {
 
   return (
     <StaffShell title="Mesas">
+      <div className="mb-3">
+        <SoundUnlockButton />
+      </div>
+      <SessionApprovalDialog barId={barId} />
       <div className="grid gap-3 sm:grid-cols-2">
         {tables.map((table) => {
           const session = data?.sessions.find((s) => s.table_id === table.id);
