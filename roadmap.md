@@ -21,8 +21,12 @@
 - [x] Selector Automática / Manual en ajustes (automática por defecto)
 
 ## Fase 2
+- [x] División de la cuenta a partes iguales (número de personas e importe por persona)
+- [x] División por consumo en grupos, con reparto de lo no asignado o "pendiente con camarero"
+- [x] Solicitar cuenta dividida: aviso al camarero y detalle de las partes en /camarero, con marcar parte como cobrada
+- [x] Botón de pago por parte (visible con la pasarela activa; falta conectar el proveedor de pago)
 - [ ] Camarero completo (añadir/eliminar líneas con registro, servir, cobrar)
-- [ ] División de cuenta, tapa gratis con bebida, avisos
+- [ ] Tapa gratis con bebida y avisos
 
 ## Fase 3
 - [ ] Pasarela de pago y offline completo
