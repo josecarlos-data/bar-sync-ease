@@ -35,6 +35,20 @@ type LineRow = {
   orders: { session_id: string } | null;
 };
 type CallRow = { id: string; session_id: string; type: "waiter" | "bill" };
+type SplitRow = {
+  id: string;
+  session_id: string;
+  mode: "equal" | "groups";
+  people: number;
+  status: "open" | "requested" | "settled";
+  bill_split_parts: {
+    id: string;
+    label: string;
+    position: number;
+    amount: number;
+    status: "pending" | "paid" | "with_waiter";
+  }[];
+};
 
 function WaiterPage() {
   const { data: staff } = useStaff();
@@ -77,11 +91,21 @@ function WaiterPage() {
         lines = (lineData ?? []) as unknown as LineRow[];
       }
 
+      let splits: SplitRow[] = [];
+      if (sessionIds.length) {
+        const { data: splitData } = await supabase
+          .from("bill_splits")
+          .select("id, session_id, mode, people, status, bill_split_parts(id, label, position, amount, status)")
+          .in("session_id", sessionIds);
+        splits = (splitData ?? []) as unknown as SplitRow[];
+      }
+
       return {
         tables: (tables.data ?? []) as TableRow[],
         sessions: (sessions.data ?? []) as SessionRow[],
         calls: (calls.data ?? []) as CallRow[],
         lines,
+        splits,
       };
     },
   });
