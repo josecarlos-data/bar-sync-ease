@@ -41,7 +41,7 @@ function WaiterPage() {
   const barId = staff?.barId ?? null;
   const queryClient = useQueryClient();
 
-  useRealtime("waiter", ["order_items", "orders", "table_sessions", "service_calls"], !!barId);
+  useRealtime("waiter", ["order_items", "orders", "table_sessions", "service_calls", "bill_splits", "bill_split_parts"], !!barId);
 
   const { data } = useQuery({
     queryKey: ["waiter-board", barId],

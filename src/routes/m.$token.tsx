@@ -93,7 +93,7 @@ function GuestPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
-  useRealtime("guest", ["order_items", "orders", "table_sessions"], !!session);
+  useRealtime("guest", ["order_items", "orders", "table_sessions", "bill_splits", "bill_split_parts", "bill_split_assignments"], !!session);
 
   const { data: menu } = useQuery({
     queryKey: ["guest-menu", session?.barId],
