@@ -82,6 +82,160 @@ export type Database = {
         }
         Relationships: []
       }
+      bill_split_assignments: {
+        Row: {
+          bar_id: string
+          created_at: string
+          id: string
+          order_item_id: string
+          part_id: string
+          qty: number
+        }
+        Insert: {
+          bar_id: string
+          created_at?: string
+          id?: string
+          order_item_id: string
+          part_id: string
+          qty: number
+        }
+        Update: {
+          bar_id?: string
+          created_at?: string
+          id?: string
+          order_item_id?: string
+          part_id?: string
+          qty?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bill_split_assignments_bar_id_fkey"
+            columns: ["bar_id"]
+            isOneToOne: false
+            referencedRelation: "bars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bill_split_assignments_order_item_id_fkey"
+            columns: ["order_item_id"]
+            isOneToOne: false
+            referencedRelation: "order_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bill_split_assignments_part_id_fkey"
+            columns: ["part_id"]
+            isOneToOne: false
+            referencedRelation: "bill_split_parts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bill_split_parts: {
+        Row: {
+          amount: number
+          bar_id: string
+          created_at: string
+          id: string
+          label: string
+          paid_at: string | null
+          payment_ref: string | null
+          position: number
+          split_id: string
+          status: string
+        }
+        Insert: {
+          amount?: number
+          bar_id: string
+          created_at?: string
+          id?: string
+          label: string
+          paid_at?: string | null
+          payment_ref?: string | null
+          position?: number
+          split_id: string
+          status?: string
+        }
+        Update: {
+          amount?: number
+          bar_id?: string
+          created_at?: string
+          id?: string
+          label?: string
+          paid_at?: string | null
+          payment_ref?: string | null
+          position?: number
+          split_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bill_split_parts_bar_id_fkey"
+            columns: ["bar_id"]
+            isOneToOne: false
+            referencedRelation: "bars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bill_split_parts_split_id_fkey"
+            columns: ["split_id"]
+            isOneToOne: false
+            referencedRelation: "bill_splits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bill_splits: {
+        Row: {
+          bar_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          mode: string
+          people: number
+          session_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          bar_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          mode: string
+          people?: number
+          session_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          bar_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          mode?: string
+          people?: number
+          session_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bill_splits_bar_id_fkey"
+            columns: ["bar_id"]
+            isOneToOne: false
+            referencedRelation: "bars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bill_splits_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "table_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           bar_id: string

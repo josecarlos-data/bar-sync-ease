@@ -35,13 +35,27 @@ type LineRow = {
   orders: { session_id: string } | null;
 };
 type CallRow = { id: string; session_id: string; type: "waiter" | "bill" };
+type SplitRow = {
+  id: string;
+  session_id: string;
+  mode: "equal" | "groups";
+  people: number;
+  status: "open" | "requested" | "settled";
+  bill_split_parts: {
+    id: string;
+    label: string;
+    position: number;
+    amount: number;
+    status: "pending" | "paid" | "with_waiter";
+  }[];
+};
 
 function WaiterPage() {
   const { data: staff } = useStaff();
   const barId = staff?.barId ?? null;
   const queryClient = useQueryClient();
 
-  useRealtime("waiter", ["order_items", "orders", "table_sessions", "service_calls"], !!barId);
+  useRealtime("waiter", ["order_items", "orders", "table_sessions", "service_calls", "bill_splits", "bill_split_parts"], !!barId);
 
   const { data } = useQuery({
     queryKey: ["waiter-board", barId],
@@ -77,11 +91,21 @@ function WaiterPage() {
         lines = (lineData ?? []) as unknown as LineRow[];
       }
 
+      let splits: SplitRow[] = [];
+      if (sessionIds.length) {
+        const { data: splitData } = await supabase
+          .from("bill_splits")
+          .select("id, session_id, mode, people, status, bill_split_parts(id, label, position, amount, status)")
+          .in("session_id", sessionIds);
+        splits = (splitData ?? []) as unknown as SplitRow[];
+      }
+
       return {
         tables: (tables.data ?? []) as TableRow[],
         sessions: (sessions.data ?? []) as SessionRow[],
         calls: (calls.data ?? []) as CallRow[],
         lines,
+        splits,
       };
     },
   });
@@ -126,6 +150,15 @@ function WaiterPage() {
     queryClient.invalidateQueries();
   }
 
+  async function markPartPaid(partId: string) {
+    const { error } = await supabase
+      .from("bill_split_parts")
+      .update({ status: "paid", paid_at: new Date().toISOString() })
+      .eq("id", partId);
+    if (error) { toast.error("No se pudo marcar como cobrada"); return; }
+    queryClient.invalidateQueries();
+  }
+
   const tables = data?.tables ?? [];
 
   return (
@@ -146,6 +179,9 @@ function WaiterPage() {
           const calls = session
             ? (data?.calls ?? []).filter((c) => c.session_id === session.id)
             : [];
+          const split = session
+            ? (data?.splits ?? []).find((s) => s.session_id === session.id)
+            : undefined;
 
           const state = !session
             ? { label: "Libre", className: "bg-muted text-muted-foreground" }
@@ -211,6 +247,51 @@ function WaiterPage() {
                         </li>
                       ))}
                     </ul>
+                  )}
+
+                  {split && (
+                    <div className="mt-3 rounded-lg border border-border p-3">
+                      <p className="text-sm font-bold">
+                        {split.mode === "equal"
+                          ? `Cuenta dividida entre ${split.people}`
+                          : "Cuenta dividida por consumo"}
+                        {split.status === "requested" && " · solicitada"}
+                      </p>
+                      <ul className="mt-2 space-y-1">
+                        {[...split.bill_split_parts]
+                          .sort((a, b) => a.position - b.position)
+                          .map((part) => (
+                            <li
+                              key={part.id}
+                              className="flex items-center justify-between gap-2 text-sm"
+                            >
+                              <span>
+                                {part.label}
+                                {part.status === "with_waiter" && (
+                                  <span className="ml-2 text-xs text-muted-foreground">
+                                    pendiente contigo
+                                  </span>
+                                )}
+                              </span>
+                              <span className="flex items-center gap-2">
+                                <span className="tabular font-semibold">
+                                  {formatEUR(Number(part.amount))}
+                                </span>
+                                {part.status === "paid" ? (
+                                  <span className="text-xs font-bold text-success">Pagada</span>
+                                ) : (
+                                  <button
+                                    onClick={() => markPartPaid(part.id)}
+                                    className="rounded-md border border-border px-2 py-1 text-xs font-semibold"
+                                  >
+                                    Cobrada
+                                  </button>
+                                )}
+                              </span>
+                            </li>
+                          ))}
+                      </ul>
+                    </div>
                   )}
 
                   <div className="mt-3 flex gap-2">
