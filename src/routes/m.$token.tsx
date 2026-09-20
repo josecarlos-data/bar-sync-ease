@@ -187,10 +187,17 @@ function GuestPage() {
     [cart, items],
   );
 
-  const billTotal = (bill ?? [])
+  const billLines: SplitLine[] = (bill ?? [])
     .flatMap((o) => o.order_items)
     .filter((l) => !l.deleted_at)
-    .reduce((sum, l) => sum + Number(l.price_snapshot) * l.qty, 0);
+    .map((l) => ({
+      id: l.id,
+      name: l.name_snapshot,
+      price: Number(l.price_snapshot),
+      qty: l.qty,
+    }));
+
+  const billTotal = billLines.reduce((sum, l) => sum + l.price * l.qty, 0);
 
   function changeQty(itemId: string, delta: number) {
     setCart((prev) => {
@@ -456,6 +463,17 @@ function GuestPage() {
                 <span>Total</span>
                 <span className="tabular">{formatEUR(billTotal)}</span>
               </div>
+            )}
+
+            {showPrices && billLines.length > 0 && liveStatus !== "rejected" && (
+              <SplitBill
+                sessionId={session!.sessionId}
+                barId={session!.barId}
+                lines={billLines}
+                total={billTotal}
+                paymentsEnabled={settings?.payments_enabled ?? false}
+                onRequestWaiter={() => call("bill")}
+              />
             )}
 
             <div className="flex gap-2">
