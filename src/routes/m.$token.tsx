@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { joinTable } from "@/lib/bar.functions";
 import { useRealtime } from "@/hooks/useRealtime";
 import { ConnectionBadge } from "@/components/ConnectionBadge";
+import { SplitBill, type SplitLine } from "@/components/SplitBill";
 import { useItemImages, resolveImage } from "@/lib/images";
 import { allergenLabel, formatEUR } from "@/lib/allergens";
 import { Input } from "@/components/ui/input";
