@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffProfile } from "@/lib/bar.functions";
+import { resolveLogin } from "@/lib/staff.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,13 +29,12 @@ export const Route = createFileRoute("/auth")({
 });
 
 function AuthPage() {
-  const [mode, setMode] = useState<"login" | "signup">("login");
-  const [email, setEmail] = useState("");
+  const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const ensureProfile = useServerFn(ensureStaffProfile);
+  const resolve = useServerFn(resolveLogin);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -46,26 +46,27 @@ function AuthPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { emailRedirectTo: window.location.origin },
-        });
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-      }
-      const { data } = await supabase.auth.getSession();
-      if (!data.session) {
-        toast.info("Revisa tu correo para confirmar la cuenta.");
+      const resolved = await resolve({ data: { login: login.trim() } });
+      if (resolved.inactive) {
+        toast.error("Esta cuenta está desactivada. Habla con el administrador.");
         return;
       }
-      await ensureProfile({ data: fullName ? { fullName } : {} });
+      if (!resolved.email) {
+        toast.error("Usuario o contraseña incorrectos");
+        return;
+      }
+      const { error } = await supabase.auth.signInWithPassword({
+        email: resolved.email,
+        password,
+      });
+      if (error) {
+        toast.error("Usuario o contraseña incorrectos");
+        return;
+      }
+      await ensureProfile({ data: {} });
       navigate({ to: "/camarero", replace: true });
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "No se pudo entrar");
+    } catch {
+      toast.error("No se pudo entrar");
     } finally {
       setLoading(false);
     }
@@ -77,28 +78,21 @@ function AuthPage() {
         <Link to="/" className="text-sm text-muted-foreground">
           ← Inicio
         </Link>
-        <h1 className="mt-4 font-display text-3xl font-bold">
-          {mode === "login" ? "Acceso del personal" : "Crear cuenta"}
-        </h1>
+        <h1 className="mt-4 font-display text-3xl font-bold">Acceso del personal</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          La primera cuenta del bar se crea como administrador.
+          Entra con tu usuario o tu correo. Las cuentas las crea el administrador del bar.
         </p>
 
         <form onSubmit={submit} className="mt-6 space-y-4">
-          {mode === "signup" && (
-            <div className="space-y-1.5">
-              <Label htmlFor="name">Nombre</Label>
-              <Input id="name" value={fullName} onChange={(e) => setFullName(e.target.value)} />
-            </div>
-          )}
           <div className="space-y-1.5">
-            <Label htmlFor="email">Correo</Label>
+            <Label htmlFor="login">Usuario o correo</Label>
             <Input
-              id="email"
-              type="email"
+              id="login"
+              autoCapitalize="none"
+              autoCorrect="off"
               required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={login}
+              onChange={(e) => setLogin(e.target.value)}
             />
           </div>
           <div className="space-y-1.5">
@@ -107,23 +101,16 @@ function AuthPage() {
               id="password"
               type="password"
               required
-              minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
           <Button type="submit" className="h-12 w-full text-base" disabled={loading}>
-            {mode === "login" ? "Entrar" : "Crear cuenta"}
+            Entrar
           </Button>
         </form>
-
-        <button
-          className="mt-4 w-full text-sm text-muted-foreground underline"
-          onClick={() => setMode(mode === "login" ? "signup" : "login")}
-        >
-          {mode === "login" ? "No tengo cuenta" : "Ya tengo cuenta"}
-        </button>
       </div>
     </div>
   );
 }
+

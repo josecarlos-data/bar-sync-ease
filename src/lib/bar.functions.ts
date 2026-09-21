@@ -90,11 +90,15 @@ export const joinTable = createServerFn({ method: "POST" })
     };
   });
 
-/** Crea el perfil del miembro del personal y le asigna un rol. */
+/**
+ * Devuelve el bar y los roles del miembro del personal.
+ * Ya no crea cuentas ni asigna roles: las altas se hacen desde el panel Personal.
+ * Excepción: si el bar aún no tiene ningún administrador, la cuenta pasa a serlo.
+ */
 export const ensureStaffProfile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { fullName?: string }) => data)
-  .handler(async ({ data, context }) => {
+  .handler(async ({ context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { data: profile } = await supabaseAdmin
@@ -102,19 +106,6 @@ export const ensureStaffProfile = createServerFn({ method: "POST" })
       .select("id, bar_id")
       .eq("id", context.userId)
       .maybeSingle();
-
-    if (!profile) {
-      await supabaseAdmin.from("profiles").insert({
-        id: context.userId,
-        bar_id: DEFAULT_BAR,
-        full_name: data.fullName ?? null,
-      });
-    } else if (data.fullName) {
-      await supabaseAdmin
-        .from("profiles")
-        .update({ full_name: data.fullName })
-        .eq("id", context.userId);
-    }
 
     const barId = profile?.bar_id ?? DEFAULT_BAR;
 
@@ -131,9 +122,18 @@ export const ensureStaffProfile = createServerFn({ method: "POST" })
         .eq("bar_id", barId)
         .eq("role", "admin");
 
-      const role = (count ?? 0) === 0 ? "admin" : "waiter";
-      await supabaseAdmin.from("user_roles").insert({ bar_id: barId, user_id: context.userId, role });
-      return { barId, roles: [role] };
+      if ((count ?? 0) === 0) {
+        if (!profile) {
+          await supabaseAdmin
+            .from("profiles")
+            .insert({ id: context.userId, bar_id: barId, full_name: null });
+        }
+        await supabaseAdmin
+          .from("user_roles")
+          .insert({ bar_id: barId, user_id: context.userId, role: "admin" });
+        return { barId, roles: ["admin"] };
+      }
+      return { barId, roles: [] as string[] };
     }
 
     return { barId, roles: myRoles.map((r) => r.role) };

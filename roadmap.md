@@ -28,5 +28,11 @@
 - [ ] Camarero completo (añadir/eliminar líneas con registro, servir, cobrar)
 - [ ] Tapa gratis con bebida y avisos
 
+## Gestión de personal
+- [x] Quitar registro público en /auth
+- [x] Acceso con usuario o correo
+- [x] Alta de personal desde Personal (usuario, contraseña puesta por el admin, roles)
+- [x] Cambiar contraseña, desactivar y borrar cuentas de personal
+
 ## Fase 3
 - [ ] Pasarela de pago y offline completo
