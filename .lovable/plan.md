@@ -1,57 +1,56 @@
-# Aprobación de mesas: comandas retenidas, ventana bloqueante e histórico
+# Altas de personal desde dentro de la app
 
-Sustituye el bloqueo actual: hoy una mesa "pendiente" no deja enviar comandas. Pasará a dejar pedir, reteniendo las comandas hasta que el personal decida.
+## Antes de nada: no se ha borrado nada
 
-## 1. Modo de aprobación (administración)
+He revisado los datos. Sigue todo: la carta (10 artículos, 4 categorías), las 7 mesas y las sesiones. Tu cuenta original "Bar Laroya" sigue siendo administradora.
 
-Nuevo selector en Ajustes del bar: **Automática** (por defecto) o **Manual**.
+Lo que pasó es que la cuenta nueva que creaste desde la pantalla de acceso entró como **camarero** (la primera cuenta del bar es la administradora; las siguientes, camarero). Al entrar con ella ves menos opciones, y por eso parece que falta contenido. Entrando con la cuenta original vuelves a verlo todo.
 
-- Automática: la mesa se abre sola, no aparece ninguna ventana y las comandas van directas a barra y cocina.
-- Manual: la mesa queda pendiente y se aprueba desde la vista de camarero.
+## 1. Se quita el registro público
 
-Se puede cambiar en cualquier momento; afecta a las mesas nuevas, no a las ya abiertas.
+En la pantalla de acceso desaparece "No tengo cuenta" / crear cuenta. Solo queda entrar. Nadie puede darse de alta desde fuera.
 
-## 2. Cliente con mesa pendiente
+## 2. Acceso con usuario o con correo
 
-- Puede enviar comandas con normalidad desde el primer momento.
-- Sus comandas se muestran con la etiqueta "Pendiente de confirmar" y un aviso de que aún no han llegado a barra ni cocina.
-- Si la mesa se rechaza, ese dispositivo sigue viendo el mensaje "Esta mesa no ha sido aceptada. Avisa al camarero." y no puede seguir pidiendo. Un escaneo nuevo desde otro dispositivo abre una mesa nueva pendiente: la mesa no queda bloqueada.
+El mismo campo acepta las dos cosas:
 
-## 3. Barra y cocina
+- Tu cuenta actual sigue entrando con su correo, sin cambios.
+- El personal nuevo entra con un nombre de usuario tipo `Mendoza1`, `MendozaCo1`, sin correo.
 
-Sólo reciben líneas de mesas aceptadas. Al aceptar o restablecer una mesa, sus comandas retenidas entran en la cola ordenadas por el momento en que el cliente las pidió, igual que el resto.
+## 3. Crear personal desde Personal (solo administrador)
 
-## 4. Ventana de aprobación en la vista de camarero
+Nuevo formulario en el panel Personal:
 
-Cada mesa pendiente abre una ventana a pantalla completa que bloquea la pantalla, con sonido y vibración al aparecer, y con: número de mesa, apodo del grupo, hora de apertura y el detalle de las comandas enviadas. Botones:
+- Nombre de la persona (ej. "María, barra")
+- Nombre de usuario (ej. `Mendoza1`) — único dentro del bar, sin espacios
+- Contraseña inicial, que pone el administrador
+- Roles: administrador / camarero / barra / cocina
 
-- **Aceptar**: la mesa pasa a abierta y sus comandas entran en cola.
-- **Posponer 30 s / 60 s**: se cierra y reaparece pasado ese tiempo (sólo en ese dispositivo).
-- **Rechazar**: pide confirmación con el texto "Si rechazas esta mesa, sus comandas no llegarán a barra ni cocina. ¿Confirmar?".
+Al guardar, la cuenta queda creada y asociada automáticamente a tu bar. Nada de correos de confirmación.
 
-Con varios camareros, la primera decisión gana: al resto se les avisa ("Otro compañero ya ha decidido") y la ventana se cierra. Con varias mesas pendientes, se muestran en cola, una tras otra (la más antigua primero).
+Sobre cada usuario el administrador puede además:
 
-## 5. Histórico de sesiones
+- Cambiar su contraseña
+- Cambiar sus roles (como ahora)
+- **Desactivar** el acceso (la cuenta queda bloqueada pero se conserva el histórico)
+- **Borrar** la cuenta, con confirmación
 
-Nueva pantalla accesible desde camarero y desde administración: mesas rechazadas y cerradas con mesa, apodo, fecha, quién decidió y sus comandas. En una mesa rechazada, botón **Restablecer y aprobar**: pasa a abierta y sus comandas entran en cola.
-
-Las comandas de mesas rechazadas no suman en cuentas ni totales mientras sigan rechazadas.
+Un administrador no puede desactivarse ni borrarse a sí mismo, y el bar no se puede quedar sin ningún administrador activo.
 
 ## Detalles técnicos
 
-Base de datos (migración sin pérdida de datos, sólo añade):
+Base de datos (migración, solo añade):
 
-- `session_status` gana el valor `rejected` (ALTER TYPE ADD VALUE; queda `pending | open | rejected | closed`).
-- `table_sessions`: nuevas columnas `decided_by uuid`, `decided_at timestamptz`, `decision text CHECK (decision IN ('approved','rejected','restored'))`, `released_at timestamptz`.
-- `bar_settings.require_session_approval`: nuevo DEFAULT `false` y actualización del bar existente a `false`.
-- `session_is_open(_session_id)` devuelve true para `pending` y `open`, false para `rejected`/`closed`. Las políticas de `orders`, `order_items` y `service_calls` heredan la nueva semántica sin cambiar de texto.
-- Nueva función `decide_session(_session_id uuid, _decision text)` SECURITY DEFINER: comprueba `is_staff_of(bar_id)`, actualiza sólo si `status = 'pending'` (approved/rejected) o `status = 'rejected'` (restored) con `WHERE` sobre el estado esperado, escribe `decision`, `decided_by = auth.uid()`, `decided_at`, `released_at` y devuelve el estado resultante o `null` si otro ya decidió. EXECUTE sólo para `authenticated`.
-- Lectura del histórico cubierta por las políticas `is_staff_of(bar_id)` existentes; no hacen falta políticas nuevas.
+- `profiles`: `username text`, `is_active boolean not null default true`. Índice único `lower(username)` por `bar_id`.
+- Política de lectura de `profiles` ya cubre al personal del bar vía `is_staff_of(bar_id)`; se añade escritura solo para `is_admin_of(bar_id)` sobre `is_active`.
+
+Servidor (`src/lib/staff.functions.ts`, todas con `requireSupabaseAuth` y comprobación `is_admin_of` del bar del llamante antes de tocar nada; `supabaseAdmin` importado dentro del handler):
+
+- `createStaffUser`: valida usuario (`^[A-Za-z0-9._-]{3,32}$`) y unicidad, crea el usuario con `auth.admin.createUser({ email: "<usuario>@<slug-bar>.staff.local", email_confirm: true })`, inserta `profiles` (bar_id, full_name, username, is_active) y las filas de `user_roles`.
+- `setStaffPassword`, `setStaffActive` (`auth.admin.updateUserById` con `ban_duration`), `deleteStaffUser` (`auth.admin.deleteUser`, previa comprobación de que queda otro admin activo).
+- `resolveLogin` (pública, sin auth): recibe el texto introducido; si no contiene `@`, busca `profiles.username` con el cliente admin y devuelve solo el correo interno a usar. No filtra nada más.
 
 Frontend:
 
-- `QueueBoard` filtra por `table_sessions.status = 'open'` en el join; el orden por llegada sigue siendo `order_items.created_at`, así que las comandas retenidas conservan su orden al liberarse.
-- Nuevo `SessionApprovalDialog` en `/camarero`, alimentado por las sesiones `pending` del bar vía realtime, con cola local, mapa de "posponer hasta" en estado, `navigator.vibrate` y un pitido corto con WebAudio (sin fichero de sonido).
-- `/m/$token`: se elimina el bloqueo por `status === 'pending'`; etiqueta por comanda y pantalla de mesa rechazada; el cálculo de la cuenta ignora sesiones `rejected`.
-- Nueva ruta `/_authenticated/historial` con el listado y el botón Restablecer y aprobar; enlace en la navegación para camarero y administrador.
-- Ajustes del bar: el interruptor de aprobación pasa a selector Automática / Manual.
+- `src/routes/auth.tsx`: se elimina el modo signup y `ensureStaffProfile` deja de crear cuentas nuevas; el campo pasa a "Usuario o correo" y llama a `resolveLogin` antes de `signInWithPassword`. Si la cuenta está desactivada, mensaje claro.
+- `src/routes/_authenticated/admin.personal.tsx`: formulario de alta, listado con usuario, estado activo/desactivado y acciones (contraseña, activar/desactivar, borrar) además de los roles actuales.
