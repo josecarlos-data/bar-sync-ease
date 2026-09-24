@@ -33,7 +33,7 @@ export function QueueBoard({ destination }: { destination: Destination }) {
   const [sortOverride, setSortOverride] = useState<SortMode | null>(null);
   const queryClient = useQueryClient();
 
-  useRealtime("queue", ["order_items", "orders", "table_sessions"], !!barId);
+  useRealtime("queue", ["order_items", "orders", "table_sessions", "order_instructions"], !!barId);
 
   const singleQueue = settings ? !settings.split_bar_kitchen : false;
   const sort: SortMode = sortOverride ?? settings?.queue_sort ?? "arrival";
@@ -60,6 +60,22 @@ export function QueueBoard({ destination }: { destination: Destination }) {
       return (data ?? []) as unknown as QueueLine[];
     },
   });
+
+  const orderIds = [...new Set(lines.map((l) => l.order_id))].sort();
+  const { data: instructions = [] } = useQuery({
+    queryKey: ["queue-instructions", orderIds.join(",")],
+    enabled: orderIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("order_instructions")
+        .select("id, order_id, instruction_text, created_at")
+        .in("order_id", orderIds)
+        .order("created_at");
+      return data ?? [];
+    },
+  });
+  const instructionsFor = (orderId: string) =>
+    instructions.filter((i) => i.order_id === orderId).map((i) => i.instruction_text);
 
   async function markReady(ids: string[]) {
     const { error } = await supabase
@@ -131,6 +147,7 @@ export function QueueBoard({ destination }: { destination: Destination }) {
             <OrderCard
               key={orderId}
               lines={orderLines}
+              instructions={instructionsFor(orderId)}
               onReadyAll={() => markReady(orderLines.map((l) => l.id))}
               onReadyLine={(id) => markReady([id])}
             />
@@ -139,6 +156,7 @@ export function QueueBoard({ destination }: { destination: Destination }) {
             <OrderCard
               key={line.id}
               lines={[line]}
+              instructions={instructionsFor(line.order_id)}
               onReadyAll={() => markReady([line.id])}
               onReadyLine={(id) => markReady([id])}
             />
@@ -149,10 +167,12 @@ export function QueueBoard({ destination }: { destination: Destination }) {
 
 function OrderCard({
   lines,
+  instructions,
   onReadyAll,
   onReadyLine,
 }: {
   lines: QueueLine[];
+  instructions: string[];
   onReadyAll: () => void;
   onReadyLine: (id: string) => void;
 }) {
@@ -174,6 +194,13 @@ function OrderCard({
         </div>
         <span className="tabular text-xs text-muted-foreground">{time}</span>
       </header>
+      {instructions.length > 0 && (
+        <div className="space-y-1 border-b border-warning bg-warning/15 px-4 py-2">
+          {instructions.map((t, i) => (
+            <p key={i} className="whitespace-pre-line text-sm font-bold">{t}</p>
+          ))}
+        </div>
+      )}
       <ul className="divide-y divide-border">
         {lines.map((line) => (
           <li key={line.id} className="flex items-center gap-3 px-4 py-3">
