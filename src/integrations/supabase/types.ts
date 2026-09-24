@@ -337,6 +337,51 @@ export type Database = {
           },
         ]
       }
+      order_instructions: {
+        Row: {
+          bar_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          instruction_text: string
+          order_id: string
+          original_text: string
+        }
+        Insert: {
+          bar_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          instruction_text: string
+          order_id: string
+          original_text: string
+        }
+        Update: {
+          bar_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          instruction_text?: string
+          order_id?: string
+          original_text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_instructions_bar_id_fkey"
+            columns: ["bar_id"]
+            isOneToOne: false
+            referencedRelation: "bars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_instructions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           bar_id: string
