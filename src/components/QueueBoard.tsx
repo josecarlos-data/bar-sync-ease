@@ -147,6 +147,7 @@ export function QueueBoard({ destination }: { destination: Destination }) {
             <OrderCard
               key={orderId}
               lines={orderLines}
+              instructions={instructionsFor(orderId)}
               onReadyAll={() => markReady(orderLines.map((l) => l.id))}
               onReadyLine={(id) => markReady([id])}
             />
@@ -155,6 +156,7 @@ export function QueueBoard({ destination }: { destination: Destination }) {
             <OrderCard
               key={line.id}
               lines={[line]}
+              instructions={instructionsFor(line.order_id)}
               onReadyAll={() => markReady([line.id])}
               onReadyLine={(id) => markReady([id])}
             />
@@ -165,10 +167,12 @@ export function QueueBoard({ destination }: { destination: Destination }) {
 
 function OrderCard({
   lines,
+  instructions,
   onReadyAll,
   onReadyLine,
 }: {
   lines: QueueLine[];
+  instructions: string[];
   onReadyAll: () => void;
   onReadyLine: (id: string) => void;
 }) {
@@ -190,6 +194,13 @@ function OrderCard({
         </div>
         <span className="tabular text-xs text-muted-foreground">{time}</span>
       </header>
+      {instructions.length > 0 && (
+        <div className="space-y-1 border-b border-warning bg-warning/15 px-4 py-2">
+          {instructions.map((t, i) => (
+            <p key={i} className="whitespace-pre-line text-sm font-bold">{t}</p>
+          ))}
+        </div>
+      )}
       <ul className="divide-y divide-border">
         {lines.map((line) => (
           <li key={line.id} className="flex items-center gap-3 px-4 py-3">
