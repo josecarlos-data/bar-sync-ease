@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { BellRing, Check, Receipt, X } from "lucide-react";
+import { BellRing, Check, Receipt, Sparkles, X } from "lucide-react";
+import { KitchenInstructionDialog } from "@/components/KitchenInstructionDialog";
 import { StaffShell } from "@/components/StaffShell";
 import { SessionApprovalDialog } from "@/components/SessionApprovalDialog";
 import { SoundUnlockButton } from "@/components/SoundUnlockButton";
@@ -54,6 +56,7 @@ function WaiterPage() {
   const { data: staff } = useStaff();
   const barId = staff?.barId ?? null;
   const queryClient = useQueryClient();
+  const [instructionFor, setInstructionFor] = useState<{ sessionId: string; tableNumber: number } | null>(null);
 
   useRealtime("waiter", ["order_items", "orders", "table_sessions", "service_calls", "bill_splits", "bill_split_parts"], !!barId);
 
@@ -167,6 +170,15 @@ function WaiterPage() {
         <SoundUnlockButton />
       </div>
       <SessionApprovalDialog barId={barId} />
+      {instructionFor && barId && staff?.userId && (
+        <KitchenInstructionDialog
+          barId={barId}
+          sessionId={instructionFor.sessionId}
+          tableNumber={instructionFor.tableNumber}
+          userId={staff.userId}
+          onClose={() => setInstructionFor(null)}
+        />
+      )}
       <div className="grid gap-3 sm:grid-cols-2">
         {tables.map((table) => {
           const session = data?.sessions.find((s) => s.table_id === table.id);
@@ -292,6 +304,15 @@ function WaiterPage() {
                           ))}
                       </ul>
                     </div>
+                  )}
+
+                  {lines.length > 0 && (
+                    <button
+                      onClick={() => setInstructionFor({ sessionId: session.id, tableNumber: table.number })}
+                      className="mt-3 flex w-full items-center justify-center gap-1 rounded-lg border border-primary py-2 text-sm font-semibold text-primary"
+                    >
+                      <Sparkles className="h-4 w-4" /> Indicación a cocina
+                    </button>
                   )}
 
                   <div className="mt-3 flex gap-2">

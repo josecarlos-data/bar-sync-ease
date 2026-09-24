@@ -33,7 +33,7 @@ export function QueueBoard({ destination }: { destination: Destination }) {
   const [sortOverride, setSortOverride] = useState<SortMode | null>(null);
   const queryClient = useQueryClient();
 
-  useRealtime("queue", ["order_items", "orders", "table_sessions"], !!barId);
+  useRealtime("queue", ["order_items", "orders", "table_sessions", "order_instructions"], !!barId);
 
   const singleQueue = settings ? !settings.split_bar_kitchen : false;
   const sort: SortMode = sortOverride ?? settings?.queue_sort ?? "arrival";
@@ -60,6 +60,22 @@ export function QueueBoard({ destination }: { destination: Destination }) {
       return (data ?? []) as unknown as QueueLine[];
     },
   });
+
+  const orderIds = [...new Set(lines.map((l) => l.order_id))].sort();
+  const { data: instructions = [] } = useQuery({
+    queryKey: ["queue-instructions", orderIds.join(",")],
+    enabled: orderIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("order_instructions")
+        .select("id, order_id, instruction_text, created_at")
+        .in("order_id", orderIds)
+        .order("created_at");
+      return data ?? [];
+    },
+  });
+  const instructionsFor = (orderId: string) =>
+    instructions.filter((i) => i.order_id === orderId).map((i) => i.instruction_text);
 
   async function markReady(ids: string[]) {
     const { error } = await supabase
