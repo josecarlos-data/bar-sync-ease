@@ -78,6 +78,24 @@ export function QueueBoard({ destination }: { destination: Destination }) {
   const instructionsFor = (orderId: string) =>
     instructions.filter((i) => i.order_id === orderId).map((i) => i.instruction_text);
 
+  const voice = settings?.kitchen_voice ?? "device";
+  const autoSpeak = useAutoSpeak(voice, settings?.kitchen_voice_auto ?? false);
+  const seenInstructions = useRef<Set<string> | null>(null);
+  useEffect(() => {
+    if (!instructions.length) return;
+    if (seenInstructions.current === null) {
+      // First load: don't read out the whole backlog
+      seenInstructions.current = new Set(instructions.map((i) => i.id));
+      return;
+    }
+    for (const ins of instructions) {
+      if (!seenInstructions.current.has(ins.id)) {
+        seenInstructions.current.add(ins.id);
+        autoSpeak(ins.id, ins.instruction_text);
+      }
+    }
+  }, [instructions, autoSpeak]);
+
   async function markReady(ids: string[]) {
     const { error } = await supabase
       .from("order_items")
