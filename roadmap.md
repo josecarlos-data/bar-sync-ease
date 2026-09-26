@@ -12,6 +12,12 @@
 - [x] PWA instalable (manifiesto e iconos)
 
 ## Aprobación de mesas (completado)
+
+## Voz para indicaciones de cocina (completado)
+- Texto de la indicación AI se mantiene; botón de altavoz por indicación en barra/cocina.
+- Voz del dispositivo (Web Speech API, es-ES) por defecto; voz IA (AI Gateway TTS, gemini-3.1-flash-tts-preview) opcional en Ajustes.
+- Reproducción automática de indicaciones nuevas (por defecto, desactivable en Ajustes); botón "Activar voz" para desbloquear audio del navegador.
+- bar_settings: kitchen_voice ('device'|'ai'), kitchen_voice_auto (true).
 - [x] Comandas retenidas en mesas pendientes, etiqueta "Pendiente de confirmar" y pantalla de mesa rechazada
 - [x] Ventana de aprobación bloqueante en /camarero (aceptar, posponer 30/60 s, rechazar) con sonido y vibración
 - [x] Botón "Activar avisos sonoros" en /camarero

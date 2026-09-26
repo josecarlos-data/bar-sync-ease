@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Check } from "lucide-react";
+import { Check, Volume2, VolumeX } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useStaff, useBarSettings } from "@/hooks/useStaff";
 import { useRealtime } from "@/hooks/useRealtime";
+import { useSpeech, useAutoSpeak, isAudioUnlocked, unlockAudio } from "@/hooks/useSpeech";
 import type { Destination } from "@/lib/types";
 
 type QueueLine = {
@@ -77,6 +78,24 @@ export function QueueBoard({ destination }: { destination: Destination }) {
   const instructionsFor = (orderId: string) =>
     instructions.filter((i) => i.order_id === orderId).map((i) => i.instruction_text);
 
+  const voice = settings?.kitchen_voice ?? "device";
+  const autoSpeak = useAutoSpeak(voice, settings?.kitchen_voice_auto ?? false);
+  const seenInstructions = useRef<Set<string> | null>(null);
+  useEffect(() => {
+    if (!instructions.length) return;
+    if (seenInstructions.current === null) {
+      // First load: don't read out the whole backlog
+      seenInstructions.current = new Set(instructions.map((i) => i.id));
+      return;
+    }
+    for (const ins of instructions) {
+      if (!seenInstructions.current.has(ins.id)) {
+        seenInstructions.current.add(ins.id);
+        autoSpeak(ins.id, ins.instruction_text);
+      }
+    }
+  }, [instructions, autoSpeak]);
+
   async function markReady(ids: string[]) {
     const { error } = await supabase
       .from("order_items")
@@ -112,7 +131,7 @@ export function QueueBoard({ destination }: { destination: Destination }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <span className="text-xs font-semibold text-muted-foreground uppercase">Orden</span>
         {(
           [
@@ -133,6 +152,18 @@ export function QueueBoard({ destination }: { destination: Destination }) {
             {label}
           </button>
         ))}
+        {!isAudioUnlocked() && (settings?.kitchen_voice_auto ?? false) && (
+          <button
+            onClick={() => {
+              unlockAudio();
+              toast.success("Avisos de voz activados");
+              queryClient.invalidateQueries();
+            }}
+            className="ml-auto flex items-center gap-1 rounded-full border border-warning bg-warning/15 px-3 py-1 text-sm font-semibold"
+          >
+            <Volume2 className="h-4 w-4" /> Activar voz
+          </button>
+        )}
       </div>
 
       {isLoading && <p className="text-sm text-muted-foreground">Cargando cola…</p>}
@@ -148,6 +179,7 @@ export function QueueBoard({ destination }: { destination: Destination }) {
               key={orderId}
               lines={orderLines}
               instructions={instructionsFor(orderId)}
+              voice={voice}
               onReadyAll={() => markReady(orderLines.map((l) => l.id))}
               onReadyLine={(id) => markReady([id])}
             />
@@ -157,6 +189,7 @@ export function QueueBoard({ destination }: { destination: Destination }) {
               key={line.id}
               lines={[line]}
               instructions={instructionsFor(line.order_id)}
+              voice={voice}
               onReadyAll={() => markReady([line.id])}
               onReadyLine={(id) => markReady([id])}
             />
@@ -168,11 +201,13 @@ export function QueueBoard({ destination }: { destination: Destination }) {
 function OrderCard({
   lines,
   instructions,
+  voice,
   onReadyAll,
   onReadyLine,
 }: {
   lines: QueueLine[];
   instructions: string[];
+  voice: "device" | "ai";
   onReadyAll: () => void;
   onReadyLine: (id: string) => void;
 }) {
@@ -182,6 +217,7 @@ function OrderCard({
     hour: "2-digit",
     minute: "2-digit",
   });
+  const { speak, speaking } = useSpeech(voice);
 
   return (
     <article className="overflow-hidden rounded-xl border border-border bg-card">
@@ -197,7 +233,16 @@ function OrderCard({
       {instructions.length > 0 && (
         <div className="space-y-1 border-b border-warning bg-warning/15 px-4 py-2">
           {instructions.map((t, i) => (
-            <p key={i} className="whitespace-pre-line text-sm font-bold">{t}</p>
+            <div key={i} className="flex items-start gap-2">
+              <p className="flex-1 whitespace-pre-line text-sm font-bold">{t}</p>
+              <button
+                onClick={() => speak(t)}
+                aria-label={speaking ? "Detener lectura" : "Leer indicación en voz alta"}
+                className="shrink-0 rounded-lg border border-warning bg-card p-1.5 text-foreground"
+              >
+                {speaking ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+              </button>
+            </div>
           ))}
         </div>
       )}

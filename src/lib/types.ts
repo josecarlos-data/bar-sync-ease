@@ -16,6 +16,8 @@ export type BarSettings = {
   queue_sort: "arrival" | "table" | "product";
   require_session_approval: boolean;
   auto_close_hours: number;
+  kitchen_voice: "device" | "ai";
+  kitchen_voice_auto: boolean;
 };
 
 export type Item = {

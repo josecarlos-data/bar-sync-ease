@@ -19,6 +19,8 @@ export type Database = {
           auto_close_hours: number
           bar_id: string
           free_tapa_with_drink: boolean
+          kitchen_voice: string
+          kitchen_voice_auto: boolean
           payments_enabled: boolean
           queue_sort: Database["public"]["Enums"]["queue_sort"]
           require_session_approval: boolean
@@ -31,6 +33,8 @@ export type Database = {
           auto_close_hours?: number
           bar_id: string
           free_tapa_with_drink?: boolean
+          kitchen_voice?: string
+          kitchen_voice_auto?: boolean
           payments_enabled?: boolean
           queue_sort?: Database["public"]["Enums"]["queue_sort"]
           require_session_approval?: boolean
@@ -43,6 +47,8 @@ export type Database = {
           auto_close_hours?: number
           bar_id?: string
           free_tapa_with_drink?: boolean
+          kitchen_voice?: string
+          kitchen_voice_auto?: boolean
           payments_enabled?: boolean
           queue_sort?: Database["public"]["Enums"]["queue_sort"]
           require_session_approval?: boolean

@@ -81,3 +81,65 @@ export const rewriteKitchenInstruction = createServerFn({ method: "POST" })
       return { ok: false, error: "No se pudo convertir la indicación" };
     }
   });
+
+const SpeakInput = z.object({ text: z.string().trim().min(1).max(1000) });
+
+type SpeakResult = { ok: true; audio: string } | { ok: false; error: string };
+
+export const speakInstruction = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => SpeakInput.parse(d))
+  .handler(async ({ data, context }): Promise<SpeakResult> => {
+    const { supabase, userId } = context;
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId);
+    if (!(roles ?? []).length) return { ok: false, error: "No tienes permiso" };
+
+    const key = process.env["LOVABLE_API_KEY"];
+    if (!key) return { ok: false, error: "IA no configurada" };
+
+    try {
+      const res = await fetch("https://ai.gateway.lovable.dev/v1/audio/speech", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${key}`,
+          "Content-Type": "application/json",
+          "X-Lovable-AIG-SDK": "fetch",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-3.1-flash-tts-preview",
+          contents: [
+            {
+              parts: [
+                {
+                  text: `Lee en voz alta, con voz clara y tono profesional de cocina, en español de España: ${data.text}`,
+                },
+              ],
+            },
+          ],
+          generationConfig: {
+            responseModalities: ["AUDIO"],
+            speechConfig: {
+              voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } },
+            },
+          },
+        }),
+      });
+      if (!res.ok) {
+        const body = await res.text();
+        console.error("speakInstruction", res.status, body);
+        if (res.status === 402)
+          return { ok: false, error: "Sin créditos de IA. Recarga en Ajustes → Planes y créditos." };
+        if (res.status === 429)
+          return { ok: false, error: "Demasiadas peticiones. Prueba en unos segundos." };
+        return { ok: false, error: "No se pudo generar la voz" };
+      }
+      const buf = await res.arrayBuffer();
+      return { ok: true, audio: Buffer.from(buf).toString("base64") };
+    } catch (e) {
+      console.error("speakInstruction", e);
+      return { ok: false, error: "No se pudo generar la voz" };
+    }
+  });

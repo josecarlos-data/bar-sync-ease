@@ -150,6 +150,48 @@ function SettingsPage() {
               }}
             />
           </div>
+
+          <div className="rounded-xl border border-border bg-card p-4">
+            <p className="font-semibold">Voz de las indicaciones de cocina</p>
+            <p className="text-sm text-muted-foreground">
+              Las indicaciones se leen en voz alta en barra y cocina. La voz del dispositivo es
+              gratis e instantánea; la voz IA suena más natural pero consume créditos de IA en cada
+              lectura.
+            </p>
+            <div className="mt-2 flex gap-2">
+              {(
+                [
+                  ["device", "Voz del dispositivo"],
+                  ["ai", "Voz IA (más cara)"],
+                ] as const
+              ).map(([value, label]) => (
+                <button
+                  key={value}
+                  onClick={() => update({ kitchen_voice: value })}
+                  className={`rounded-full px-4 py-1.5 text-sm font-semibold ${
+                    settings.kitchen_voice === value
+                      ? "bg-primary text-primary-foreground"
+                      : "border border-border text-muted-foreground"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <label className="mt-3 flex items-center justify-between gap-4">
+              <span className="text-sm">
+                <span className="block font-semibold">Reproducción automática</span>
+                <span className="block text-muted-foreground">
+                  Las indicaciones nuevas suenan solas al llegar. Si la desactivas, solo suenan al
+                  pulsar el altavoz.
+                </span>
+              </span>
+              <Switch
+                checked={settings.kitchen_voice_auto}
+                onCheckedChange={(checked) => update({ kitchen_voice_auto: checked })}
+              />
+            </label>
+          </div>
         </div>
       )}
     </StaffShell>
