@@ -201,11 +201,13 @@ export function QueueBoard({ destination }: { destination: Destination }) {
 function OrderCard({
   lines,
   instructions,
+  voice,
   onReadyAll,
   onReadyLine,
 }: {
   lines: QueueLine[];
   instructions: string[];
+  voice: "device" | "ai";
   onReadyAll: () => void;
   onReadyLine: (id: string) => void;
 }) {
@@ -215,6 +217,7 @@ function OrderCard({
     hour: "2-digit",
     minute: "2-digit",
   });
+  const { speak, speaking } = useSpeech(voice);
 
   return (
     <article className="overflow-hidden rounded-xl border border-border bg-card">
@@ -230,7 +233,16 @@ function OrderCard({
       {instructions.length > 0 && (
         <div className="space-y-1 border-b border-warning bg-warning/15 px-4 py-2">
           {instructions.map((t, i) => (
-            <p key={i} className="whitespace-pre-line text-sm font-bold">{t}</p>
+            <div key={i} className="flex items-start gap-2">
+              <p className="flex-1 whitespace-pre-line text-sm font-bold">{t}</p>
+              <button
+                onClick={() => speak(t)}
+                aria-label={speaking ? "Detener lectura" : "Leer indicación en voz alta"}
+                className="shrink-0 rounded-lg border border-warning bg-card p-1.5 text-foreground"
+              >
+                {speaking ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+              </button>
+            </div>
           ))}
         </div>
       )}
