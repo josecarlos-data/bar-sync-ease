@@ -131,7 +131,7 @@ export function QueueBoard({ destination }: { destination: Destination }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <span className="text-xs font-semibold text-muted-foreground uppercase">Orden</span>
         {(
           [
@@ -152,6 +152,18 @@ export function QueueBoard({ destination }: { destination: Destination }) {
             {label}
           </button>
         ))}
+        {!isAudioUnlocked() && (settings?.kitchen_voice_auto ?? false) && (
+          <button
+            onClick={() => {
+              unlockAudio();
+              toast.success("Avisos de voz activados");
+              queryClient.invalidateQueries();
+            }}
+            className="ml-auto flex items-center gap-1 rounded-full border border-warning bg-warning/15 px-3 py-1 text-sm font-semibold"
+          >
+            <Volume2 className="h-4 w-4" /> Activar voz
+          </button>
+        )}
       </div>
 
       {isLoading && <p className="text-sm text-muted-foreground">Cargando cola…</p>}
@@ -167,6 +179,7 @@ export function QueueBoard({ destination }: { destination: Destination }) {
               key={orderId}
               lines={orderLines}
               instructions={instructionsFor(orderId)}
+              voice={voice}
               onReadyAll={() => markReady(orderLines.map((l) => l.id))}
               onReadyLine={(id) => markReady([id])}
             />
@@ -176,6 +189,7 @@ export function QueueBoard({ destination }: { destination: Destination }) {
               key={line.id}
               lines={[line]}
               instructions={instructionsFor(line.order_id)}
+              voice={voice}
               onReadyAll={() => markReady([line.id])}
               onReadyLine={(id) => markReady([id])}
             />
