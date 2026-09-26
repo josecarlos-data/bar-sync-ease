@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Check } from "lucide-react";
+import { Check, Volume2, VolumeX } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useStaff, useBarSettings } from "@/hooks/useStaff";
 import { useRealtime } from "@/hooks/useRealtime";
+import { useSpeech, useAutoSpeak, isAudioUnlocked, unlockAudio } from "@/hooks/useSpeech";
 import type { Destination } from "@/lib/types";
 
 type QueueLine = {
