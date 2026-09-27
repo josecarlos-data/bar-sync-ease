@@ -2,13 +2,14 @@ import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { BellRing, Check, Receipt, Sparkles, X } from "lucide-react";
+import { BellRing, Check, Plus, Receipt, Sparkles, X } from "lucide-react";
+import { StaffOrderDialog } from "@/components/StaffOrderDialog";
 import { KitchenInstructionDialog } from "@/components/KitchenInstructionDialog";
 import { StaffShell } from "@/components/StaffShell";
 import { SessionApprovalDialog } from "@/components/SessionApprovalDialog";
 import { SoundUnlockButton } from "@/components/SoundUnlockButton";
 import { supabase } from "@/integrations/supabase/client";
-import { useStaff } from "@/hooks/useStaff";
+import { useBarSettings, useStaff } from "@/hooks/useStaff";
 import { useRealtime } from "@/hooks/useRealtime";
 import { formatEUR } from "@/lib/allergens";
 
@@ -56,6 +57,11 @@ function WaiterPage() {
   const { data: staff } = useStaff();
   const barId = staff?.barId ?? null;
   const queryClient = useQueryClient();
+  const { data: settings } = useBarSettings(barId);
+  const isAdmin = staff?.roles.includes("admin") ?? false;
+  const isWaiterish = staff?.roles.some((r) => r === "admin" || r === "waiter") ?? false;
+  const canOrder = isAdmin || settings?.waiter_can_order !== false;
+  const [orderFor, setOrderFor] = useState<{ tableId: string; tableNumber: number; hasSession: boolean } | null>(null);
   const [instructionFor, setInstructionFor] = useState<{ sessionId: string; tableNumber: number } | null>(null);
 
   useRealtime("waiter", ["order_items", "orders", "table_sessions", "service_calls", "bill_splits", "bill_split_parts"], !!barId);
@@ -166,10 +172,22 @@ function WaiterPage() {
 
   return (
     <StaffShell title="Mesas">
-      <div className="mb-3">
-        <SoundUnlockButton />
-      </div>
-      <SessionApprovalDialog barId={barId} />
+      {isWaiterish && (
+        <div className="mb-3">
+          <SoundUnlockButton />
+        </div>
+      )}
+      {isWaiterish && <SessionApprovalDialog barId={barId} />}
+      {orderFor && barId && staff?.userId && (
+        <StaffOrderDialog
+          barId={barId}
+          tableId={orderFor.tableId}
+          tableNumber={orderFor.tableNumber}
+          hasSession={orderFor.hasSession}
+          userId={staff.userId}
+          onClose={() => setOrderFor(null)}
+        />
+      )}
       {instructionFor && barId && staff?.userId && (
         <KitchenInstructionDialog
           barId={barId}
@@ -225,7 +243,16 @@ function WaiterPage() {
                 </span>
               </div>
 
-              {session && (
+              {canOrder && (
+                <button
+                  onClick={() => setOrderFor({ tableId: table.id, tableNumber: table.number, hasSession: !!session })}
+                  className="mt-3 flex w-full items-center justify-center gap-1 rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground"
+                >
+                  <Plus className="h-4 w-4" /> Añadir comanda
+                </button>
+              )}
+
+              {session && isWaiterish && (
                 <>
                   <div className="mt-3 flex gap-4 text-sm text-muted-foreground">
                     <span>{pending} pendientes</span>
