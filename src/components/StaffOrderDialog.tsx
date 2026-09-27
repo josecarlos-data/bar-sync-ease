@@ -79,7 +79,7 @@ export function StaffOrderDialog({
           bar_id: res.barId,
           session_id: res.sessionId,
           created_by: userId,
-          created_by_role: res.role,
+          created_by_role: res.role ?? "waiter",
         })
         .select("id")
         .single();
