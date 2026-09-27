@@ -138,3 +138,62 @@ export const ensureStaffProfile = createServerFn({ method: "POST" })
 
     return { barId, roles: myRoles.map((r) => r.role) };
   });
+
+/**
+ * El personal abre (o reutiliza) la sesión de una mesa para añadir comandas.
+ */
+export const openSessionForTable = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { tableId: string; nickname?: string }) => data)
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: table } = await supabase
+      .from("tables")
+      .select("id, bar_id")
+      .eq("id", data.tableId)
+      .maybeSingle();
+    if (!table) throw new Error("Mesa no encontrada");
+
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("bar_id", table.bar_id);
+    const roleList = (roles ?? []).map((r) => r.role);
+    if (!roleList.length) throw new Error("No autorizado");
+    const isAdmin = roleList.includes("admin");
+    if (!isAdmin) {
+      const { data: settings } = await supabase
+        .from("bar_settings")
+        .select("waiter_can_order")
+        .eq("bar_id", table.bar_id)
+        .maybeSingle();
+      if (settings && !settings.waiter_can_order) throw new Error("El personal no puede añadir comandas en este bar");
+    }
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: existing } = await supabaseAdmin
+      .from("table_sessions")
+      .select("id, status")
+      .eq("table_id", table.id)
+      .in("status", ["pending", "open"])
+      .maybeSingle();
+    if (existing) return { sessionId: existing.id, barId: table.bar_id, role: roleList[0] };
+
+    const now = new Date().toISOString();
+    const { data: created, error } = await supabaseAdmin
+      .from("table_sessions")
+      .insert({
+        bar_id: table.bar_id,
+        table_id: table.id,
+        nickname: data.nickname?.trim() || null,
+        status: "open",
+        decided_by: userId,
+        decided_at: now,
+        decision: "approved",
+      })
+      .select("id")
+      .single();
+    if (error || !created) throw new Error("No se pudo abrir la mesa");
+    return { sessionId: created.id, barId: table.bar_id, role: roleList[0] };
+  });
