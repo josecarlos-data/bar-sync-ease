@@ -133,13 +133,14 @@ function GuestPage() {
       const { data } = await supabase
         .from("orders")
         .select(
-          "id, created_at, order_items(id, name_snapshot, price_snapshot, qty, note, status, deleted_at)",
+          "id, created_at, created_by_role, order_items(id, name_snapshot, price_snapshot, qty, note, status, deleted_at)",
         )
         .eq("session_id", session!.sessionId)
         .order("created_at");
       return (data ?? []) as {
         id: string;
         created_at: string;
+        created_by_role: string;
         order_items: {
           id: string;
           name_snapshot: string;
@@ -431,6 +432,7 @@ function GuestPage() {
                     hour: "2-digit",
                     minute: "2-digit",
                   })}
+                  {order.created_by_role !== "client" && " · Añadida por el camarero"}
                 </p>
                 <ul className="space-y-1">
                   {order.order_items
