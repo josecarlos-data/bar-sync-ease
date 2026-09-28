@@ -1,0 +1,1 @@
+ALTER TABLE public.bar_settings ADD COLUMN IF NOT EXISTS order_voice_auto text NOT NULL DEFAULT 'off' CHECK (order_voice_auto IN ('off','summary','full'));

@@ -21,6 +21,7 @@ export type Database = {
           free_tapa_with_drink: boolean
           kitchen_voice: string
           kitchen_voice_auto: boolean
+          order_voice_auto: string
           payments_enabled: boolean
           queue_sort: Database["public"]["Enums"]["queue_sort"]
           require_session_approval: boolean
@@ -35,6 +36,7 @@ export type Database = {
           free_tapa_with_drink?: boolean
           kitchen_voice?: string
           kitchen_voice_auto?: boolean
+          order_voice_auto?: string
           payments_enabled?: boolean
           queue_sort?: Database["public"]["Enums"]["queue_sort"]
           require_session_approval?: boolean
@@ -49,6 +51,7 @@ export type Database = {
           free_tapa_with_drink?: boolean
           kitchen_voice?: string
           kitchen_voice_auto?: boolean
+          order_voice_auto?: string
           payments_enabled?: boolean
           queue_sort?: Database["public"]["Enums"]["queue_sort"]
           require_session_approval?: boolean
