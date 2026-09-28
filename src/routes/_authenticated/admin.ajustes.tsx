@@ -191,6 +191,34 @@ function SettingsPage() {
                 onCheckedChange={(checked) => update({ kitchen_voice_auto: checked })}
               />
             </label>
+            <div className="mt-4">
+              <p className="font-semibold">Lectura automática de comandas</p>
+              <p className="text-sm text-muted-foreground">
+                Qué se dice en voz alta cuando llega una comanda nueva a barra o cocina. El altavoz de
+                cada comanda siempre permite escucharla entera al pulsarlo.
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {(
+                  [
+                    ["off", "No leer"],
+                    ["summary", "Solo aviso (“Nueva comanda, mesa 1”)"],
+                    ["full", "Comanda completa"],
+                  ] as const
+                ).map(([value, label]) => (
+                  <button
+                    key={value}
+                    onClick={() => update({ order_voice_auto: value })}
+                    className={`rounded-full px-4 py-1.5 text-sm font-semibold ${
+                      (settings.order_voice_auto ?? "off") === value
+                        ? "bg-primary text-primary-foreground"
+                        : "border border-border text-muted-foreground"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       )}

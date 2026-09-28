@@ -18,6 +18,7 @@ export type BarSettings = {
   auto_close_hours: number;
   kitchen_voice: "device" | "ai";
   kitchen_voice_auto: boolean;
+  order_voice_auto?: "off" | "summary" | "full";
 };
 
 export type Item = {
