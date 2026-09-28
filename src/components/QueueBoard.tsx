@@ -96,6 +96,24 @@ export function QueueBoard({ destination }: { destination: Destination }) {
     }
   }, [instructions, autoSpeak]);
 
+  const orderMode = settings?.order_voice_auto ?? "off";
+  const autoSpeakOrder = useAutoSpeak(voice, orderMode !== "off");
+  const seenOrders = useRef<Set<string> | null>(null);
+  useEffect(() => {
+    if (isLoading || !settings) return;
+    const byOrder = new Map<string, QueueLine[]>();
+    for (const l of lines) byOrder.set(l.order_id, [...(byOrder.get(l.order_id) ?? []), l]);
+    if (seenOrders.current === null) {
+      seenOrders.current = new Set(byOrder.keys());
+      return;
+    }
+    for (const [orderId, orderLines] of byOrder) {
+      if (seenOrders.current.has(orderId)) continue;
+      seenOrders.current.add(orderId);
+      autoSpeakOrder(`order-${orderId}`, orderSpeech(orderLines, [], orderMode === "full"));
+    }
+  }, [lines, isLoading, settings, orderMode, autoSpeakOrder]);
+
   async function markReady(ids: string[]) {
     const { error } = await supabase
       .from("order_items")
@@ -152,7 +170,8 @@ export function QueueBoard({ destination }: { destination: Destination }) {
             {label}
           </button>
         ))}
-        {!isAudioUnlocked() && (settings?.kitchen_voice_auto ?? false) && (
+        {!isAudioUnlocked() &&
+          ((settings?.kitchen_voice_auto ?? false) || orderMode !== "off") && (
           <button
             onClick={() => {
               unlockAudio();
@@ -228,7 +247,16 @@ function OrderCard({
             {session?.nickname ?? ""}
           </span>
         </div>
-        <span className="tabular text-xs text-muted-foreground">{time}</span>
+        <div className="flex items-center gap-2">
+          <span className="tabular text-xs text-muted-foreground">{time}</span>
+          <button
+            onClick={() => speak(orderSpeech(lines, instructions, true))}
+            aria-label={speaking ? "Detener lectura" : "Leer comanda en voz alta"}
+            className="rounded-lg border border-border bg-card p-1.5 text-foreground"
+          >
+            {speaking ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+          </button>
+        </div>
       </header>
       {instructions.length > 0 && (
         <div className="space-y-1 border-b border-warning bg-warning/15 px-4 py-2">
@@ -276,4 +304,17 @@ function OrderCard({
       )}
     </article>
   );
+}
+
+const NUMS = ["cero", "una", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve", "diez"];
+
+function orderSpeech(lines: QueueLine[], instructions: string[], full: boolean): string {
+  const session = lines[0]?.orders?.table_sessions;
+  const mesa = `Mesa ${session?.tables?.number ?? ""}`;
+  if (!full) return `Nueva comanda, ${mesa}.`;
+  const items = lines
+    .map((l) => `${NUMS[l.qty] ?? l.qty} ${l.name_snapshot}${l.note ? `, ${l.note}` : ""}`)
+    .join(". ");
+  const extra = instructions.length ? `. Indicaciones: ${instructions.join(". ")}` : "";
+  return `${mesa}${session?.nickname ? `, ${session.nickname}` : ""}. ${items}${extra}.`;
 }
