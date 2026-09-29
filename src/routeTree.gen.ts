@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedBarraRouteImport } from './routes/_authenticated/barra'
 import { Route as AuthenticatedCamareroRouteImport } from './routes/_authenticated/camarero'
 import { Route as AuthenticatedCocinaRouteImport } from './routes/_authenticated/cocina'
+import { Route as AuthenticatedComandasRouteImport } from './routes/_authenticated/comandas'
 import { Route as AuthenticatedHistorialRouteImport } from './routes/_authenticated/historial'
 import { Route as MTokenRouteImport } from './routes/m.$token'
 import { Route as AuthenticatedAdminAjustesRouteImport } from './routes/_authenticated/admin.ajustes'
@@ -49,6 +50,11 @@ const AuthenticatedCamareroRoute = AuthenticatedCamareroRouteImport.update({
 const AuthenticatedCocinaRoute = AuthenticatedCocinaRouteImport.update({
   id: '/cocina',
   path: '/cocina',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedComandasRoute = AuthenticatedComandasRouteImport.update({
+  id: '/comandas',
+  path: '/comandas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedHistorialRoute = AuthenticatedHistorialRouteImport.update({
@@ -91,6 +97,7 @@ export interface FileRoutesByFullPath {
   '/barra': typeof AuthenticatedBarraRoute
   '/camarero': typeof AuthenticatedCamareroRoute
   '/cocina': typeof AuthenticatedCocinaRoute
+  '/comandas': typeof AuthenticatedComandasRoute
   '/historial': typeof AuthenticatedHistorialRoute
   '/m/$token': typeof MTokenRoute
   '/admin/ajustes': typeof AuthenticatedAdminAjustesRoute
@@ -104,6 +111,7 @@ export interface FileRoutesByTo {
   '/barra': typeof AuthenticatedBarraRoute
   '/camarero': typeof AuthenticatedCamareroRoute
   '/cocina': typeof AuthenticatedCocinaRoute
+  '/comandas': typeof AuthenticatedComandasRoute
   '/historial': typeof AuthenticatedHistorialRoute
   '/m/$token': typeof MTokenRoute
   '/admin/ajustes': typeof AuthenticatedAdminAjustesRoute
@@ -119,6 +127,7 @@ export interface FileRoutesById {
   '/_authenticated/barra': typeof AuthenticatedBarraRoute
   '/_authenticated/camarero': typeof AuthenticatedCamareroRoute
   '/_authenticated/cocina': typeof AuthenticatedCocinaRoute
+  '/_authenticated/comandas': typeof AuthenticatedComandasRoute
   '/_authenticated/historial': typeof AuthenticatedHistorialRoute
   '/m/$token': typeof MTokenRoute
   '/_authenticated/admin/ajustes': typeof AuthenticatedAdminAjustesRoute
@@ -134,6 +143,7 @@ export interface FileRouteTypes {
     | '/barra'
     | '/camarero'
     | '/cocina'
+    | '/comandas'
     | '/historial'
     | '/m/$token'
     | '/admin/ajustes'
@@ -147,6 +157,7 @@ export interface FileRouteTypes {
     | '/barra'
     | '/camarero'
     | '/cocina'
+    | '/comandas'
     | '/historial'
     | '/m/$token'
     | '/admin/ajustes'
@@ -161,6 +172,7 @@ export interface FileRouteTypes {
     | '/_authenticated/barra'
     | '/_authenticated/camarero'
     | '/_authenticated/cocina'
+    | '/_authenticated/comandas'
     | '/_authenticated/historial'
     | '/m/$token'
     | '/_authenticated/admin/ajustes'
@@ -220,6 +232,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCocinaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/comandas': {
+      id: '/_authenticated/comandas'
+      path: '/comandas'
+      fullPath: '/comandas'
+      preLoaderRoute: typeof AuthenticatedComandasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/historial': {
       id: '/_authenticated/historial'
       path: '/historial'
@@ -269,6 +288,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedBarraRoute: typeof AuthenticatedBarraRoute
   AuthenticatedCamareroRoute: typeof AuthenticatedCamareroRoute
   AuthenticatedCocinaRoute: typeof AuthenticatedCocinaRoute
+  AuthenticatedComandasRoute: typeof AuthenticatedComandasRoute
   AuthenticatedHistorialRoute: typeof AuthenticatedHistorialRoute
   AuthenticatedAdminAjustesRoute: typeof AuthenticatedAdminAjustesRoute
   AuthenticatedAdminArticulosRoute: typeof AuthenticatedAdminArticulosRoute
@@ -280,6 +300,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBarraRoute: AuthenticatedBarraRoute,
   AuthenticatedCamareroRoute: AuthenticatedCamareroRoute,
   AuthenticatedCocinaRoute: AuthenticatedCocinaRoute,
+  AuthenticatedComandasRoute: AuthenticatedComandasRoute,
   AuthenticatedHistorialRoute: AuthenticatedHistorialRoute,
   AuthenticatedAdminAjustesRoute: AuthenticatedAdminAjustesRoute,
   AuthenticatedAdminArticulosRoute: AuthenticatedAdminArticulosRoute,
