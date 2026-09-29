@@ -3,7 +3,7 @@ import type { AllergenValue } from "@/lib/allergens";
 export type Destination = "bar" | "kitchen";
 export type SessionStatus = "pending" | "open" | "rejected" | "closed";
 export type SessionDecision = "approved" | "rejected" | "restored";
-export type LineStatus = "pending" | "ready" | "served";
+export type LineStatus = "pending" | "preparing" | "ready" | "served";
 export type AppRole = "admin" | "waiter" | "bar" | "kitchen";
 
 export type BarSettings = {

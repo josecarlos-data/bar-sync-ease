@@ -2,12 +2,13 @@ import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { BellRing, Check, Plus, Receipt, Sparkles, X } from "lucide-react";
+import { BellRing, Check, ListChecks, Plus, Receipt, Sparkles, X } from "lucide-react";
 import { StaffOrderDialog } from "@/components/StaffOrderDialog";
 import { KitchenInstructionDialog } from "@/components/KitchenInstructionDialog";
 import { StaffShell } from "@/components/StaffShell";
 import { SessionApprovalDialog } from "@/components/SessionApprovalDialog";
 import { SoundUnlockButton } from "@/components/SoundUnlockButton";
+import { TableOrdersDialog } from "@/components/TableOrdersDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useBarSettings, useStaff } from "@/hooks/useStaff";
 import { useRealtime } from "@/hooks/useRealtime";
@@ -34,7 +35,7 @@ type LineRow = {
   id: string;
   qty: number;
   price_snapshot: number;
-  status: "pending" | "ready" | "served";
+  status: "pending" | "preparing" | "ready" | "served";
   orders: { session_id: string } | null;
 };
 type CallRow = { id: string; session_id: string; type: "waiter" | "bill" };
@@ -62,6 +63,7 @@ function WaiterPage() {
   const isWaiterish = staff?.roles.some((r) => r === "admin" || r === "waiter") ?? false;
   const canOrder = isAdmin || settings?.waiter_can_order !== false;
   const [orderFor, setOrderFor] = useState<{ tableId: string; tableNumber: number; hasSession: boolean } | null>(null);
+  const [detailFor, setDetailFor] = useState<{ sessionId: string; tableNumber: number; nickname: string | null } | null>(null);
   const [instructionFor, setInstructionFor] = useState<{ sessionId: string; tableNumber: number } | null>(null);
 
   useRealtime("waiter", ["order_items", "orders", "table_sessions", "service_calls", "bill_splits", "bill_split_parts"], !!barId);
@@ -188,6 +190,14 @@ function WaiterPage() {
           onClose={() => setOrderFor(null)}
         />
       )}
+      {detailFor && (
+        <TableOrdersDialog
+          sessionId={detailFor.sessionId}
+          tableNumber={detailFor.tableNumber}
+          nickname={detailFor.nickname}
+          onClose={() => setDetailFor(null)}
+        />
+      )}
       {instructionFor && barId && staff?.userId && (
         <KitchenInstructionDialog
           barId={barId}
@@ -203,7 +213,7 @@ function WaiterPage() {
           const lines = session
             ? (data?.lines ?? []).filter((l) => l.orders?.session_id === session.id)
             : [];
-          const pending = lines.filter((l) => l.status === "pending").length;
+          const pending = lines.filter((l) => l.status === "pending" || l.status === "preparing").length;
           const ready = lines.filter((l) => l.status === "ready").length;
           const total = lines.reduce((sum, l) => sum + Number(l.price_snapshot) * l.qty, 0);
           const calls = session
@@ -331,6 +341,15 @@ function WaiterPage() {
                           ))}
                       </ul>
                     </div>
+                  )}
+
+                  {lines.length > 0 && (
+                    <button
+                      onClick={() => setDetailFor({ sessionId: session.id, tableNumber: table.number, nickname: session.nickname })}
+                      className="mt-3 flex w-full items-center justify-center gap-1 rounded-lg border border-border py-2 text-sm font-semibold"
+                    >
+                      <ListChecks className="h-4 w-4" /> Ver comandas
+                    </button>
                   )}
 
                   {lines.length > 0 && (

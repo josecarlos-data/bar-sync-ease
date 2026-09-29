@@ -1,18 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Check, Volume2, VolumeX } from "lucide-react";
+import { Check, Flame, Volume2, VolumeX } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useStaff, useBarSettings } from "@/hooks/useStaff";
 import { useRealtime } from "@/hooks/useRealtime";
 import { useSpeech, useAutoSpeak, isAudioUnlocked, unlockAudio } from "@/hooks/useSpeech";
-import type { Destination } from "@/lib/types";
+import type { Destination, LineStatus } from "@/lib/types";
 
 type QueueLine = {
   id: string;
   name_snapshot: string;
   qty: number;
   note: string | null;
+  status: LineStatus;
   destination: Destination;
   created_at: string;
   order_id: string;
@@ -46,11 +47,11 @@ export function QueueBoard({ destination }: { destination: Destination }) {
       let query = supabase
         .from("order_items")
         .select(
-          "id, name_snapshot, qty, note, destination, created_at, order_id, orders!inner(created_at, session_id, table_sessions!inner(status, nickname, tables!inner(number, name)))",
+          "id, name_snapshot, qty, note, status, destination, created_at, order_id, orders!inner(created_at, session_id, table_sessions!inner(status, nickname, tables!inner(number, name)))",
         )
         .eq("bar_id", barId!)
         .eq("orders.table_sessions.status", "open")
-        .eq("status", "pending")
+        .in("status", ["pending", "preparing"])
         .is("deleted_at", null)
         .order("created_at", { ascending: true });
 
@@ -113,6 +114,16 @@ export function QueueBoard({ destination }: { destination: Destination }) {
       autoSpeakOrder(`order-${orderId}`, orderSpeech(orderLines, [], orderMode === "full"));
     }
   }, [lines, isLoading, settings, orderMode, autoSpeakOrder]);
+
+  async function markPreparing(ids: string[]) {
+    const { error } = await supabase
+      .from("order_items")
+      .update({ status: "preparing", started_at: new Date().toISOString() })
+      .in("id", ids)
+      .eq("status", "pending");
+    if (error) { toast.error("No se pudo empezar"); return; }
+    queryClient.invalidateQueries();
+  }
 
   async function markReady(ids: string[]) {
     const { error } = await supabase
@@ -199,6 +210,8 @@ export function QueueBoard({ destination }: { destination: Destination }) {
               lines={orderLines}
               instructions={instructionsFor(orderId)}
               voice={voice}
+              onStartAll={() => markPreparing(orderLines.map((l) => l.id))}
+              onStartLine={(id) => markPreparing([id])}
               onReadyAll={() => markReady(orderLines.map((l) => l.id))}
               onReadyLine={(id) => markReady([id])}
             />
@@ -209,6 +222,8 @@ export function QueueBoard({ destination }: { destination: Destination }) {
               lines={[line]}
               instructions={instructionsFor(line.order_id)}
               voice={voice}
+              onStartAll={() => markPreparing([line.id])}
+              onStartLine={(id) => markPreparing([id])}
               onReadyAll={() => markReady([line.id])}
               onReadyLine={(id) => markReady([id])}
             />
@@ -223,7 +238,11 @@ function OrderCard({
   voice,
   onReadyAll,
   onReadyLine,
+  onStartAll,
+  onStartLine,
 }: {
+  onStartAll: () => void;
+  onStartLine: (id: string) => void;
   lines: QueueLine[];
   instructions: string[];
   voice: "device" | "ai";
@@ -284,6 +303,17 @@ function OrderCard({
               <p className="leading-tight font-semibold">{line.name_snapshot}</p>
               {line.note && <p className="text-sm text-accent-foreground italic">“{line.note}”</p>}
             </div>
+            {line.status === "pending" ? (
+              <button
+                onClick={() => onStartLine(line.id)}
+                className="rounded-lg border border-warning p-2 text-warning-foreground"
+                aria-label="Empezar a preparar"
+              >
+                <Flame className="h-5 w-5" />
+              </button>
+            ) : (
+              <span className="rounded bg-warning px-1.5 py-0.5 text-[10px] font-bold text-warning-foreground">Preparando</span>
+            )}
             <button
               onClick={() => onReadyLine(line.id)}
               className="rounded-lg border border-success p-2 text-success"
@@ -294,6 +324,14 @@ function OrderCard({
           </li>
         ))}
       </ul>
+      {lines.some((l) => l.status === "pending") && lines.length > 1 && (
+        <button
+          onClick={onStartAll}
+          className="w-full border-t border-border bg-warning/20 py-2.5 font-semibold"
+        >
+          Empezar comanda
+        </button>
+      )}
       {lines.length > 1 && (
         <button
           onClick={onReadyAll}

@@ -407,6 +407,7 @@ export type Database = {
           qty: number
           ready_at: string | null
           served_at: string | null
+          started_at: string | null
           status: Database["public"]["Enums"]["line_status"]
           tax_rate_snapshot: number
         }
@@ -425,6 +426,7 @@ export type Database = {
           qty?: number
           ready_at?: string | null
           served_at?: string | null
+          started_at?: string | null
           status?: Database["public"]["Enums"]["line_status"]
           tax_rate_snapshot?: number
         }
@@ -443,6 +445,7 @@ export type Database = {
           qty?: number
           ready_at?: string | null
           served_at?: string | null
+          started_at?: string | null
           status?: Database["public"]["Enums"]["line_status"]
           tax_rate_snapshot?: number
         }
@@ -817,7 +820,7 @@ export type Database = {
       call_status: "open" | "done"
       call_type: "waiter" | "bill"
       item_destination: "bar" | "kitchen"
-      line_status: "pending" | "ready" | "served"
+      line_status: "pending" | "preparing" | "ready" | "served"
       queue_sort: "arrival" | "table" | "product"
       session_status: "pending" | "open" | "closed" | "rejected"
     }
@@ -967,7 +970,7 @@ export const Constants = {
       call_status: ["open", "done"],
       call_type: ["waiter", "bill"],
       item_destination: ["bar", "kitchen"],
-      line_status: ["pending", "ready", "served"],
+      line_status: ["pending", "preparing", "ready", "served"],
       queue_sort: ["arrival", "table", "product"],
       session_status: ["pending", "open", "closed", "rejected"],
     },

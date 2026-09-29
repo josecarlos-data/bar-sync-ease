@@ -441,8 +441,14 @@ function GuestPage() {
                       <li key={line.id} className="flex justify-between gap-2 text-sm">
                         <span>
                           {line.qty} × {line.name_snapshot}
+                          {line.status === "preparing" && (
+                            <span className="ml-2 text-xs font-bold text-warning-foreground">En preparación</span>
+                          )}
                           {line.status === "ready" && (
                             <span className="ml-2 text-xs font-bold text-success">Listo</span>
+                          )}
+                          {line.status === "served" && (
+                            <span className="ml-2 text-xs font-bold text-muted-foreground">Servido</span>
                           )}
                           {line.note && (
                             <span className="block text-xs text-muted-foreground italic">
