@@ -66,6 +66,7 @@ function WaiterPage() {
   const [orderFor, setOrderFor] = useState<{ tableId: string; tableNumber: number; hasSession: boolean } | null>(null);
   const [detailFor, setDetailFor] = useState<{ sessionId: string; tableNumber: number; nickname: string | null } | null>(null);
   const [instructionFor, setInstructionFor] = useState<{ sessionId: string; tableNumber: number } | null>(null);
+  const [ticketFor, setTicketFor] = useState<string | null>(null);
 
   useRealtime("waiter", ["order_items", "orders", "table_sessions", "service_calls", "bill_splits", "bill_split_parts"], !!barId);
 
@@ -371,6 +372,14 @@ function WaiterPage() {
                         <Check className="h-4 w-4" /> Aceptar mesa
                       </button>
                     )}
+                    {lines.length > 0 && (
+                      <button
+                        onClick={() => setTicketFor(session.id)}
+                        className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-border py-2.5 text-sm font-semibold"
+                      >
+                        <FileText className="h-4 w-4" /> Ticket
+                      </button>
+                    )}
                     <button
                       onClick={() => closeSession(session.id)}
                       className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-border py-2.5 text-sm font-semibold"
@@ -384,6 +393,7 @@ function WaiterPage() {
           );
         })}
       </div>
+      {ticketFor && <InvoiceDialog sessionId={ticketFor} staff onClose={() => setTicketFor(null)} />}
       {tables.length === 0 && (
         <p className="text-sm text-muted-foreground">
           Todavía no hay mesas. Créalas en el apartado QR.
