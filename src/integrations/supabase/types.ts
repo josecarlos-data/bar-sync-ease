@@ -16,47 +16,74 @@ export type Database = {
     Tables: {
       bar_settings: {
         Row: {
+          address: string | null
           auto_close_hours: number
           bar_id: string
           free_tapa_with_drink: boolean
           kitchen_voice: string
           kitchen_voice_auto: boolean
+          legal_name: string | null
           order_voice_auto: string
           payments_enabled: boolean
+          phone: string | null
+          printer_enabled: boolean
+          printer_scope: string
+          printer_trigger: string
+          printer_width: number
           queue_sort: Database["public"]["Enums"]["queue_sort"]
           require_session_approval: boolean
           show_prices: boolean
           split_bar_kitchen: boolean
+          tax_id: string | null
+          ticket_footer: string | null
           updated_at: string
           waiter_can_order: boolean
         }
         Insert: {
+          address?: string | null
           auto_close_hours?: number
           bar_id: string
           free_tapa_with_drink?: boolean
           kitchen_voice?: string
           kitchen_voice_auto?: boolean
+          legal_name?: string | null
           order_voice_auto?: string
           payments_enabled?: boolean
+          phone?: string | null
+          printer_enabled?: boolean
+          printer_scope?: string
+          printer_trigger?: string
+          printer_width?: number
           queue_sort?: Database["public"]["Enums"]["queue_sort"]
           require_session_approval?: boolean
           show_prices?: boolean
           split_bar_kitchen?: boolean
+          tax_id?: string | null
+          ticket_footer?: string | null
           updated_at?: string
           waiter_can_order?: boolean
         }
         Update: {
+          address?: string | null
           auto_close_hours?: number
           bar_id?: string
           free_tapa_with_drink?: boolean
           kitchen_voice?: string
           kitchen_voice_auto?: boolean
+          legal_name?: string | null
           order_voice_auto?: string
           payments_enabled?: boolean
+          phone?: string | null
+          printer_enabled?: boolean
+          printer_scope?: string
+          printer_trigger?: string
+          printer_width?: number
           queue_sort?: Database["public"]["Enums"]["queue_sort"]
           require_session_approval?: boolean
           show_prices?: boolean
           split_bar_kitchen?: boolean
+          tax_id?: string | null
+          ticket_footer?: string | null
           updated_at?: string
           waiter_can_order?: boolean
         }
@@ -277,6 +304,108 @@ export type Database = {
           },
         ]
       }
+      invoice_counters: {
+        Row: {
+          bar_id: string
+          last_number: number
+          series: string
+        }
+        Insert: {
+          bar_id: string
+          last_number?: number
+          series: string
+        }
+        Update: {
+          bar_id?: string
+          last_number?: number
+          series?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_counters_bar_id_fkey"
+            columns: ["bar_id"]
+            isOneToOne: false
+            referencedRelation: "bars"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoices: {
+        Row: {
+          bar_id: string
+          created_at: string
+          created_by: string | null
+          customer_address: string | null
+          customer_name: string | null
+          customer_tax_id: string | null
+          emailed_to: string | null
+          id: string
+          kind: string
+          number: number
+          series: string
+          session_id: string
+          snapshot: Json
+          split_part_id: string | null
+          total: number
+        }
+        Insert: {
+          bar_id: string
+          created_at?: string
+          created_by?: string | null
+          customer_address?: string | null
+          customer_name?: string | null
+          customer_tax_id?: string | null
+          emailed_to?: string | null
+          id?: string
+          kind: string
+          number: number
+          series: string
+          session_id: string
+          snapshot: Json
+          split_part_id?: string | null
+          total: number
+        }
+        Update: {
+          bar_id?: string
+          created_at?: string
+          created_by?: string | null
+          customer_address?: string | null
+          customer_name?: string | null
+          customer_tax_id?: string | null
+          emailed_to?: string | null
+          id?: string
+          kind?: string
+          number?: number
+          series?: string
+          session_id?: string
+          snapshot?: Json
+          split_part_id?: string | null
+          total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_bar_id_fkey"
+            columns: ["bar_id"]
+            isOneToOne: false
+            referencedRelation: "bars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "table_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_split_part_id_fkey"
+            columns: ["split_part_id"]
+            isOneToOne: false
+            referencedRelation: "bill_split_parts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       items: {
         Row: {
           allergens: Database["public"]["Enums"]["allergen"][]
@@ -481,6 +610,7 @@ export type Database = {
           created_by_role: string
           id: string
           note: string | null
+          printed_at: string | null
           session_id: string
         }
         Insert: {
@@ -490,6 +620,7 @@ export type Database = {
           created_by_role?: string
           id?: string
           note?: string | null
+          printed_at?: string | null
           session_id: string
         }
         Update: {
@@ -499,6 +630,7 @@ export type Database = {
           created_by_role?: string
           id?: string
           note?: string | null
+          printed_at?: string | null
           session_id?: string
         }
         Relationships: [
@@ -782,6 +914,7 @@ export type Database = {
     }
     Functions: {
       can_view_bar: { Args: { _bar_id: string }; Returns: boolean }
+      claim_print: { Args: { _order_id: string }; Returns: boolean }
       decide_session: {
         Args: { _decision: string; _merge?: boolean; _session_id: string }
         Returns: Json
@@ -798,6 +931,17 @@ export type Database = {
       is_guest_of_bar: { Args: { _bar_id: string }; Returns: boolean }
       is_session_member: { Args: { _session_id: string }; Returns: boolean }
       is_staff_of: { Args: { _bar_id: string }; Returns: boolean }
+      issue_invoice: {
+        Args: {
+          _customer_address?: string
+          _customer_name?: string
+          _customer_tax_id?: string
+          _kind?: string
+          _session_id: string
+          _split_part_id?: string
+        }
+        Returns: string
+      }
       session_is_open: { Args: { _session_id: string }; Returns: boolean }
     }
     Enums: {

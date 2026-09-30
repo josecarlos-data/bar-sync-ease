@@ -3,7 +3,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { BellRing, Minus, Plus, Receipt, UtensilsCrossed } from "lucide-react";
+import { BellRing, FileText, Minus, Plus, Receipt, UtensilsCrossed } from "lucide-react";
+import { InvoiceDialog } from "@/components/InvoiceDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { joinTable } from "@/lib/bar.functions";
 import { useRealtime } from "@/hooks/useRealtime";
@@ -499,6 +500,9 @@ function GuestPage() {
                 <Receipt className="h-4 w-4" /> Solicitar cuenta
               </button>
             </div>
+            {showPrices && billLines.length > 0 && liveStatus !== "rejected" && (
+              <ClientTicketButton sessionId={session!.sessionId} />
+            )}
             <p className="text-xs text-muted-foreground">
               ¿Algo está mal en la cuenta? Avisa al camarero: es quien puede corregir las comandas
               ya enviadas.
@@ -659,5 +663,20 @@ function Centered({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen items-center justify-center bg-background p-6 text-center text-muted-foreground">
       {children}
     </div>
+  );
+}
+
+function ClientTicketButton({ sessionId }: { sessionId: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        className="flex w-full items-center justify-center gap-1 rounded-lg border border-border py-3 font-semibold"
+      >
+        <FileText className="h-4 w-4" /> Ticket o factura (PDF)
+      </button>
+      {open && <InvoiceDialog sessionId={sessionId} staff={false} onClose={() => setOpen(false)} />}
+    </>
   );
 }

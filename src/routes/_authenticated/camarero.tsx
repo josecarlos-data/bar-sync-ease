@@ -2,13 +2,14 @@ import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { BellRing, Check, ListChecks, Plus, Receipt, Sparkles, X } from "lucide-react";
+import { BellRing, Check, FileText, ListChecks, Plus, Receipt, Sparkles, X } from "lucide-react";
 import { StaffOrderDialog } from "@/components/StaffOrderDialog";
 import { KitchenInstructionDialog } from "@/components/KitchenInstructionDialog";
 import { StaffShell } from "@/components/StaffShell";
 import { SessionApprovalDialog } from "@/components/SessionApprovalDialog";
 import { SoundUnlockButton } from "@/components/SoundUnlockButton";
 import { TableOrdersDialog } from "@/components/TableOrdersDialog";
+import { InvoiceDialog } from "@/components/InvoiceDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useBarSettings, useStaff } from "@/hooks/useStaff";
 import { useRealtime } from "@/hooks/useRealtime";
@@ -65,6 +66,7 @@ function WaiterPage() {
   const [orderFor, setOrderFor] = useState<{ tableId: string; tableNumber: number; hasSession: boolean } | null>(null);
   const [detailFor, setDetailFor] = useState<{ sessionId: string; tableNumber: number; nickname: string | null } | null>(null);
   const [instructionFor, setInstructionFor] = useState<{ sessionId: string; tableNumber: number } | null>(null);
+  const [ticketFor, setTicketFor] = useState<string | null>(null);
 
   useRealtime("waiter", ["order_items", "orders", "table_sessions", "service_calls", "bill_splits", "bill_split_parts"], !!barId);
 
@@ -370,6 +372,14 @@ function WaiterPage() {
                         <Check className="h-4 w-4" /> Aceptar mesa
                       </button>
                     )}
+                    {lines.length > 0 && (
+                      <button
+                        onClick={() => setTicketFor(session.id)}
+                        className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-border py-2.5 text-sm font-semibold"
+                      >
+                        <FileText className="h-4 w-4" /> Ticket
+                      </button>
+                    )}
                     <button
                       onClick={() => closeSession(session.id)}
                       className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-border py-2.5 text-sm font-semibold"
@@ -383,6 +393,7 @@ function WaiterPage() {
           );
         })}
       </div>
+      {ticketFor && <InvoiceDialog sessionId={ticketFor} staff onClose={() => setTicketFor(null)} />}
       {tables.length === 0 && (
         <p className="text-sm text-muted-foreground">
           Todavía no hay mesas. Créalas en el apartado QR.
