@@ -499,6 +499,9 @@ function GuestPage() {
                 <Receipt className="h-4 w-4" /> Solicitar cuenta
               </button>
             </div>
+            {showPrices && billLines.length > 0 && liveStatus !== "rejected" && (
+              <ClientTicketButton sessionId={session!.sessionId} />
+            )}
             <p className="text-xs text-muted-foreground">
               ¿Algo está mal en la cuenta? Avisa al camarero: es quien puede corregir las comandas
               ya enviadas.
