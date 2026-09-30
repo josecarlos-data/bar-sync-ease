@@ -220,6 +220,76 @@ function SettingsPage() {
               </div>
             </div>
           </div>
+
+          <div className="rounded-xl border border-border bg-card p-4">
+            <label className="flex items-center justify-between gap-4">
+              <span>
+                <span className="block font-semibold">Impresora de cocina</span>
+                <span className="block text-sm text-muted-foreground">
+                  Imprime un ticket por comanda en un tablet/PC con impresora. Desactívala si trabajáis solo con pantalla.
+                </span>
+              </span>
+              <Switch checked={!!settings.printer_enabled} onCheckedChange={(v) => update({ printer_enabled: v })} />
+            </label>
+            {settings.printer_enabled && (
+              <div className="mt-3 space-y-3">
+                {(
+                  [
+                    ["Cuándo imprimir", "printer_trigger", settings.printer_trigger ?? "new", [["new", "Al entrar la comanda"], ["ready", "Al estar preparada"]]],
+                    ["Qué imprime", "printer_scope", settings.printer_scope ?? "kitchen", [["kitchen", "Cocina"], ["bar", "Barra"], ["both", "Ambas"]]],
+                    ["Ancho del papel", "printer_width", String(settings.printer_width ?? 80), [["58", "58 mm"], ["80", "80 mm"]]],
+                  ] as const
+                ).map(([title, key, current, opts]) => (
+                  <div key={key}>
+                    <p className="text-sm font-semibold">{title}</p>
+                    <div className="mt-1 flex flex-wrap gap-2">
+                      {opts.map(([value, label]) => (
+                        <button
+                          key={value}
+                          onClick={() => update({ [key]: key === "printer_width" ? Number(value) : value } as Partial<BarSettings>)}
+                          className={`rounded-full px-4 py-1.5 text-sm font-semibold ${
+                            current === value ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground"
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                <p className="text-xs text-muted-foreground">
+                  En el dispositivo de cocina, activa "Este dispositivo imprime" en su pantalla de Cocina o Barra.
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-xl border border-border bg-card p-4">
+            <p className="font-semibold">Datos del negocio (salen en tickets y facturas)</p>
+            <div className="mt-2 space-y-2">
+              {(
+                [
+                  ["legal_name", "Razón social"],
+                  ["tax_id", "NIF / CIF"],
+                  ["address", "Dirección"],
+                  ["phone", "Teléfono"],
+                  ["ticket_footer", "Texto al pie del ticket"],
+                ] as const
+              ).map(([key, label]) => (
+                <label key={key} className="block text-sm">
+                  <span className="text-muted-foreground">{label}</span>
+                  <input
+                    defaultValue={settings[key] ?? ""}
+                    onBlur={(e) => {
+                      const v = e.target.value.trim() || null;
+                      if (v !== (settings[key] ?? null)) update({ [key]: v } as Partial<BarSettings>);
+                    }}
+                    className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2"
+                  />
+                </label>
+              ))}
+            </div>
+          </div>
         </div>
       )}
     </StaffShell>

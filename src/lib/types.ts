@@ -19,6 +19,15 @@ export type BarSettings = {
   kitchen_voice: "device" | "ai";
   kitchen_voice_auto: boolean;
   order_voice_auto?: "off" | "summary" | "full";
+  printer_enabled?: boolean;
+  printer_trigger?: "new" | "ready";
+  printer_scope?: "kitchen" | "bar" | "both";
+  printer_width?: number;
+  legal_name?: string | null;
+  tax_id?: string | null;
+  address?: string | null;
+  phone?: string | null;
+  ticket_footer?: string | null;
 };
 
 export type Item = {

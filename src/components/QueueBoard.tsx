@@ -7,6 +7,7 @@ import { useStaff, useBarSettings } from "@/hooks/useStaff";
 import { useRealtime } from "@/hooks/useRealtime";
 import { useSpeech, useAutoSpeak, isAudioUnlocked, unlockAudio } from "@/hooks/useSpeech";
 import type { Destination, LineStatus } from "@/lib/types";
+import { PrintAgent } from "@/components/PrintAgent";
 
 type QueueLine = {
   id: string;
@@ -195,6 +196,7 @@ export function QueueBoard({ destination }: { destination: Destination }) {
           </button>
         )}
       </div>
+      {barId && settings && <PrintAgent barId={barId} settings={settings} destination={destination} />}
 
       {isLoading && <p className="text-sm text-muted-foreground">Cargando cola…</p>}
       {!isLoading && sorted.length === 0 && (
