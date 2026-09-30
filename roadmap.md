@@ -42,3 +42,10 @@
 
 ## Fase 3
 - [ ] Pasarela de pago y offline completo
+
+## Impresión y tickets (completado)
+- [x] Impresora de cocina configurable (cuándo, zona, ancho) + "Este dispositivo imprime"
+- [x] Datos fiscales del bar
+- [x] Ticket (factura simplificada) y factura con datos: imprimir, PDF; en Mesas, Histórico y móvil del cliente
+- [ ] Envío por email (bloqueado: falta configurar un dominio de correo)
+- [ ] Verifactu (fase posterior)
