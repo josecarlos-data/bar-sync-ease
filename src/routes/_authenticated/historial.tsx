@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { InvoiceDialog } from "@/components/InvoiceDialog";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -49,6 +50,7 @@ function HistoryPage() {
   const barId = staff?.barId ?? null;
   const queryClient = useQueryClient();
   const [conflict, setConflict] = useState<{ sessionId: string; nickname: string | null } | null>(null);
+  const [ticketFor, setTicketFor] = useState<string | null>(null);
 
   useRealtime("history", ["table_sessions", "orders", "order_items"], !!barId);
 
@@ -163,10 +165,20 @@ function HistoryPage() {
                   <RotateCcw className="h-4 w-4" /> Restablecer y aprobar
                 </button>
               )}
+              {s.status === "closed" && (
+                <button
+                  onClick={() => setTicketFor(s.id)}
+                  className="mt-3 w-full rounded-lg border border-border py-2.5 text-sm font-semibold"
+                >
+                  Ticket / factura
+                </button>
+              )}
             </article>
           );
         })}
       </div>
+      {ticketFor && <InvoiceDialog sessionId={ticketFor} staff onClose={() => setTicketFor(null)} />}
+
 
       <Dialog open={!!conflict} onOpenChange={(open) => !open && setConflict(null)}>
         <DialogContent>
