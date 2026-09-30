@@ -30,7 +30,7 @@ export function PrintAgent({ barId, settings, destination }: { barId: string; se
 
   const { data: orders = [] } = useQuery({
     queryKey: ["print-queue", barId],
-    enabled: active,
+    enabled: !!active,
     refetchInterval: 8000,
     queryFn: async () => {
       const since = new Date(Date.now() - 3 * 3600_000).toISOString();

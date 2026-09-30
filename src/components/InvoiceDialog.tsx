@@ -51,14 +51,17 @@ export function InvoiceDialog({
 
   async function issue(partId: string | null, full = false): Promise<InvoiceRow | null> {
     setBusy(true);
-    const { data: id, error } = await supabase.rpc("issue_invoice", {
+    const args: { _session_id: string; _split_part_id?: string; _kind: string; _customer_name?: string; _customer_tax_id?: string; _customer_address?: string } = {
       _session_id: sessionId,
-      _split_part_id: partId ?? undefined,
       _kind: full ? "full" : "simplified",
-      _customer_name: full ? cust.name : undefined,
-      _customer_tax_id: full ? cust.taxId : undefined,
-      _customer_address: full ? cust.address || undefined : undefined,
-    });
+    };
+    if (partId) args._split_part_id = partId;
+    if (full) {
+      args._customer_name = cust.name;
+      args._customer_tax_id = cust.taxId;
+      if (cust.address) args._customer_address = cust.address;
+    }
+    const { data: id, error } = await supabase.rpc("issue_invoice", args);
     if (error || !id) { setBusy(false); toast.error("No se pudo generar el ticket"); return null; }
     const { data } = await supabase.from("invoices").select("*").eq("id", id).single();
     setBusy(false);

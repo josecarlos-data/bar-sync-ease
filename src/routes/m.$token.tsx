@@ -664,3 +664,18 @@ function Centered({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
+
+function ClientTicketButton({ sessionId }: { sessionId: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        className="flex w-full items-center justify-center gap-1 rounded-lg border border-border py-3 font-semibold"
+      >
+        <FileText className="h-4 w-4" /> Ticket o factura (PDF)
+      </button>
+      {open && <InvoiceDialog sessionId={sessionId} staff={false} onClose={() => setOpen(false)} />}
+    </>
+  );
+}
