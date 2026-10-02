@@ -148,6 +148,7 @@ function WaiterPage() {
     if (error) { toast.error("No se pudo cerrar la mesa"); return; }
     toast.success("Mesa cerrada");
     queryClient.invalidateQueries();
+    setTicketFor(sessionId);
   }
 
   async function handleCall(callId: string) {
@@ -164,12 +165,16 @@ function WaiterPage() {
   }
 
   async function markPartPaid(partId: string) {
-    const { error } = await supabase
+    const { data: part, error } = await supabase
       .from("bill_split_parts")
       .update({ status: "paid", paid_at: new Date().toISOString() })
-      .eq("id", partId);
+      .eq("id", partId)
+      .select("split_id")
+      .single();
     if (error) { toast.error("No se pudo marcar como cobrada"); return; }
     queryClient.invalidateQueries();
+    const { data: split } = await supabase.from("bill_splits").select("session_id").eq("id", part.split_id).single();
+    if (split) setTicketFor(split.session_id);
   }
 
   const tables = data?.tables ?? [];
