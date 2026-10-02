@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { BellRing, FileText, Minus, Plus, Receipt, UtensilsCrossed } from "lucide-react";
+import { LiveTicket } from "@/components/LiveTicket";
 import { InvoiceDialog } from "@/components/InvoiceDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { joinTable } from "@/lib/bar.functions";
@@ -56,7 +57,7 @@ function GuestPage() {
   const [session, setSession] = useState<Joined | null>(null);
   const [nickname, setNickname] = useState("");
   const [cart, setCart] = useState<CartLine[]>([]);
-  const [tab, setTab] = useState<"carta" | "cuenta">("carta");
+  const [tab, setTab] = useState<"carta" | "cuenta" | "ticket">("carta");
   const [confirming, setConfirming] = useState(false);
   const [sending, setSending] = useState(false);
 
@@ -134,7 +135,7 @@ function GuestPage() {
       const { data } = await supabase
         .from("orders")
         .select(
-          "id, created_at, created_by_role, order_items(id, name_snapshot, price_snapshot, qty, note, status, deleted_at)",
+          "id, created_at, created_by_role, order_items(id, name_snapshot, price_snapshot, tax_rate_snapshot, qty, note, status, deleted_at)",
         )
         .eq("session_id", session!.sessionId)
         .order("created_at");
@@ -146,6 +147,7 @@ function GuestPage() {
           id: string;
           name_snapshot: string;
           price_snapshot: number;
+          tax_rate_snapshot: number;
           qty: number;
           note: string | null;
           status: LineStatus;
@@ -339,6 +341,7 @@ function GuestPage() {
             [
               ["carta", "Carta"],
               ["cuenta", "Cuenta"],
+              ...(showPrices ? ([["ticket", "Ticket"]] as const) : []),
             ] as const
           ).map(([value, label]) => (
             <button
@@ -508,6 +511,17 @@ function GuestPage() {
               ya enviadas.
             </p>
           </div>
+        )}
+
+        {tab === "ticket" && showPrices && (
+          <LiveTicket
+            sessionId={session!.sessionId}
+            barName="Ticket de mesa"
+            settings={settings}
+            tableNumber={tableInfo?.number}
+            nickname={session?.nickname}
+            lines={liveStatus === "rejected" ? [] : (bill ?? []).flatMap((o) => o.order_items).filter((l) => !l.deleted_at).map((l) => ({ name: l.name_snapshot, price: Number(l.price_snapshot), qty: l.qty, taxRate: Number(l.tax_rate_snapshot ?? 10) }))}
+          />
         )}
       </main>
 
