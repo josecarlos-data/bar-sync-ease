@@ -516,7 +516,7 @@ function GuestPage() {
         {tab === "ticket" && showPrices && (
           <LiveTicket
             sessionId={session!.sessionId}
-            barName={session?.barName ?? "Bar"}
+            barName="Ticket de mesa"
             settings={settings}
             tableNumber={tableInfo?.number}
             nickname={session?.nickname}
