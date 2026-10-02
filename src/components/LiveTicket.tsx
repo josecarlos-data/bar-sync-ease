@@ -42,8 +42,8 @@ export function LiveTicket({
   sessionId: string;
   barName: string;
   settings: BarSettings | null | undefined;
-  tableNumber?: number;
-  nickname?: string | null;
+  tableNumber?: number | undefined;
+  nickname?: string | null | undefined;
   lines: TicketLine[];
 }) {
   const { data: parts = [] } = useQuery({
