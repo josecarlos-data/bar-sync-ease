@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Download, Printer, FileText, X } from "lucide-react";
+import { Download, Printer, FileText, X, Mail } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -105,6 +105,9 @@ export function InvoiceDialog({
                 </Button>
                 <Button size="sm" variant="outline" disabled={busy} onClick={() => setFullFor(t.id)}>
                   <FileText className="h-4 w-4" /> Factura con datos
+                </Button>
+                <Button size="sm" variant="outline" disabled title="Configura el correo del negocio para activar el envío">
+                  <Mail className="h-4 w-4" /> Enviar por email
                 </Button>
               </div>
             </div>
