@@ -49,3 +49,10 @@
 - [x] Ticket (factura simplificada) y factura con datos: imprimir, PDF; en Mesas, Histórico y móvil del cliente
 - [ ] Envío por email (bloqueado: falta configurar un dominio de correo)
 - [ ] Verifactu (fase posterior)
+
+## Existencias (fase 1 completada)
+- [x] Ollas/artículos con stock estimado, descuento al pedir, devolución al eliminar línea
+- [x] Confirmación al llegar a cero o agotado automático (ajuste en Existencias)
+- [x] Panel Existencias: +/−, mitad, poco, recargar, agotar, reabrir, vincular artículos
+- [ ] Etiqueta "Últimas unidades" en la carta del cliente
+- [ ] Panel de consumo y sugerencias de compra (cuando haya datos)
