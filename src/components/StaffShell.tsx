@@ -4,6 +4,7 @@ import { LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ConnectionBadge } from "@/components/ConnectionBadge";
 import { useStaff } from "@/hooks/useStaff";
+import { StockAlert } from "@/components/StockAlert";
 import type { ReactNode } from "react";
 
 const NAV = [
@@ -11,6 +12,7 @@ const NAV = [
   { to: "/comandas", label: "Comandas", roles: ["admin", "waiter"] },
   { to: "/barra", label: "Barra", roles: ["admin", "waiter", "bar"] },
   { to: "/cocina", label: "Cocina", roles: ["admin", "waiter", "kitchen"] },
+  { to: "/existencias", label: "Existencias", roles: ["admin", "waiter", "bar", "kitchen"] },
   { to: "/historial", label: "Histórico", roles: ["admin", "waiter"] },
   { to: "/admin/articulos", label: "Carta", roles: ["admin"] },
   { to: "/admin/mesas", label: "QR", roles: ["admin"] },
@@ -66,6 +68,7 @@ export function StaffShell({ title, children }: { title: string; children: React
         </nav>
       </header>
       <main className="mx-auto w-full max-w-3xl px-4 py-4">{children}</main>
+      <StockAlert barId={staff?.barId} />
     </div>
   );
 }
