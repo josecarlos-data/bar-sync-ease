@@ -34,6 +34,7 @@ export type Database = {
           require_session_approval: boolean
           show_prices: boolean
           split_bar_kitchen: boolean
+          stock_zero_action: string
           tax_id: string | null
           ticket_footer: string | null
           updated_at: string
@@ -58,6 +59,7 @@ export type Database = {
           require_session_approval?: boolean
           show_prices?: boolean
           split_bar_kitchen?: boolean
+          stock_zero_action?: string
           tax_id?: string | null
           ticket_footer?: string | null
           updated_at?: string
@@ -82,6 +84,7 @@ export type Database = {
           require_session_approval?: boolean
           show_prices?: boolean
           split_bar_kitchen?: boolean
+          stock_zero_action?: string
           tax_id?: string | null
           ticket_footer?: string | null
           updated_at?: string
@@ -420,6 +423,8 @@ export type Database = {
           is_drink: boolean
           is_tapa: boolean
           name: string
+          pool_id: string | null
+          pool_portions: number
           position: number
           price: number
           tax_rate: number
@@ -437,6 +442,8 @@ export type Database = {
           is_drink?: boolean
           is_tapa?: boolean
           name: string
+          pool_id?: string | null
+          pool_portions?: number
           position?: number
           price?: number
           tax_rate?: number
@@ -454,6 +461,8 @@ export type Database = {
           is_drink?: boolean
           is_tapa?: boolean
           name?: string
+          pool_id?: string | null
+          pool_portions?: number
           position?: number
           price?: number
           tax_rate?: number
@@ -471,6 +480,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "items_pool_id_fkey"
+            columns: ["pool_id"]
+            isOneToOne: false
+            referencedRelation: "stock_pools"
             referencedColumns: ["id"]
           },
         ]
@@ -775,6 +791,115 @@ export type Database = {
           },
         ]
       }
+      stock_movements: {
+        Row: {
+          bar_id: string
+          created_at: string
+          created_by: string | null
+          delta: number
+          id: string
+          item_id: string | null
+          order_item_id: string | null
+          pool_id: string
+          reason: string
+        }
+        Insert: {
+          bar_id: string
+          created_at?: string
+          created_by?: string | null
+          delta: number
+          id?: string
+          item_id?: string | null
+          order_item_id?: string | null
+          pool_id: string
+          reason: string
+        }
+        Update: {
+          bar_id?: string
+          created_at?: string
+          created_by?: string | null
+          delta?: number
+          id?: string
+          item_id?: string | null
+          order_item_id?: string | null
+          pool_id?: string
+          reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_movements_bar_id_fkey"
+            columns: ["bar_id"]
+            isOneToOne: false
+            referencedRelation: "bars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_order_item_id_fkey"
+            columns: ["order_item_id"]
+            isOneToOne: false
+            referencedRelation: "order_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_pool_id_fkey"
+            columns: ["pool_id"]
+            isOneToOne: false
+            referencedRelation: "stock_pools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_pools: {
+        Row: {
+          bar_id: string
+          created_at: string
+          id: string
+          low_threshold: number
+          name: string
+          quantity: number
+          status: string
+          unit_label: string
+          updated_at: string
+        }
+        Insert: {
+          bar_id: string
+          created_at?: string
+          id?: string
+          low_threshold?: number
+          name: string
+          quantity?: number
+          status?: string
+          unit_label?: string
+          updated_at?: string
+        }
+        Update: {
+          bar_id?: string
+          created_at?: string
+          id?: string
+          low_threshold?: number
+          name?: string
+          quantity?: number
+          status?: string
+          unit_label?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_pools_bar_id_fkey"
+            columns: ["bar_id"]
+            isOneToOne: false
+            referencedRelation: "bars"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       table_sessions: {
         Row: {
           bar_id: string
@@ -913,6 +1038,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_pool_delta: {
+        Args: {
+          _delta: number
+          _item: string
+          _oi: string
+          _pool: string
+          _reason: string
+        }
+        Returns: undefined
+      }
       can_view_bar: { Args: { _bar_id: string }; Returns: boolean }
       claim_print: { Args: { _order_id: string }; Returns: boolean }
       decide_session: {
@@ -943,6 +1078,10 @@ export type Database = {
         Returns: string
       }
       session_is_open: { Args: { _session_id: string }; Returns: boolean }
+      stock_action: {
+        Args: { _action: string; _pool: string; _qty?: number }
+        Returns: undefined
+      }
     }
     Enums: {
       allergen:
