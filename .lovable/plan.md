@@ -15,7 +15,15 @@ Cada mesa tiene un contador de ronda para no repetir tapas.
 - **Ejemplo** (4 personas): 2 cervezas + Coca-Cola + agua → propone 3 × 1.ª (ajustable a 4 cobrando 1 extra). Luego 4 cervezas → 4 × 2.ª. Luego 2 mostos → 2 × 3.ª.
 - **Rondas parciales** (luego 2 cervezas más): la app lleva la cuenta por "plazas": las 2 nuevas van a las personas con menos tapas, así que propone 2 × 4.ª si todos llevan 3, o lo que corresponda. El camarero puede cambiar a otra ronda con un toque si el cliente lo pide. Se escala por defecto, sin preguntar, para no frenar el servicio.
 - El cliente que pide por QR ve «Incluye tapa (2.ª ronda)»; en De pie funciona igual por cuenta.
-- **La elige el cliente (Almería)**: cada bebida da derecho a una tapa a elegir. Las tapas normales salen a 0 €; las especiales cobran solo su suplemento.
+
+## Modo Almería: el cliente elige la tapa
+Es el tercer modo del ajuste «Tapa con la bebida».
+- Cada bebida que «incluye tapa» da derecho a elegir una tapa de la carta.
+- Tapas normales: 0 €. Tapas especiales: solo el suplemento (1 €, 2 €...). Ejemplo: bebida 3,50 € + tapa +1 € = 4,50 €.
+- Cliente (QR) y camarero ven un contador: «Tapas por elegir: 2 de 3 bebidas». En cada tapa sale «Incluida» o «+1 €».
+- Si piden más tapas que bebidas, las sobrantes se cobran a precio de tapa suelta, con aviso.
+- La cocina recibe el nombre de la tapa elegida (no la ronda).
+- Se puede usar con bebidas de rondas anteriores: si piden la tapa después, sigue contando.
 
 ## En cada artículo
 - Bebida: «Incluye tapa» (sí/no; p. ej. agua o café sin tapa).
