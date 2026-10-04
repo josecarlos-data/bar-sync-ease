@@ -8,7 +8,9 @@ export function useRealtime(channelName: string, tables: string[], enabled = tru
 
   useEffect(() => {
     if (!enabled) return;
-    const channel = supabase.channel(channelName);
+    // Nombre único por instancia: supabase reutiliza canales con el mismo nombre
+    // y fallaría al añadir callbacks a un canal ya suscrito.
+    const channel = supabase.channel(`${channelName}:${Math.random().toString(36).slice(2, 10)}`);
     for (const table of tables) {
       channel.on("postgres_changes", { event: "*", schema: "public", table }, () => {
         queryClient.invalidateQueries();
