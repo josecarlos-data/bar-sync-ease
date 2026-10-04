@@ -217,27 +217,72 @@ export function StaffOrderDialog({
       <footer className="border-t border-border bg-card px-4 py-3">
         {confirming ? (
           <div className="space-y-2">
-            <ul className="max-h-40 overflow-y-auto text-sm">
-              {cart.map((l) => {
-                const it = items.find((i) => i.id === l.itemId);
-                return (
-                  <li key={l.itemId} className="flex justify-between">
-                    <span>{l.qty}× {it?.name}{l.note ? ` (${l.note})` : ""}</span>
-                    <button onClick={() => setCart((p) => p.filter((x) => x.itemId !== l.itemId))} className="text-xs text-destructive">Eliminar</button>
-                  </li>
-                );
-              })}
-            </ul>
-            <div className="flex gap-2">
-              <button onClick={() => setConfirming(false)} className="rounded-lg border border-border px-3 py-2.5 font-semibold">Volver</button>
-              <button disabled={sending || !cart.length} onClick={() => send(false)} className="flex-1 rounded-lg bg-primary py-2.5 font-semibold text-primary-foreground disabled:opacity-50">
-                {sending ? "Enviando…" : "Enviar a preparar"}
-              </button>
-              <button disabled={sending || !cart.length} onClick={() => send(true)} className="flex-1 rounded-lg bg-success py-2.5 font-semibold text-success-foreground disabled:opacity-50">
-                Ya servido
-              </button>
-            </div>
-            <p className="text-xs text-muted-foreground">"Ya servido": para lo que pones al momento (una caña, un café). Se cobra igual pero no va a la cola.</p>
+            {(() => {
+              const destOf = (l: CartLine) => items.find((i) => i.id === l.itemId)?.destination ?? "kitchen";
+              const barLines = cart.filter((l) => destOf(l) === "bar");
+              const kitchenLines = cart.filter((l) => destOf(l) !== "bar");
+              const mixed = barLines.length > 0 && kitchenLines.length > 0;
+              const renderGroup = (title: string | null, lines: CartLine[]) => (
+                <div key={title ?? "all"}>
+                  {title && <p className="mb-0.5 text-xs font-bold uppercase tracking-wide text-muted-foreground">{title}</p>}
+                  <ul className="text-sm">
+                    {lines.map((l) => {
+                      const it = items.find((i) => i.id === l.itemId);
+                      return (
+                        <li key={l.itemId} className="flex justify-between">
+                          <span>{l.qty}× {it?.name}{l.note ? ` (${l.note})` : ""}</span>
+                          <button onClick={() => setCart((p) => p.filter((x) => x.itemId !== l.itemId))} className="text-xs text-destructive">Eliminar</button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              );
+              return (
+                <>
+                  <div className="max-h-48 space-y-2 overflow-y-auto">
+                    {mixed ? (
+                      <>
+                        {renderGroup("🍺 Barra / Bebidas", barLines)}
+                        {renderGroup("🍳 Cocina / Comida", kitchenLines)}
+                      </>
+                    ) : (
+                      renderGroup(null, cart)
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => setConfirming(false)} className="rounded-lg border border-border px-3 py-2.5 font-semibold">Volver</button>
+                    {mixed ? (
+                      <>
+                        <button disabled={sending} onClick={() => send("drinks-served")} className="flex-1 rounded-lg bg-primary py-2.5 font-semibold text-primary-foreground disabled:opacity-50">
+                          {sending ? "Enviando…" : "Servir bebidas y enviar cocina"}
+                        </button>
+                        <button disabled={sending} onClick={() => send("all-queue")} className="flex-1 rounded-lg border border-border py-2.5 font-semibold disabled:opacity-50">
+                          Enviar todo a preparar
+                        </button>
+                        <button disabled={sending} onClick={() => send("all-served")} className="flex-1 rounded-lg bg-success py-2.5 font-semibold text-success-foreground disabled:opacity-50">
+                          Ya servido todo
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button disabled={sending || !cart.length} onClick={() => send("all-queue")} className="flex-1 rounded-lg bg-primary py-2.5 font-semibold text-primary-foreground disabled:opacity-50">
+                          {sending ? "Enviando…" : "Enviar a preparar"}
+                        </button>
+                        <button disabled={sending || !cart.length} onClick={() => send("all-served")} className="flex-1 rounded-lg bg-success py-2.5 font-semibold text-success-foreground disabled:opacity-50">
+                          Ya servido
+                        </button>
+                      </>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {mixed
+                      ? "\"Servir bebidas y enviar cocina\": las bebidas quedan servidas al momento y la comida va a la cola de cocina."
+                      : "\"Ya servido\": para lo que pones al momento (una caña, un café). Se cobra igual pero no va a la cola."}
+                  </p>
+                </>
+              );
+            })()}
           </div>
         ) : (
           <button disabled={!cart.length} onClick={() => setConfirming(true)} className="w-full rounded-lg bg-primary py-3 font-semibold text-primary-foreground disabled:opacity-50">
