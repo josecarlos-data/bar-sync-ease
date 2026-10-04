@@ -116,7 +116,9 @@ export function StaffOrderDialog({
           qty: l.qty,
           note: l.note.trim() || null,
           destination: it.destination,
-          ...(alreadyServed ? { status: "served" as const, ready_at: now, served_at: now } : {}),
+          ...(alreadyServed
+            ? { status: "served" as const, ready_at: now, served_at: now }
+            : { status: "pending" as const }),
         };
       });
       const { error: le } = await supabase.from("order_items").insert(lines);
