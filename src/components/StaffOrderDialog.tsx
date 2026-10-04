@@ -83,7 +83,9 @@ export function StaffOrderDialog({
     });
   }
 
-  async function send(alreadyServed: boolean) {
+  type SendMode = "all-queue" | "all-served" | "drinks-served";
+
+  async function send(mode: SendMode) {
     if (!cart.length) return;
     setSending(true);
     try {
@@ -102,6 +104,8 @@ export function StaffOrderDialog({
       const now = new Date().toISOString();
       const lines = cart.map((l) => {
         const it = items.find((i) => i.id === l.itemId)!;
+        const alreadyServed =
+          mode === "all-served" || (mode === "drinks-served" && it.destination === "bar");
         return {
           bar_id: res.barId,
           order_id: order.id,
