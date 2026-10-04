@@ -4,7 +4,17 @@ Hoy existe el interruptor «tapa gratis con bebida» y las marcas «es bebida»/
 
 ## Ajuste en Administración > Ajustes: «Tapa con la bebida»
 - **Desactivado** (por defecto): todo se cobra a su precio, como ahora.
-- **La pone el bar (Granada)**: cada bebida lleva su tapa incluida; el cliente no elige. Al pedir bebida, aparece en Cocina una línea «Tapa de la casa» (precio 0) para que no se olvide. Opcional: texto de la tapa del día.
+- **La pone el bar (Granada)**: cada bebida lleva su tapa incluida; el cliente no elige. La cocina la prepara por rondas (ver abajo).
+
+## Tapas por rondas (modo Granada)
+Cada mesa tiene un contador de ronda para no repetir tapas.
+- En Ajustes el bar define su lista: 1.ª tapa, 2.ª, 3.ª... (p. ej. 1.ª patatas, 2.ª albóndigas, 3.ª migas). Después de la última se vuelve a empezar o se repite la última (configurable).
+- Al servir bebidas, el camarero ve: «Tapas: 3 × 1.ª» ya calculado y ajustable con + / − antes de enviar (por si alguien no la quiere o el agua sí la lleva). La cocina recibe «Mesa 4 · 3 × 1.ª ronda (patatas)».
+- **Qué bebidas cuentan**: cada bebida tiene «Incluye tapa». Valores de partida: cerveza, vino, tinto de verano, mosto y refrescos sí; agua, café e infusiones no. El bar lo cambia a su gusto.
+- **Tapa para bebida que no la incluye**: botón «+ tapa extra» que la añade y la cobra al precio que fije el bar.
+- **Ejemplo** (4 personas): 2 cervezas + Coca-Cola + agua → propone 3 × 1.ª (ajustable a 4 cobrando 1 extra). Luego 4 cervezas → 4 × 2.ª. Luego 2 mostos → 2 × 3.ª.
+- **Rondas parciales** (luego 2 cervezas más): la app lleva la cuenta por "plazas": las 2 nuevas van a las personas con menos tapas, así que propone 2 × 4.ª si todos llevan 3, o lo que corresponda. El camarero puede cambiar a otra ronda con un toque si el cliente lo pide. Se escala por defecto, sin preguntar, para no frenar el servicio.
+- El cliente que pide por QR ve «Incluye tapa (2.ª ronda)»; en De pie funciona igual por cuenta.
 - **La elige el cliente (Almería)**: cada bebida da derecho a una tapa a elegir. Las tapas normales salen a 0 €; las especiales cobran solo su suplemento.
 
 ## En cada artículo
