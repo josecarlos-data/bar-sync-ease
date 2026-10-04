@@ -14,6 +14,7 @@ import { SplitBill, type SplitLine } from "@/components/SplitBill";
 import { useItemImages, resolveImage } from "@/lib/images";
 import { allergenLabel, formatEUR } from "@/lib/allergens";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
