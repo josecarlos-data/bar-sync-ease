@@ -15,6 +15,7 @@ import { ConnectionBadge } from "@/components/ConnectionBadge";
 import { SplitBill, type SplitLine } from "@/components/SplitBill";
 import { useItemImages, resolveImage } from "@/lib/images";
 import { allergenLabel, formatEUR } from "@/lib/allergens";
+import { openStatus, parseHours } from "@/lib/hours";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -56,7 +57,14 @@ function GuestPage() {
   const queryClient = useQueryClient();
 
   const [phase, setPhase] = useState<"loading" | "nickname" | "ready" | "error" | "occupied" | "notice">("loading");
-  const [occupied, setOccupied] = useState<{ nickname: string | null; openedAt: string | null; orderCount: number } | null>(null);
+  const [occupied, setOccupied] = useState<{
+    nickname: string | null;
+    openedAt: string | null;
+    orderCount: number;
+    barId: string;
+    slug: string;
+    waitlistEnabled: boolean;
+  } | null>(null);
   const [message, setMessage] = useState("");
   const [tableInfo, setTableInfo] = useState<{ number: number; name: string | null } | null>(null);
   const [session, setSession] = useState<Joined | null>(null);
@@ -82,7 +90,17 @@ function GuestPage() {
         | Joined
         | { error: string }
         | { needsNickname: true; table: { number: number; name: string | null } }
-        | { alreadyOpen: { nickname: string | null; openedAt: string | null; orderCount: number }; table: { number: number; name: string | null } };
+        | {
+            alreadyOpen: {
+              nickname: string | null;
+              openedAt: string | null;
+              orderCount: number;
+              barId: string;
+              slug: string;
+              waitlistEnabled: boolean;
+            };
+            table: { number: number; name: string | null };
+          };
 
       if ("error" in result) {
         setMessage(result.error);
@@ -333,6 +351,7 @@ function GuestPage() {
           >
             No, somos otros clientes
           </Button>
+          {occupied.waitlistEnabled && <OccupiedWaitlist barId={occupied.barId} slug={occupied.slug} />}
         </div>
       </Centered>
     );
@@ -435,18 +454,34 @@ function GuestPage() {
 
       <main className="mx-auto w-full max-w-2xl px-4 py-4">
         {tab === "carta" && (
-          <MenuBrowser
-            categories={menu?.categories ?? []}
-            sort={menu?.settings?.menu_sort ?? "alpha"}
-            items={items}
-            cart={cart}
-            showPrices={showPrices}
-            favKey={`comandas:favs:${session?.sessionId ?? ""}`}
-            images={(item) => resolveImage(item.image_url, imageMap)}
-            stickyTop="top-[105px]"
-            onQty={changeQty}
-            onNote={(itemId, note) => setCart((prev) => prev.map((l) => (l.itemId === itemId ? { ...l, note } : l)))}
-          />
+          <div className="space-y-4">
+            {menu?.settings && (
+              <>
+                {menu.settings.hours_enabled && <HoursBanner settings={menu.settings} />}
+                {menu.settings.special_enabled && (
+                  <SpecialCard
+                    settings={menu.settings}
+                    items={menu.items}
+                    showPrices={showPrices}
+                    image={(item) => resolveImage(item.image_url, imageMap)}
+                  />
+                )}
+              </>
+            )}
+            <MenuBrowser
+              categories={menu?.categories ?? []}
+              sort={menu?.settings?.menu_sort ?? "alpha"}
+              items={items}
+              cart={cart}
+              showPrices={showPrices}
+              favKey={`comandas:favs:${session?.sessionId ?? ""}`}
+              images={(item) => resolveImage(item.image_url, imageMap)}
+              stickyTop="top-[105px]"
+              showSoldOut={menu?.settings?.show_sold_out_notice !== false}
+              onQty={changeQty}
+              onNote={(itemId, note) => setCart((prev) => prev.map((l) => (l.itemId === itemId ? { ...l, note } : l)))}
+            />
+          </div>
         )}
 
         {tab === "cuenta" && (
@@ -707,6 +742,112 @@ function Centered({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-6 text-center text-muted-foreground">
       {children}
+    </div>
+  );
+}
+
+/** Quien espera mesa puede apuntarse sin salir de esta pantalla. */
+function OccupiedWaitlist({ barId, slug }: { barId: string; slug: string }) {
+  const [name, setName] = useState("");
+  const [people, setPeople] = useState(2);
+  const [phone, setPhone] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
+
+  async function joinList() {
+    const clean = name.trim();
+    if (!clean) { toast.error("Escribe tu nombre"); return; }
+    setBusy(true);
+    const { error } = await supabase.rpc("join_waitlist", {
+      _bar: barId,
+      _name: clean,
+      _phone: phone.trim(),
+      _people: people,
+    });
+    setBusy(false);
+    if (error) { toast.error("No hemos podido apuntarte. Avisa a alguien del bar."); return; }
+    setDone(true);
+  }
+
+  if (done) {
+    return (
+      <div className="rounded-xl border border-border bg-secondary p-3 text-sm">
+        <p className="font-semibold">Apuntados, {name.trim()}</p>
+        <p className="text-muted-foreground">
+          Sois {people} {people === 1 ? "persona" : "personas"}. Os llaman cuando quede sitio.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-xl border border-border p-3">
+      <p className="mb-2 text-sm font-semibold">¿Esperáis mesa? Apuntaos y os llaman</p>
+      <div className="space-y-2">
+        <Input placeholder="Tu nombre" value={name} onChange={(e) => setName(e.target.value)} maxLength={40} />
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Personas</span>
+          <Input
+            type="number"
+            min={1}
+            max={20}
+            className="w-20"
+            value={people}
+            onChange={(e) => setPeople(Math.min(20, Math.max(1, Number(e.target.value) || 1)))}
+          />
+        </div>
+        <Input placeholder="Teléfono (opcional)" value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={20} />
+        <Button className="w-full" variant="outline" disabled={busy} onClick={joinList}>
+          {busy ? "Apuntando…" : "Apuntarme a la lista"}
+        </Button>
+        {slug && (
+          <p className="text-xs text-muted-foreground">
+            ¿No tenéis QR? Compartid el enlace /apuntarse?bar={slug}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Aviso de horario del bar: abierto, a punto de cerrar o cuándo abre. */
+function HoursBanner({ settings }: { settings: BarSettings }) {
+  const status = openStatus(parseHours(settings.hours), settings.timezone ?? "Europe/Madrid");
+  return (
+    <p
+      className={`rounded-lg px-3 py-2 text-sm font-semibold ${
+        status.open ? "bg-secondary text-secondary-foreground" : "bg-warning px-4 py-3 text-warning-foreground"
+      }`}
+    >
+      {status.text}
+    </p>
+  );
+}
+
+/** «Especial de hoy»: plato enlazado de la carta o texto suelto. */
+function SpecialCard({
+  settings,
+  items,
+  showPrices,
+  image,
+}: {
+  settings: BarSettings;
+  items: Item[];
+  showPrices: boolean;
+  image: (item: Item) => string | null;
+}) {
+  const item = settings.special_item_id ? items.find((i) => i.id === settings.special_item_id) : undefined;
+  const text = settings.special_text?.trim() || item?.name || "";
+  if (!text) return null;
+  const src = item ? image(item) : null;
+  return (
+    <div className="flex items-center gap-3 rounded-xl border border-primary/40 bg-primary/5 p-3">
+      {src && <img src={src} alt="" className="h-14 w-14 shrink-0 rounded-lg object-cover" />}
+      <div className="min-w-0">
+        <p className="text-xs font-bold tracking-wide text-primary uppercase">Especial de hoy</p>
+        <p className="font-semibold">{text}</p>
+        {item && showPrices && <p className="text-sm text-muted-foreground">{formatEUR(Number(item.price))}</p>}
+      </div>
     </div>
   );
 }

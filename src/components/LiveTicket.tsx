@@ -89,6 +89,7 @@ export function LiveTicket({
     vat.forEach((b) => row(`IVA ${b.rate}% base ${formatEUR(b.base)}`, `cuota ${formatEUR(b.tax)}`));
     doc.setFont("helvetica", "bold");
     row("TOTAL (IVA incluido)", formatEUR(total));
+    if (s?.bizum_enabled && s?.bizum_phone) row("Paga con Bizum", s.bizum_phone);
     parts.forEach((p) => row(`Parte ${p.label}${p.status === "paid" ? " (pagada)" : ""}`, formatEUR(Number(p.amount))));
     doc.save(`ticket-provisional-mesa-${tableNumber ?? ""}.pdf`);
   }
@@ -129,6 +130,11 @@ export function LiveTicket({
           <span>TOTAL <span className="text-xs font-normal">IVA incluido</span></span>
           <span className="tabular">{formatEUR(total)}</span>
         </div>
+        {s?.bizum_enabled && s?.bizum_phone && (
+          <p className="mt-2 rounded-lg bg-secondary px-2 py-1.5 text-center text-xs">
+            ¿Pagas tú? Bizum <b>{s.bizum_phone}</b>{s.bizum_label ? ` · ${s.bizum_label}` : ""} · {formatEUR(total)}
+          </p>
+        )}
         {parts.length > 0 && (
           <>
             <hr className="my-2 border-dashed border-border" />

@@ -25,7 +25,7 @@ export const joinTable = createServerFn({ method: "POST" })
 
     const { data: settings } = await supabaseAdmin
       .from("bar_settings")
-      .select("require_session_approval, auto_close_hours, ask_nickname")
+      .select("require_session_approval, auto_close_hours, ask_nickname, waitlist_enabled")
       .eq("bar_id", table.bar_id)
       .maybeSingle();
 
@@ -75,15 +75,19 @@ export const joinTable = createServerFn({ method: "POST" })
         .eq("user_id", context.userId)
         .maybeSingle();
       if (!member) {
-        const [{ data: s }, { count }] = await Promise.all([
+        const [{ data: s }, { count }, { data: bar }] = await Promise.all([
           supabaseAdmin.from("table_sessions").select("opened_at").eq("id", session.id).maybeSingle(),
           supabaseAdmin.from("orders").select("id", { count: "exact", head: true }).eq("session_id", session.id),
+          supabaseAdmin.from("bars").select("slug").eq("id", table.bar_id).maybeSingle(),
         ]);
         return {
           alreadyOpen: {
             nickname: session.nickname,
             openedAt: s?.opened_at ?? null,
             orderCount: count ?? 0,
+            barId: table.bar_id,
+            slug: bar?.slug ?? "",
+            waitlistEnabled: settings?.waitlist_enabled === true,
           },
           table: { number: table.number, name: table.name },
         };
