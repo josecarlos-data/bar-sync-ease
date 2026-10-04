@@ -94,6 +94,12 @@ export function MenuBrowser({
     const updateActive = () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
+        const last = sections[sections.length - 1];
+        const scroller = document.getElementById(`sec-${last?.category.id}`)?.closest(".overflow-y-auto");
+        const atBottom = scroller
+          ? scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 8
+          : window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 8;
+        if (atBottom && last) { setActive(last.category.id); return; }
         const threshold = (navRef.current?.getBoundingClientRect().bottom ?? 0) + 40;
         let selected = sections[0]?.category.id;
         for (const section of sections) {
