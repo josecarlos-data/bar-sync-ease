@@ -61,3 +61,10 @@
 - Carta de ejemplo Almería/Granada con grupos y etiquetas
 - Carta del móvil: índice de secciones, buscador, filtro de alérgenos, favoritas; orden por grupo alfabético/más vendidos/manual configurable por bar; detalles solo cuando aportan descripción o imagen
 - Carta impresa: tríptico, díptico, A4, A5, cartel A3
+
+## Modo bar pequeño
+- [x] Ajuste "Forma de trabajar" (Equipo / Bar pequeño)
+- [x] Servir todo / servir línea desde la tarjeta de Mesas
+- [x] "Ya servido" y "Lo más pedido" al apuntar comanda
+- [x] Franja "Por preparar en cocina" en Mesas (bar pequeño)
+- [ ] Cuentas de barra sin mesa (varias a la vez) — de momento crear mesas "Barra" en QR

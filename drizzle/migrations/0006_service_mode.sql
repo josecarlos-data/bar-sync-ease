@@ -1,0 +1,2 @@
+ALTER TABLE public.bar_settings ADD COLUMN IF NOT EXISTS service_mode text NOT NULL DEFAULT 'team';
+ALTER TABLE public.bar_settings ADD CONSTRAINT bar_settings_service_mode_chk CHECK (service_mode IN ('team','solo'));

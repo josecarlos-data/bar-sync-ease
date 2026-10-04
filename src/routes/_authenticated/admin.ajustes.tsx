@@ -80,6 +80,30 @@ function SettingsPage() {
           ))}
 
           <div className="rounded-xl border border-border bg-card p-4">
+            <p className="font-semibold">Forma de trabajar</p>
+            <p className="text-sm text-muted-foreground">
+              <b>Equipo</b>: barra, cocina y sala separadas, con todos los pasos. <b>Bar pequeño</b>: una o dos
+              personas lo llevan todo; en Mesas aparece lo pendiente de cocina y la comanda puede marcarse
+              "ya servida" al apuntarla. Puedes cambiarlo cuando quieras (p. ej. Equipo el fin de semana).
+            </p>
+            <div className="mt-2 flex gap-2">
+              {([["team", "Equipo"], ["solo", "Bar pequeño"]] as const).map(([value, label]) => (
+                <button
+                  key={value}
+                  onClick={() => update({ service_mode: value })}
+                  className={`rounded-full px-4 py-1.5 text-sm font-semibold ${
+                    (settings.service_mode ?? "team") === value
+                      ? "bg-primary text-primary-foreground"
+                      : "border border-border text-muted-foreground"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-border bg-card p-4">
             <p className="font-semibold">Aprobación de mesas</p>
             <p className="text-sm text-muted-foreground">
               En automática la mesa se abre sola. En manual el camarero acepta cada mesa y sus

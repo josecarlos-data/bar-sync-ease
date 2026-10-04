@@ -43,6 +43,13 @@
       "when": 1791143250335,
       "tag": "0005_split_payment_guards",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791145413948,
+      "tag": "0006_service_mode",
+      "breakpoints": true
     }
   ]
 }

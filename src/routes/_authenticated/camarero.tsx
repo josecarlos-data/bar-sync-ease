@@ -39,6 +39,9 @@ type LineRow = {
   price_snapshot: number;
   name_snapshot: string;
   status: "pending" | "preparing" | "ready" | "served";
+  note: string | null;
+  destination: "bar" | "kitchen";
+  created_at: string;
   orders: { session_id: string } | null;
 };
 type CallRow = { id: string; session_id: string; type: "waiter" | "bill" };
@@ -100,7 +103,7 @@ function WaiterPage() {
       if (sessionIds.length) {
         const { data: lineData } = await supabase
           .from("order_items")
-          .select("id, qty, price_snapshot, name_snapshot, status, orders!inner(session_id)")
+          .select("id, qty, price_snapshot, name_snapshot, status, note, destination, created_at, orders!inner(session_id)")
           .eq("bar_id", barId!)
           .is("deleted_at", null)
           .in("orders.session_id", sessionIds);
@@ -230,7 +233,26 @@ function WaiterPage() {
     if (split) setTicketFor(split.session_id);
   }
 
+  async function setLines(ids: string[], status: "ready" | "served") {
+    if (!ids.length) return;
+    const now = new Date().toISOString();
+    const patch = status === "served" ? { status, served_at: now } : { status, ready_at: now };
+    const { error } = await supabase.from("order_items").update(patch).in("id", ids);
+    if (error) { toast.error("No se pudo actualizar"); return; }
+    toast.success(status === "served" ? (ids.length > 1 ? `${ids.length} servidos` : "Servido") : "Listo");
+    queryClient.invalidateQueries();
+  }
+
   const tables = data?.tables ?? [];
+  const solo = settings?.service_mode === "solo";
+  const tableBySession = new Map(
+    (data?.sessions ?? []).map((s) => [s.id, tables.find((t) => t.id === s.table_id)?.number ?? 0]),
+  );
+  const kitchenQueue = solo
+    ? (data?.lines ?? [])
+        .filter((l) => l.destination === "kitchen" && (l.status === "pending" || l.status === "preparing"))
+        .sort((a, b) => a.created_at.localeCompare(b.created_at))
+    : [];
 
   return (
     <StaffShell title="Mesas">
@@ -266,6 +288,28 @@ function WaiterPage() {
           userId={staff.userId}
           onClose={() => setInstructionFor(null)}
         />
+      )}
+      {solo && kitchenQueue.length > 0 && (
+        <section className="mb-4 rounded-xl border-2 border-warning bg-card p-3">
+          <p className="mb-2 font-display text-lg font-bold">Por preparar en cocina ({kitchenQueue.length})</p>
+          <ul className="space-y-2">
+            {kitchenQueue.map((l) => (
+              <li key={l.id} className="flex items-center justify-between gap-2 rounded-lg bg-secondary px-3 py-2">
+                <span className="min-w-0">
+                  <span className="mr-2 rounded bg-foreground px-1.5 py-0.5 text-xs font-bold text-background">
+                    Mesa {tableBySession.get(l.orders?.session_id ?? "") ?? "?"}
+                  </span>
+                  <b className="tabular">{l.qty}×</b> {l.name_snapshot}
+                  {l.note && <span className="block text-xs text-muted-foreground">{l.note}</span>}
+                </span>
+                <span className="flex shrink-0 gap-1">
+                  <button onClick={() => setLines([l.id], "ready")} className="rounded-md border border-border bg-card px-2 py-1.5 text-xs font-semibold">Listo</button>
+                  <button onClick={() => setLines([l.id], "served")} className="rounded-md bg-success px-2 py-1.5 text-xs font-semibold text-success-foreground">Servido</button>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
       <div className="grid gap-3 sm:grid-cols-2">
         {tables.map((table) => {
@@ -331,6 +375,42 @@ function WaiterPage() {
                       {formatEUR(total)}
                     </span>
                   </div>
+
+                  {(() => {
+                    const unserved = lines.filter((l) => l.status !== "served");
+                    if (!unserved.length) return null;
+                    const readyFirst = [...unserved].sort(
+                      (a, b) => Number(b.status === "ready") - Number(a.status === "ready"),
+                    );
+                    return (
+                      <div className="mt-3 rounded-lg border border-border p-2">
+                        <button
+                          onClick={() => setLines(unserved.map((l) => l.id), "served")}
+                          className="flex w-full items-center justify-center gap-1 rounded-lg bg-success py-2.5 text-sm font-bold text-success-foreground"
+                        >
+                          <Check className="h-4 w-4" /> Servir todo ({unserved.reduce((s, l) => s + l.qty, 0)})
+                        </button>
+                        <p className="mt-2 text-xs text-muted-foreground">Toca una línea para servirla sola:</p>
+                        <ul className="mt-1 flex flex-wrap gap-1.5">
+                          {readyFirst.map((l) => (
+                            <li key={l.id}>
+                              <button
+                                onClick={() => setLines([l.id], "served")}
+                                className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                                  l.status === "ready"
+                                    ? "bg-success/20 text-foreground ring-1 ring-success"
+                                    : "bg-secondary text-secondary-foreground"
+                                }`}
+                              >
+                                {l.qty}× {l.name_snapshot}
+                                {l.status === "ready" ? " · listo" : ""}
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    );
+                  })()}
 
                   {calls.length > 0 && (
                     <ul className="mt-3 space-y-2">
