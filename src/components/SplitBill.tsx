@@ -71,6 +71,10 @@ export function SplitBill({
 
   const parts = split?.bill_split_parts ?? [];
 
+  const calc = useMemo(
+    () => computeSplit(split?.mode ?? "groups", parts, lines),
+    [split?.mode, parts, lines],
+  );
   const assignedByLine = useMemo(() => {
     const map = new Map<string, number>();
     for (const part of parts) {
@@ -81,20 +85,48 @@ export function SplitBill({
     return map;
   }, [parts]);
 
-  const remainingLines = lines
-    .map((l) => ({ ...l, left: round2(l.qty - (assignedByLine.get(l.id) ?? 0)) }))
-    .filter((l) => l.left > 0.001);
-
-  const remainingAmount = round2(remainingLines.reduce((s, l) => s + l.price * l.left, 0));
+  const remainingLines = calc.unassignedLines;
+  const remainingAmount = calc.unassigned;
+  const anyPaid = parts.some((p) => p.status === "paid");
 
   function partAmount(part: PartRow) {
-    if (split?.mode === "equal") return Number(part.amount);
-    return round2(
-      part.bill_split_assignments.reduce((sum, a) => {
-        const line = lines.find((l) => l.id === a.order_item_id);
-        return sum + (line ? line.price * Number(a.qty) : 0);
-      }, 0),
-    );
+    return calc.amounts.get(part.id) ?? 0;
+  }
+
+  async function notifyIfRequested() {
+    if (split?.status === "requested") {
+      await onRequestWaiter();
+      toast.success("Cuenta actualizada: el camarero ya puede cobrar");
+    }
+  }
+
+  async function addGroup() {
+    if (!split) return;
+    setBusy(true);
+    const used = parts.filter((p) => p.status !== "with_waiter").length;
+    await supabase.from("bill_split_parts").insert({
+      bar_id: barId,
+      split_id: split.id,
+      label: `Grupo ${GROUP_LABELS[used] ?? used + 1}`,
+      position: used,
+    });
+    setBusy(false);
+    queryClient.invalidateQueries({ queryKey: ["bill-split", sessionId] });
+  }
+
+  async function addLaterPart() {
+    if (!split) return;
+    setBusy(true);
+    await supabase.from("bill_split_parts").insert({
+      bar_id: barId,
+      split_id: split.id,
+      label: "Consumo posterior",
+      position: parts.length,
+      amount: remainingAmount,
+    });
+    setBusy(false);
+    await notifyIfRequested();
+    queryClient.invalidateQueries({ queryKey: ["bill-split", sessionId] });
   }
 
   async function reset() {
