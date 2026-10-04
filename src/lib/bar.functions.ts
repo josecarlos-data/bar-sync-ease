@@ -9,7 +9,7 @@ const DEFAULT_BAR = "11111111-1111-1111-1111-111111111111";
  */
 export const joinTable = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { token: string; nickname?: string; confirmJoin?: boolean }) => data)
+  .inputValidator((data: { token: string; nickname?: string; confirmJoin?: boolean; skipNickname?: boolean }) => data)
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -25,7 +25,7 @@ export const joinTable = createServerFn({ method: "POST" })
 
     const { data: settings } = await supabaseAdmin
       .from("bar_settings")
-      .select("require_session_approval, auto_close_hours")
+      .select("require_session_approval, auto_close_hours, ask_nickname")
       .eq("bar_id", table.bar_id)
       .maybeSingle();
 
@@ -49,7 +49,7 @@ export const joinTable = createServerFn({ method: "POST" })
 
     if (!session) {
       const nickname = (data.nickname ?? "").trim();
-      if (!nickname) {
+      if (!nickname && settings?.ask_nickname !== false && !data.skipNickname) {
         return {
           needsNickname: true as const,
           table: { number: table.number, name: table.name },
@@ -60,7 +60,7 @@ export const joinTable = createServerFn({ method: "POST" })
         .insert({
           bar_id: table.bar_id,
           table_id: table.id,
-          nickname,
+          nickname: nickname || null,
           status: settings?.require_session_approval ? "pending" : "open",
         })
         .select("id, nickname, status")
@@ -278,7 +278,7 @@ export const openCounterAccount = createServerFn({ method: "POST" })
       .from("table_sessions")
       .insert({
         bar_id: barId, table_id: table.id,
-        nickname: data.nickname?.trim() || `Barra ${table.number - 900}`,
+        nickname: data.nickname?.trim() || null,
         status: "open", decided_by: userId, decided_at: now, decision: "approved",
       })
       .select("id").single();

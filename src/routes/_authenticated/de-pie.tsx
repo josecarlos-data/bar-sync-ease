@@ -1,3 +1,4 @@
+import { displayNickname, tableLabel } from "@/lib/tableLabel";
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -119,7 +120,7 @@ function CounterPage() {
       .update({ status: "closed", closed_at: new Date().toISOString(), closed_by: staff?.userId ?? null })
       .eq("id", a.id);
     if (error) { toast.error("No se pudo cobrar"); return; }
-    toast.success(`Cobrada: ${a.nickname ?? "cuenta"}`);
+    toast.success(`Cobrada: ${displayNickname(a.nickname, a.tables?.number) ?? tableLabel(a.tables?.number)}`);
     qc.invalidateQueries();
     setTicketFor(a.id);
   }
@@ -179,7 +180,7 @@ function CounterPage() {
           return (
             <div key={a.id} className="rounded-xl border bg-card p-3">
               <div className="mb-2 flex items-baseline justify-between gap-2">
-                <p className="font-display text-xl font-extrabold">{a.nickname ?? "Barra"}</p>
+                <div><p className="font-display text-xl font-extrabold">{tableLabel(a.tables?.number)}</p>{displayNickname(a.nickname, a.tables?.number) && <p className="text-sm text-muted-foreground">{displayNickname(a.nickname, a.tables?.number)}</p>}</div>
                 <span className="text-xs text-muted-foreground">
                   {new Date(a.opened_at).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
                 </span>

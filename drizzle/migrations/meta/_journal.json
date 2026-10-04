@@ -57,6 +57,13 @@
       "when": 1791145648072,
       "tag": "0007_counter_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791145824515,
+      "tag": "0008_ask_nickname",
+      "breakpoints": true
     }
   ]
 }

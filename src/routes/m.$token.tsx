@@ -1,3 +1,4 @@
+import { displayNickname } from "@/lib/tableLabel";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -65,7 +66,7 @@ function GuestPage() {
   const [confirming, setConfirming] = useState(false);
   const [sending, setSending] = useState(false);
 
-  async function attempt(nick?: string, confirmJoin?: boolean) {
+  async function attempt(nick?: string, confirmJoin?: boolean, skipNickname?: boolean) {
     try {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) {
@@ -77,7 +78,7 @@ function GuestPage() {
           return;
         }
       }
-      const result = (await join({ data: { token, ...(nick ? { nickname: nick } : {}), ...(confirmJoin ? { confirmJoin: true } : {}) } })) as
+      const result = (await join({ data: { token, ...(nick ? { nickname: nick } : {}), ...(confirmJoin ? { confirmJoin: true } : {}), ...(skipNickname ? { skipNickname: true } : {}) } })) as
         | Joined
         | { error: string }
         | { needsNickname: true; table: { number: number; name: string | null } }
@@ -358,12 +359,12 @@ function GuestPage() {
             onChange={(e) => setNickname(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter")
-                attempt(nickname.trim() || `Mesa ${tableInfo?.number ?? ""}`);
+                attempt(nickname.trim() || undefined, false, true);
             }}
           />
           <button
             onClick={() =>
-              attempt(nickname.trim() || `Mesa ${tableInfo?.number ?? ""}`)
+              attempt(nickname.trim() || undefined, false, true)
             }
             className="w-full rounded-lg bg-primary py-3 font-semibold text-primary-foreground"
           >
@@ -400,7 +401,7 @@ function GuestPage() {
             <h1 className="font-display truncate text-lg font-extrabold">
               Mesa {tableInfo?.number}
             </h1>
-            <p className="truncate text-xs text-muted-foreground">{session?.nickname}</p>
+            <p className="truncate text-xs text-muted-foreground">{displayNickname(session?.nickname, tableInfo?.number)}</p>
           </div>
           <ConnectionBadge />
         </div>

@@ -1,4 +1,4 @@
-import { tableLabel } from "@/lib/tableLabel";
+import { tableLabel, displayNickname } from "@/lib/tableLabel";
 import { useState } from "react";
 import { InvoiceDialog } from "@/components/InvoiceDialog";
 import { createFileRoute } from "@tanstack/react-router";
@@ -125,7 +125,7 @@ function HistoryPage() {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="font-display text-xl font-extrabold">{tableLabel(s.tables?.number)}</p>
-                  <p className="text-sm text-muted-foreground">{s.nickname ?? "Sin apodo"}</p>
+                  <p className="text-sm text-muted-foreground">{displayNickname(s.nickname, s.tables?.number) ?? ""}</p>
                   <p className="text-xs text-muted-foreground">
                     {new Date(s.opened_at).toLocaleString("es-ES", {
                       day: "2-digit",

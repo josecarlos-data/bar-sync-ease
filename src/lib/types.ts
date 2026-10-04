@@ -11,6 +11,7 @@ export type BarSettings = {
   show_prices: boolean;
   split_bar_kitchen: boolean;
   waiter_can_order: boolean;
+  ask_nickname: boolean;
   service_mode?: "team" | "solo" | string;
   free_tapa_with_drink: boolean;
   payments_enabled: boolean;
