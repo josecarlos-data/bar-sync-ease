@@ -56,3 +56,8 @@
 - [x] Panel Existencias: +/−, mitad, poco, recargar, agotar, reabrir, vincular artículos
 - [ ] Etiqueta "Últimas unidades" en la carta del cliente
 - [ ] Panel de consumo y sugerencias de compra (cuando haya datos)
+
+## Carta (hecho)
+- Carta de ejemplo Almería/Granada con grupos y etiquetas
+- Carta del móvil: secciones fijas, buscador, A-Z, filtro de alérgenos, favoritas
+- Carta impresa: tríptico, díptico, A4, A5, cartel A3
