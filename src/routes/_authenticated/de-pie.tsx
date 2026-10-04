@@ -5,7 +5,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Check, ListChecks, Plus, Receipt } from "lucide-react";
+import { Check, ListChecks, Plus, Receipt, UserRound } from "lucide-react";
+import { ChargeToTabDialog } from "@/components/ChargeToTabDialog";
 import { StaffShell } from "@/components/StaffShell";
 import { StaffOrderDialog } from "@/components/StaffOrderDialog";
 import { TableOrdersDialog } from "@/components/TableOrdersDialog";
@@ -59,6 +60,7 @@ function CounterPage() {
   const [orderFor, setOrderFor] = useState<{ tableId: string; tableNumber: number } | null>(null);
   const [detailFor, setDetailFor] = useState<Account | null>(null);
   const [ticketFor, setTicketFor] = useState<string | null>(null);
+  const [chargeFor, setChargeFor] = useState<{ sessionId: string; label: string; amount: number } | null>(null);
   const isAdmin = staff?.roles.includes("admin") ?? false;
   const canOrder = isAdmin || settings?.waiter_can_order !== false;
 
@@ -149,6 +151,7 @@ function CounterPage() {
         />
       )}
       {ticketFor && <InvoiceDialog sessionId={ticketFor} staff onClose={() => setTicketFor(null)} />}
+      {chargeFor && barId && <ChargeToTabDialog barId={barId} {...chargeFor} onClose={() => setChargeFor(null)} />}
 
       {canOrder && (
         <form
@@ -218,6 +221,11 @@ function CounterPage() {
                   <ListChecks className="mr-1 h-4 w-4" /> Ver comandas
                 </Button>
                 {barId && <PrintToBarButton barId={barId} sessionId={a.id} userId={staff?.userId} settings={settings} />}
+                {settings?.tabs_enabled && barId && total > 0 && (
+                  <Button size="sm" variant="outline" onClick={() => setChargeFor({ sessionId: a.id, label: displayNickname(a.nickname, a.tables?.number) ?? tableLabel(a.tables?.number), amount: total })}>
+                    <UserRound className="mr-1 h-4 w-4" /> A la cuenta de…
+                  </Button>
+                )}
                 <Button size="sm" onClick={() => charge(a, pending.map((l) => l.id))}>
                   <Receipt className="mr-1 h-4 w-4" /> Cobrar {formatEUR(total)}
                 </Button>

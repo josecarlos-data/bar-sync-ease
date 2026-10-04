@@ -604,6 +604,7 @@ function WaiterPage() {
         })}
       </div>
       {ticketFor && <InvoiceDialog sessionId={ticketFor} staff onClose={() => setTicketFor(null)} />}
+      {chargeFor && barId && <ChargeToTabDialog barId={barId} {...chargeFor} onClose={() => setChargeFor(null)} />}
       {tables.length === 0 && (
         <p className="text-sm text-muted-foreground">
           Todavía no hay mesas. Créalas en el apartado QR.
