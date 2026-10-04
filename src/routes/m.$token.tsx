@@ -1,3 +1,4 @@
+import { cartDrinks, houseTapaLines, priceCart, pricedTotal, proposeRounds, tapaMode } from "@/lib/tapas";
 import { displayNickname } from "@/lib/tableLabel";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
@@ -203,7 +204,7 @@ function GuestPage() {
       const { data } = await supabase
         .from("orders")
         .select(
-          "id, created_at, created_by_role, order_items(id, name_snapshot, price_snapshot, tax_rate_snapshot, qty, note, status, deleted_at)",
+          "id, created_at, created_by_role, order_items(id, item_id, name_snapshot, price_snapshot, tax_rate_snapshot, qty, note, status, deleted_at, tapa_kind, tapa_round)",
         )
         .eq("session_id", session!.sessionId)
         .order("created_at");
@@ -213,6 +214,9 @@ function GuestPage() {
         created_by_role: string;
         order_items: {
           id: string;
+          item_id: string | null;
+          tapa_kind: string | null;
+          tapa_round: number | null;
           name_snapshot: string;
           price_snapshot: number;
           tax_rate_snapshot: number;
@@ -265,14 +269,15 @@ function GuestPage() {
   const showPrices = settings?.show_prices ?? true;
   const { data: imageMap } = useItemImages(items.map((i) => i.image_url));
 
-  const cartTotal = useMemo(
-    () =>
-      cart.reduce((sum, line) => {
-        const item = items.find((i) => i.id === line.itemId);
-        return sum + (item ? Number(item.price) * line.qty : 0);
-      }, 0),
-    [cart, items],
-  );
+  const tmode = tapaMode(settings);
+  const sessionTapaLines = useMemo(() => (bill ?? []).flatMap((o) => o.order_items), [bill]);
+  const priced = useMemo(() => priceCart(settings, cart, items, sessionTapaLines), [settings, cart, items, sessionTapaLines]);
+  const houseLines = useMemo(() => {
+    if (tmode !== "house") return [];
+    const n = cartDrinks(cart, items);
+    return houseTapaLines(settings, proposeRounds(n, sessionTapaLines), n);
+  }, [tmode, settings, cart, items, sessionTapaLines]);
+  const cartTotal = pricedTotal(priced);
 
   const billLines: SplitLine[] = (bill ?? [])
     .flatMap((o) => o.order_items)
@@ -316,22 +321,39 @@ function GuestPage() {
       return;
     }
 
-    const lines = cart.map((line) => {
-      const item = items.find((i) => i.id === line.itemId)!;
+    const lines: Record<string, unknown>[] = priced.map((line) => {
+      const item = line.item;
       return {
         bar_id: session.barId,
         order_id: order.id,
         item_id: item.id,
         name_snapshot: item.name,
-        price_snapshot: item.price,
+        price_snapshot: line.price,
         tax_rate_snapshot: item.tax_rate,
         qty: line.qty,
         note: line.note.trim() || null,
         destination: item.destination,
+        tapa_kind: line.tapa_kind,
       };
     });
+    for (const h of houseLines) {
+      lines.push({
+        bar_id: session.barId,
+        order_id: order.id,
+        item_id: null,
+        name_snapshot: h.name,
+        price_snapshot: h.price,
+        tax_rate_snapshot: 10,
+        qty: h.qty,
+        note: null,
+        destination: "kitchen",
+        tapa_kind: h.tapa_kind,
+        tapa_round: h.tapa_round,
+      });
+    }
 
-    const { error: lineError } = await supabase.from("order_items").insert(lines);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: lineError } = await supabase.from("order_items").insert(lines as any);
     setSending(false);
     setConfirming(false);
     if (lineError) {
@@ -542,6 +564,7 @@ function GuestPage() {
               images={(item) => resolveImage(item.image_url, imageMap)}
               stickyTop="top-[105px]"
               showSoldOut={menu?.settings?.show_sold_out_notice !== false}
+              tapaChoice={tmode === "choice"}
               onQty={changeQty}
               onNote={(itemId, note) => setCart((prev) => prev.map((l) => (l.itemId === itemId ? { ...l, note } : l)))}
             />
@@ -684,12 +707,13 @@ function GuestPage() {
             <DialogTitle>{t("confirmTitle", lang)}</DialogTitle>
           </DialogHeader>
           <ul className="space-y-1 text-sm">
-            {cart.map((line) => {
-              const item = items.find((i) => i.id === line.itemId);
+            {priced.map((line, idx) => {
+              const item = line.item;
               return (
-                <li key={line.itemId} className="flex justify-between gap-2">
+                <li key={line.item.id + idx} className="flex justify-between gap-2">
                   <span>
-                    {line.qty} × {item?.name}
+                    {line.qty} × {shownItems.find((i) => i.id === item.id)?.name ?? item.name}
+                    {line.tapa_kind && <span className="ml-1 text-xs font-bold text-primary">(tapa con bebida)</span>}
                     {line.note && (
                       <span className="block text-xs text-muted-foreground italic">
                         {line.note}
@@ -697,11 +721,17 @@ function GuestPage() {
                     )}
                   </span>
                   {showPrices && item && (
-                    <span className="tabular">{formatEUR(Number(item.price) * line.qty)}</span>
+                    <span className="tabular">{formatEUR(line.price * line.qty)}</span>
                   )}
                 </li>
               );
             })}
+            {houseLines.map((h) => (
+              <li key={h.name} className="flex justify-between gap-2 text-primary">
+                <span>{h.qty} × {h.name}</span>
+                {showPrices && <span className="tabular">{h.price ? formatEUR(h.price * h.qty) : "0,00 €"}</span>}
+              </li>
+            ))}
           </ul>
           <DialogFooter className="gap-2">
             <button
