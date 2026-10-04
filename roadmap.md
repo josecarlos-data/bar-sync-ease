@@ -59,5 +59,5 @@
 
 ## Carta (hecho)
 - Carta de ejemplo Almería/Granada con grupos y etiquetas
-- Carta del móvil: secciones fijas, buscador, A-Z, filtro de alérgenos, favoritas
+- Carta del móvil: índice de secciones, buscador, filtro de alérgenos, favoritas; orden por grupo alfabético/más vendidos/manual configurable por bar; detalles solo cuando aportan descripción o imagen
 - Carta impresa: tríptico, díptico, A4, A5, cartel A3

@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { openSessionForTable } from "@/lib/bar.functions";
 import { allergenLabel, formatEUR } from "@/lib/allergens";
 import { MenuBrowser } from "@/components/MenuBrowser";
+import { useBarSettings } from "@/hooks/useStaff";
 import { Input } from "@/components/ui/input";
 import type { Category, Item } from "@/lib/types";
 
@@ -33,6 +34,7 @@ export function StaffOrderDialog({
   const [nickname, setNickname] = useState("");
   const [confirming, setConfirming] = useState(false);
   const [sending, setSending] = useState(false);
+  const { data: settings } = useBarSettings(barId);
 
   const { data } = useQuery({
     queryKey: ["staff-menu", barId],
@@ -167,6 +169,7 @@ export function StaffOrderDialog({
         )}
         <MenuBrowser
           categories={categories}
+          sort={settings?.menu_sort ?? "alpha"}
           items={items.filter((i) => i.available)}
           cart={cart}
           favKey={`comandas:staff-favs:${barId}`}

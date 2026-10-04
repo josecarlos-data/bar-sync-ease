@@ -24,6 +24,7 @@ export type Database = {
           kitchen_voice_auto: boolean
           legal_name: string | null
           menu_print: Json
+          menu_sort: string
           order_voice_auto: string
           payments_enabled: boolean
           phone: string | null
@@ -51,6 +52,7 @@ export type Database = {
           kitchen_voice_auto?: boolean
           legal_name?: string | null
           menu_print?: Json
+          menu_sort?: string
           order_voice_auto?: string
           payments_enabled?: boolean
           phone?: string | null
@@ -78,6 +80,7 @@ export type Database = {
           kitchen_voice_auto?: boolean
           legal_name?: string | null
           menu_print?: Json
+          menu_sort?: string
           order_voice_auto?: string
           payments_enabled?: boolean
           phone?: string | null
@@ -1088,6 +1091,13 @@ export type Database = {
           _split_part_id?: string
         }
         Returns: string
+      }
+      menu_popularity: {
+        Args: { _bar_id: string }
+        Returns: {
+          item_id: string
+          units: number
+        }[]
       }
       session_is_open: { Args: { _session_id: string }; Returns: boolean }
       stock_action: {
