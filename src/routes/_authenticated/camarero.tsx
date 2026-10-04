@@ -1,3 +1,4 @@
+import { computeSplit } from "@/lib/split";
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -36,6 +37,7 @@ type LineRow = {
   id: string;
   qty: number;
   price_snapshot: number;
+  name_snapshot: string;
   status: "pending" | "preparing" | "ready" | "served";
   orders: { session_id: string } | null;
 };
@@ -52,6 +54,7 @@ type SplitRow = {
     position: number;
     amount: number;
     status: "pending" | "paid" | "with_waiter";
+    bill_split_assignments: { id: string; order_item_id: string; qty: number }[];
   }[];
 };
 
@@ -68,7 +71,7 @@ function WaiterPage() {
   const [instructionFor, setInstructionFor] = useState<{ sessionId: string; tableNumber: number } | null>(null);
   const [ticketFor, setTicketFor] = useState<string | null>(null);
 
-  useRealtime("waiter", ["order_items", "orders", "table_sessions", "service_calls", "bill_splits", "bill_split_parts"], !!barId);
+  useRealtime("waiter", ["order_items", "orders", "table_sessions", "service_calls", "bill_splits", "bill_split_parts", "bill_split_assignments"], !!barId);
 
   const { data } = useQuery({
     queryKey: ["waiter-board", barId],
@@ -97,7 +100,7 @@ function WaiterPage() {
       if (sessionIds.length) {
         const { data: lineData } = await supabase
           .from("order_items")
-          .select("id, qty, price_snapshot, status, orders!inner(session_id)")
+          .select("id, qty, price_snapshot, name_snapshot, status, orders!inner(session_id)")
           .eq("bar_id", barId!)
           .is("deleted_at", null)
           .in("orders.session_id", sessionIds);
@@ -108,7 +111,7 @@ function WaiterPage() {
       if (sessionIds.length) {
         const { data: splitData } = await supabase
           .from("bill_splits")
-          .select("id, session_id, mode, people, status, bill_split_parts(id, label, position, amount, status)")
+          .select("id, session_id, mode, people, status, bill_split_parts(id, label, position, amount, status, bill_split_assignments(id, order_item_id, qty))")
           .in("session_id", sessionIds);
         splits = (splitData ?? []) as unknown as SplitRow[];
       }
@@ -137,6 +140,18 @@ function WaiterPage() {
   }
 
   async function closeSession(sessionId: string) {
+    const split = (data?.splits ?? []).find((s) => s.session_id === sessionId);
+    if (split) {
+      const c = splitCalc(split, sessionId);
+      const unpaid = split.bill_split_parts.filter((p) => p.status !== "paid" && (c.amounts.get(p.id) ?? 0) > 0.009);
+      if (c.unassigned > 0.009 || unpaid.length) {
+        toast.error(
+          [c.unassigned > 0.009 ? `Sin asignar: ${formatEUR(c.unassigned)}` : null,
+           unpaid.length ? `Sin cobrar: ${unpaid.map((p) => p.label).join(", ")}` : null].filter(Boolean).join(" · "),
+        );
+        return;
+      }
+    }
     const { error } = await supabase
       .from("table_sessions")
       .update({
@@ -164,14 +179,52 @@ function WaiterPage() {
     queryClient.invalidateQueries();
   }
 
-  async function markPartPaid(partId: string) {
+  function splitCalc(split: SplitRow, sessionId: string) {
+    const lines = (data?.lines ?? [])
+      .filter((l) => l.orders?.session_id === sessionId)
+      .map((l) => ({ id: l.id, name: l.name_snapshot, price: Number(l.price_snapshot), qty: l.qty }));
+    return { lines, ...computeSplit(split.mode, split.bill_split_parts, lines) };
+  }
+
+  async function assignToWaiter(split: SplitRow, sessionId: string) {
+    const c = splitCalc(split, sessionId);
+    if (c.unassigned <= 0.009) return;
+    if (split.mode === "equal") {
+      await supabase.from("bill_split_parts").insert({
+        bar_id: barId!, split_id: split.id, label: "Consumo posterior",
+        position: split.bill_split_parts.length, amount: c.unassigned,
+      });
+    } else {
+      let part = split.bill_split_parts.find((p) => p.status === "with_waiter");
+      if (!part) {
+        const { data: created } = await supabase
+          .from("bill_split_parts")
+          .insert({ bar_id: barId!, split_id: split.id, label: "Pendiente con camarero", position: 99, status: "with_waiter" })
+          .select("id, label, position, amount, status")
+          .single();
+        if (!created) { toast.error("No se pudo asignar"); return; }
+        part = { ...(created as never as SplitRow["bill_split_parts"][number]), bill_split_assignments: [] };
+      }
+      for (const line of c.unassignedLines) {
+        const ex = part.bill_split_assignments.find((a) => a.order_item_id === line.id);
+        if (ex) await supabase.from("bill_split_assignments").update({ qty: Number(ex.qty) + line.left }).eq("id", ex.id);
+        else await supabase.from("bill_split_assignments").insert({ bar_id: barId!, part_id: part.id, order_item_id: line.id, qty: line.left });
+      }
+    }
+    queryClient.invalidateQueries();
+  }
+
+  async function markPartPaid(partId: string, amount: number) {
     const { data: part, error } = await supabase
       .from("bill_split_parts")
-      .update({ status: "paid", paid_at: new Date().toISOString() })
+      .update({ status: "paid", paid_at: new Date().toISOString(), amount })
       .eq("id", partId)
       .select("split_id")
       .single();
-    if (error) { toast.error("No se pudo marcar como cobrada"); return; }
+    if (error) {
+      toast.error(error.message.includes("unassigned") ? "Queda consumo sin asignar: repartidlo antes de cobrar" : "No se pudo marcar como cobrada");
+      return;
+    }
     queryClient.invalidateQueries();
     const { data: split } = await supabase.from("bill_splits").select("session_id").eq("id", part.split_id).single();
     if (split) setTicketFor(split.session_id);
@@ -305,8 +358,17 @@ function WaiterPage() {
                     </ul>
                   )}
 
-                  {split && (
+                  {split && (() => {
+                    const c = splitCalc(split, session!.id);
+                    const blocked = c.unassigned > 0.009;
+                    const anyPaid = split.bill_split_parts.some((p) => p.status === "paid");
+                    return (
                     <div className="mt-3 rounded-lg border border-border p-3">
+                      {anyPaid && blocked && (
+                        <span className="mb-2 inline-block rounded-full bg-warning px-2 py-0.5 text-xs font-bold text-warning-foreground">
+                          Consumo nuevo tras pagar
+                        </span>
+                      )}
                       <p className="text-sm font-bold">
                         {split.mode === "equal"
                           ? `Cuenta dividida entre ${split.people}`
@@ -331,14 +393,15 @@ function WaiterPage() {
                               </span>
                               <span className="flex items-center gap-2">
                                 <span className="tabular font-semibold">
-                                  {formatEUR(Number(part.amount))}
+                                  {formatEUR(c.amounts.get(part.id) ?? 0)}
                                 </span>
                                 {part.status === "paid" ? (
                                   <span className="text-xs font-bold text-success">Pagada</span>
                                 ) : (
                                   <button
-                                    onClick={() => markPartPaid(part.id)}
-                                    className="rounded-md border border-border px-2 py-1 text-xs font-semibold"
+                                    onClick={() => markPartPaid(part.id, c.amounts.get(part.id) ?? 0)}
+                                    disabled={blocked}
+                                    className="rounded-md border border-border px-2 py-1 text-xs font-semibold disabled:opacity-40"
                                   >
                                     Cobrada
                                   </button>
@@ -347,8 +410,20 @@ function WaiterPage() {
                             </li>
                           ))}
                       </ul>
+                      {blocked && (
+                        <div className="mt-2 rounded-md bg-warning/15 p-2 text-xs">
+                          <p className="font-semibold">Sin asignar: {formatEUR(c.unassigned)} — pídeles que lo repartan</p>
+                          <button
+                            onClick={() => assignToWaiter(split, session!.id)}
+                            className="mt-1 rounded-md border border-border bg-card px-2 py-1 font-semibold"
+                          >
+                            Asignarlo yo
+                          </button>
+                        </div>
+                      )}
                     </div>
-                  )}
+                    );
+                  })()}
 
                   {lines.length > 0 && (
                     <button
