@@ -637,8 +637,7 @@ function GuestPage() {
               <ClientTicketButton sessionId={session!.sessionId} />
             )}
             <p className="text-xs text-muted-foreground">
-              ¿Algo está mal en la cuenta? Avisa al camarero: es quien puede corregir las comandas
-              ya enviadas.
+              {t("billHelp", lang)}
             </p>
           </div>
         )}
@@ -646,7 +645,7 @@ function GuestPage() {
         {tab === "ticket" && showPrices && (
           <LiveTicket
             sessionId={session!.sessionId}
-            barName="Ticket de mesa"
+            barName={t("ticketTitle", lang)}
             settings={settings}
             tableNumber={tableInfo?.number}
             nickname={session?.nickname}
@@ -660,7 +659,7 @@ function GuestPage() {
           <div className="mx-auto flex max-w-2xl items-center gap-3">
             <div className="flex-1">
               <p className="text-sm font-semibold">
-                {cart.reduce((n, l) => n + l.qty, 0)} artículos
+                {cart.reduce((n, l) => n + l.qty, 0)} {t("articlesWord", lang)}
               </p>
               {showPrices && (
                 <p className="tabular font-display text-lg font-extrabold">
@@ -673,7 +672,7 @@ function GuestPage() {
               onClick={() => setConfirming(true)}
               className="flex items-center gap-2 rounded-lg bg-primary px-5 py-3 font-semibold text-primary-foreground disabled:opacity-50"
             >
-              <UtensilsCrossed className="h-4 w-4" /> Enviar comanda
+              <UtensilsCrossed className="h-4 w-4" /> {t("sendOrder", lang)}
             </button>
           </div>
         </div>
@@ -682,7 +681,7 @@ function GuestPage() {
       <Dialog open={confirming} onOpenChange={setConfirming}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>¿Enviamos la comanda?</DialogTitle>
+            <DialogTitle>{t("confirmTitle", lang)}</DialogTitle>
           </DialogHeader>
           <ul className="space-y-1 text-sm">
             {cart.map((line) => {
@@ -811,7 +810,7 @@ function Centered({ children }: { children: React.ReactNode }) {
 }
 
 /** Quien espera mesa puede apuntarse sin salir de esta pantalla. */
-function OccupiedWaitlist({ barId, slug }: { barId: string; slug: string }) {
+function OccupiedWaitlist({ barId, slug, lang = "es" }: { barId: string; slug: string; lang?: Lang }) {
   const [name, setName] = useState("");
   const [people, setPeople] = useState(2);
   const [phone, setPhone] = useState("");
@@ -820,7 +819,7 @@ function OccupiedWaitlist({ barId, slug }: { barId: string; slug: string }) {
 
   async function joinList() {
     const clean = name.trim();
-    if (!clean) { toast.error("Escribe tu nombre"); return; }
+    if (!clean) { toast.error(t("joinNameError", lang)); return; }
     setBusy(true);
     const { error } = await supabase.rpc("join_waitlist", {
       _bar: barId,
@@ -829,16 +828,16 @@ function OccupiedWaitlist({ barId, slug }: { barId: string; slug: string }) {
       _people: people,
     });
     setBusy(false);
-    if (error) { toast.error("No hemos podido apuntarte. Avisa a alguien del bar."); return; }
+    if (error) { toast.error(t("joinFail", lang)); return; }
     setDone(true);
   }
 
   if (done) {
     return (
       <div className="rounded-xl border border-border bg-secondary p-3 text-sm">
-        <p className="font-semibold">Apuntados, {name.trim()}</p>
+        <p className="font-semibold">{t("joinedTitle", lang)}, {name.trim()}</p>
         <p className="text-muted-foreground">
-          Sois {people} {people === 1 ? "persona" : "personas"}. Os llaman cuando quede sitio.
+          {people} {people === 1 ? t("personOne", lang) : t("personMany", lang)}. {t("joinedHint", lang)}
         </p>
       </div>
     );
@@ -846,11 +845,11 @@ function OccupiedWaitlist({ barId, slug }: { barId: string; slug: string }) {
 
   return (
     <div className="rounded-xl border border-border p-3">
-      <p className="mb-2 text-sm font-semibold">¿Esperáis mesa? Apuntaos y os llaman</p>
+      <p className="mb-2 text-sm font-semibold">{t("waitlistAsk", lang)}</p>
       <div className="space-y-2">
-        <Input placeholder="Tu nombre" value={name} onChange={(e) => setName(e.target.value)} maxLength={40} />
+        <Input placeholder={t("yourName", lang)} value={name} onChange={(e) => setName(e.target.value)} maxLength={40} />
         <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Personas</span>
+          <span className="text-sm text-muted-foreground">{t("peopleWord", lang)}</span>
           <Input
             type="number"
             min={1}
@@ -860,13 +859,13 @@ function OccupiedWaitlist({ barId, slug }: { barId: string; slug: string }) {
             onChange={(e) => setPeople(Math.min(20, Math.max(1, Number(e.target.value) || 1)))}
           />
         </div>
-        <Input placeholder="Teléfono (opcional)" value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={20} />
+        <Input placeholder={t("phoneOptional", lang)} value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={20} />
         <Button className="w-full" variant="outline" disabled={busy} onClick={joinList}>
-          {busy ? "Apuntando…" : "Apuntarme a la lista"}
+          {busy ? t("joining", lang) : t("joinList", lang)}
         </Button>
         {slug && (
           <p className="text-xs text-muted-foreground">
-            ¿No tenéis QR? Compartid el enlace /apuntarse?bar={slug}
+            {t("noQr", lang)} /apuntarse?bar={slug}
           </p>
         )}
       </div>
@@ -875,8 +874,8 @@ function OccupiedWaitlist({ barId, slug }: { barId: string; slug: string }) {
 }
 
 /** Aviso de horario del bar: abierto, a punto de cerrar o cuándo abre. */
-function HoursBanner({ settings }: { settings: BarSettings }) {
-  const status = openStatus(parseHours(settings.hours), settings.timezone ?? "Europe/Madrid");
+function HoursBanner({ settings, lang = "es" }: { settings: BarSettings; lang?: Lang }) {
+  const status = openStatus(parseHours(settings.hours), settings.timezone ?? "Europe/Madrid", lang);
   return (
     <p
       className={`rounded-lg px-3 py-2 text-sm font-semibold ${
@@ -894,11 +893,13 @@ function SpecialCard({
   items,
   showPrices,
   image,
+  lang = "es",
 }: {
   settings: BarSettings;
   items: Item[];
   showPrices: boolean;
   image: (item: Item) => string | null;
+  lang?: Lang;
 }) {
   const item = settings.special_item_id ? items.find((i) => i.id === settings.special_item_id) : undefined;
   const text = settings.special_text?.trim() || item?.name || "";
@@ -908,7 +909,7 @@ function SpecialCard({
     <div className="flex items-center gap-3 rounded-xl border border-primary/40 bg-primary/5 p-3">
       {src && <img src={src} alt="" className="h-14 w-14 shrink-0 rounded-lg object-cover" />}
       <div className="min-w-0">
-        <p className="text-xs font-bold tracking-wide text-primary uppercase">Especial de hoy</p>
+        <p className="text-xs font-bold tracking-wide text-primary uppercase">{t("special", lang)}</p>
         <p className="font-semibold">{text}</p>
         {item && showPrices && <p className="text-sm text-muted-foreground">{formatEUR(Number(item.price))}</p>}
       </div>
@@ -916,7 +917,7 @@ function SpecialCard({
   );
 }
 
-function ClientTicketButton({ sessionId }: { sessionId: string }) {
+function ClientTicketButton({ sessionId, lang = "es" }: { sessionId: string; lang?: Lang }) {
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -924,7 +925,7 @@ function ClientTicketButton({ sessionId }: { sessionId: string }) {
         onClick={() => setOpen(true)}
         className="flex w-full items-center justify-center gap-1 rounded-lg border border-border py-3 font-semibold"
       >
-        <FileText className="h-4 w-4" /> Ticket o factura (PDF)
+        <FileText className="h-4 w-4" /> {t("ticketPdf", lang)}
       </button>
       {open && <InvoiceDialog sessionId={sessionId} staff={false} onClose={() => setOpen(false)} />}
     </>

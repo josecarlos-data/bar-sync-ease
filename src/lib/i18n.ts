@@ -101,6 +101,8 @@ const T: Record<string, Entry> = {
   preparing: { es: "En preparación", en: "Preparing", fr: "En préparation", de: "In Zubereitung", it: "In preparazione", pt: "Em preparação", ca: "En preparació" },
   orderOne: { es: "comanda", en: "order", fr: "commande", de: "Bestellung", it: "ordine", pt: "pedido", ca: "comanda" },
   orderMany: { es: "comandas", en: "orders", fr: "commandes", de: "Bestellungen", it: "ordini", pt: "pedidos", ca: "comandes" },
+  billHelp: { es: "¿Algo está mal en la cuenta? Avisa al camarero: es quien puede corregir las comandas ya enviadas.", en: "Something wrong with the bill? Ask a waiter: only they can correct orders already sent.", fr: "Un souci avec l'addition ? Prévenez le serveur : lui seul peut corriger les commandes envoyées.", de: "Stimmt etwas mit der Rechnung nicht? Bitten Sie den Service – nur er kann gesendete Bestellungen korrigieren.", it: "Qualcosa non va nel conto? Avvisa il cameriere: solo lui può correggere gli ordini già inviati.", pt: "Está tudo bem com a conta? Avise o empregado: só ele pode corrigir pedidos já enviados.", ca: "Alguna cosa no va bé amb el compte? Avisa el cambrer: només ell pot corregir les comandes enviades." },
+  ticketTitle: { es: "Ticket de mesa", en: "Table ticket", fr: "Ticket de la table", de: "Tischbon", it: "Scontrino del tavolo", pt: "Talão de mesa", ca: "Tiquet de taula" },
 };
 
 export function t(key: string, lang: Lang = "es"): string {
