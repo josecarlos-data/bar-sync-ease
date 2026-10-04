@@ -5,6 +5,7 @@ import { CreditCard, Minus, Plus, Split, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatEUR } from "@/lib/allergens";
 import { Input } from "@/components/ui/input";
+import { computeSplit } from "@/lib/split";
 
 export type SplitLine = { id: string; name: string; price: number; qty: number };
 
@@ -31,6 +32,7 @@ const WAITER_LABEL = "Pendiente con camarero";
 function round2(value: number) {
   return Math.round(value * 100) / 100;
 }
+void round2;
 
 export function SplitBill({
   sessionId,
@@ -361,7 +363,7 @@ export function SplitBill({
             ? `A partes iguales entre ${split.people}`
             : `Por consumo · ${parts.filter((p) => p.status !== "with_waiter").length} grupos`}
         </p>
-        {!requested && (
+        {!requested && !anyPaid && (
           <button
             onClick={async () => {
               await reset();
@@ -384,7 +386,7 @@ export function SplitBill({
               </span>
             </div>
 
-            {split.mode === "groups" && part.status !== "with_waiter" && !requested && (
+            {split.mode === "groups" && part.status === "pending" && (!requested || remainingAmount > 0.009) && (
               <ul className="mt-2 space-y-1">
                 {lines.map((line) => {
                   const assigned =
@@ -444,21 +446,47 @@ export function SplitBill({
         ))}
       </ul>
 
-      {split.mode === "groups" && !requested && remainingAmount > 0.009 && (
-        <div className="rounded-lg bg-secondary p-3">
-          <p className="text-sm font-semibold">
-            Sin asignar: {formatEUR(remainingAmount)}
-          </p>
+      {split.mode === "equal" && remainingAmount > 0.009 && (
+        <div className="rounded-lg border border-warning bg-warning/15 p-3">
+          <p className="text-sm font-semibold">Consumo nuevo: {formatEUR(remainingAmount)}</p>
           <p className="text-xs text-muted-foreground">
-            No se puede pedir la cuenta hasta repartir lo que queda.
+            Ya habéis pagado todas las partes. Añadidlo como parte nueva para que el camarero pueda cobrar.
           </p>
-          <div className="mt-2 flex gap-2">
+          <button disabled={busy} onClick={addLaterPart} className="mt-2 w-full rounded-lg border border-border bg-card py-2 text-xs font-semibold">
+            Añadir "Consumo posterior"
+          </button>
+        </div>
+      )}
+
+      {split.mode === "groups" && remainingAmount > 0.009 && (
+        <div className={requested ? "rounded-lg border border-warning bg-warning/15 p-3" : "rounded-lg bg-secondary p-3"}>
+          <p className="text-sm font-semibold">
+            {requested ? "Nuevo sin asignar" : "Sin asignar"}: {formatEUR(remainingAmount)}
+          </p>
+          <ul className="mt-1 text-xs text-muted-foreground">
+            {remainingLines.map((l) => (
+              <li key={l.id}>{l.left % 1 === 0 ? l.left : l.left.toFixed(2)} × {l.name}</li>
+            ))}
+          </ul>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {requested
+              ? "Habéis pedido algo nuevo: repartidlo para que el camarero pueda cobrar."
+              : "No se puede pedir la cuenta hasta repartir lo que queda."}
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button
+              disabled={busy}
+              onClick={addGroup}
+              className="flex-1 rounded-lg border border-border bg-card py-2 text-xs font-semibold"
+            >
+              Nuevo grupo
+            </button>
             <button
               disabled={busy}
               onClick={shareRemainder}
               className="flex-1 rounded-lg border border-border bg-card py-2 text-xs font-semibold"
             >
-              Repartir entre los grupos
+              Repartir entre pendientes
             </button>
             <button
               disabled={busy}
