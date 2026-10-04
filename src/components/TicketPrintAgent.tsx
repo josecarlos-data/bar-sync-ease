@@ -70,7 +70,7 @@ export async function sendToBarPrinter(barId: string, sessionId: string, userId?
   else toast.success("Enviado a la impresora de la barra");
 }
 
-export function PrintToBarButton({ barId, sessionId, userId, settings }: { barId: string; sessionId: string; userId?: string | null; settings?: BarSettings | null }) {
+export function PrintToBarButton({ barId, sessionId, userId, settings }: { barId: string; sessionId: string; userId?: string | null | undefined; settings?: BarSettings | null | undefined }) {
   if (!settings?.ticket_printer_enabled) return null;
   return (
     <Button size="sm" variant="outline" onClick={() => sendToBarPrinter(barId, sessionId, userId)}>
