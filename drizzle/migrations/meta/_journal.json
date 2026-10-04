@@ -64,6 +64,13 @@
       "when": 1791145824515,
       "tag": "0008_ask_nickname",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791146916236,
+      "tag": "0009_ticket_printer",
+      "breakpoints": true
     }
   ]
 }
