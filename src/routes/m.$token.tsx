@@ -634,7 +634,7 @@ function GuestPage() {
               </button>
             </div>
             {showPrices && billLines.length > 0 && liveStatus !== "rejected" && (
-              <ClientTicketButton sessionId={session!.sessionId} />
+              <ClientTicketButton sessionId={session!.sessionId} lang={lang} />
             )}
             <p className="text-xs text-muted-foreground">
               {t("billHelp", lang)}
