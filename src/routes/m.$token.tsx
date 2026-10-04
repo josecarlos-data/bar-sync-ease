@@ -16,6 +16,7 @@ import { SplitBill, type SplitLine } from "@/components/SplitBill";
 import { useItemImages, resolveImage } from "@/lib/images";
 import { allergenLabel, formatEUR } from "@/lib/allergens";
 import { openStatus, parseHours } from "@/lib/hours";
+import { detectLang, rememberLang, storedLang, t, type Lang } from "@/lib/i18n";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -68,6 +69,7 @@ function GuestPage() {
   const [message, setMessage] = useState("");
   const [tableInfo, setTableInfo] = useState<{ number: number; name: string | null } | null>(null);
   const [session, setSession] = useState<Joined | null>(null);
+  const [lang, setLang] = useState<Lang>("es");
   const [nickname, setNickname] = useState("");
   const [cart, setCart] = useState<CartLine[]>([]);
   const [tab, setTab] = useState<"carta" | "cuenta" | "ticket">("carta");
