@@ -15,11 +15,11 @@ export const joinTable = createServerFn({ method: "POST" })
 
     const { data: table } = await supabaseAdmin
       .from("tables")
-      .select("id, bar_id, number, name, active")
+      .select("id, bar_id, number, name, active, kind")
       .eq("qr_token", data.token)
       .maybeSingle();
 
-    if (!table || !table.active) {
+    if (!table || !table.active || table.kind !== "table") {
       return { error: "Este código QR no es válido." as const };
     }
 
@@ -235,4 +235,53 @@ export const openSessionForTable = createServerFn({ method: "POST" })
       .single();
     if (error || !created) throw new Error("No se pudo abrir la mesa");
     return { sessionId: created.id, barId: table.bar_id, role: roleList[0] };
+  });
+
+/** Abre una cuenta de barra (cliente de pie, sin mesa ni QR). */
+export const openCounterAccount = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { nickname?: string }) => data)
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: profile } = await supabase.from("profiles").select("bar_id").eq("id", userId).maybeSingle();
+    const barId = profile?.bar_id;
+    if (!barId) throw new Error("No autorizado");
+    const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", userId).eq("bar_id", barId);
+    const roleList = (roles ?? []).map((r) => r.role);
+    if (!roleList.length) throw new Error("No autorizado");
+    if (!roleList.includes("admin")) {
+      const { data: settings } = await supabase.from("bar_settings").select("waiter_can_order").eq("bar_id", barId).maybeSingle();
+      if (settings && !settings.waiter_can_order) throw new Error("El personal no puede añadir comandas en este bar");
+    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: counters } = await supabaseAdmin
+      .from("tables").select("id, number").eq("bar_id", barId).eq("kind", "counter").order("number");
+    const { data: busy } = await supabaseAdmin
+      .from("table_sessions").select("table_id").eq("bar_id", barId).in("status", ["pending", "open"]);
+    const busyIds = new Set((busy ?? []).map((b) => b.table_id));
+    let table = (counters ?? []).find((t) => !busyIds.has(t.id));
+    if (!table) {
+      const used = new Set((counters ?? []).map((t) => t.number));
+      let n = 901;
+      while (used.has(n)) n++;
+      const bytes = crypto.getRandomValues(new Uint8Array(24));
+      const token = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+      const { data: created, error } = await supabaseAdmin
+        .from("tables")
+        .insert({ bar_id: barId, number: n, name: "Barra", qr_token: token, active: true, kind: "counter" })
+        .select("id, number").single();
+      if (error || !created) throw new Error("No se pudo crear la cuenta");
+      table = created;
+    }
+    const now = new Date().toISOString();
+    const { data: session, error } = await supabaseAdmin
+      .from("table_sessions")
+      .insert({
+        bar_id: barId, table_id: table.id,
+        nickname: data.nickname?.trim() || `Barra ${table.number - 900}`,
+        status: "open", decided_by: userId, decided_at: now, decision: "approved",
+      })
+      .select("id").single();
+    if (error || !session) throw new Error("No se pudo abrir la cuenta");
+    return { sessionId: session.id, tableId: table.id, tableNumber: table.number };
   });

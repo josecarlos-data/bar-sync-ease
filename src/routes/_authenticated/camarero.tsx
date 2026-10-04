@@ -85,6 +85,7 @@ function WaiterPage() {
           .from("tables")
           .select("id, number, name, active")
           .eq("bar_id", barId!)
+          .eq("kind", "table")
           .order("number"),
         supabase
           .from("table_sessions")

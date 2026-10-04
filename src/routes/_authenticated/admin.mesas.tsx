@@ -39,6 +39,7 @@ function TablesPage() {
         .from("tables")
         .select("*")
         .eq("bar_id", barId!)
+        .eq("kind", "table")
         .order("number");
       return (data ?? []) as BarTable[];
     },

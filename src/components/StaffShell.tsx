@@ -9,6 +9,7 @@ import type { ReactNode } from "react";
 
 const NAV = [
   { to: "/camarero", label: "Mesas", roles: ["admin", "waiter", "bar", "kitchen"] },
+  { to: "/de-pie", label: "De pie", roles: ["admin", "waiter", "bar"] },
   { to: "/comandas", label: "Comandas", roles: ["admin", "waiter"] },
   { to: "/barra", label: "Barra", roles: ["admin", "waiter", "bar"] },
   { to: "/cocina", label: "Cocina", roles: ["admin", "waiter", "kitchen"] },
