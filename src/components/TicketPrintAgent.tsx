@@ -15,15 +15,21 @@ type Job = { id: string; session_id: string; invoice_id: string | null; kind: "p
 
 /** Builds and prints the customer ticket for a print job. */
 export async function printJob(job: Pick<Job, "session_id" | "invoice_id" | "kind">, barId: string, width: number) {
+  const { data: st } = await supabase
+    .from("bar_settings")
+    .select("legal_name, tax_id, address, phone, ticket_footer, bizum_enabled, bizum_phone, bizum_label")
+    .eq("bar_id", barId)
+    .single();
+  const bizum = st?.bizum_enabled && st.bizum_phone ? { phone: st.bizum_phone, label: st.bizum_label } : null;
+
   if (job.kind === "final" && job.invoice_id) {
     const { data } = await supabase.from("invoices").select("*").eq("id", job.invoice_id).single();
-    if (data) printHtml(invoiceHtml(data as unknown as InvoiceRow), width);
+    if (data) printHtml(invoiceHtml(data as unknown as InvoiceRow, bizum), width);
     return;
   }
-  const [{ data: s }, { data: bar }, { data: st }, { data: lines }] = await Promise.all([
+  const [{ data: s }, { data: bar }, { data: lines }] = await Promise.all([
     supabase.from("table_sessions").select("nickname, tables(number)").eq("id", job.session_id).single(),
     supabase.from("bars").select("name").eq("id", barId).single(),
-    supabase.from("bar_settings").select("legal_name, tax_id, address, phone, ticket_footer").eq("bar_id", barId).single(),
     supabase
       .from("order_items")
       .select("name_snapshot, price_snapshot, tax_rate_snapshot, qty, orders!inner(session_id)")
@@ -43,6 +49,7 @@ export async function printJob(job: Pick<Job, "session_id" | "invoice_id" | "kin
       },
       tableNumber: sess?.tables?.number ?? 0,
       nickname: sess?.nickname ?? null,
+      bizum,
       lines: (lines ?? []).map((l) => ({
         name: l.name_snapshot,
         price: Number(l.price_snapshot),

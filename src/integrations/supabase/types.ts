@@ -20,12 +20,20 @@ export type Database = {
           ask_nickname: boolean
           auto_close_hours: number
           bar_id: string
+          bizum_enabled: boolean
+          bizum_label: string
+          bizum_phone: string
           free_tapa_with_drink: boolean
+          hours: Json
+          hours_enabled: boolean
           kitchen_voice: string
           kitchen_voice_auto: boolean
           legal_name: string | null
+          menu_default_language: string
+          menu_languages: string[]
           menu_print: Json
           menu_sort: string
+          offline_mode: boolean
           order_voice_auto: string
           payments_enabled: boolean
           phone: string | null
@@ -34,32 +42,48 @@ export type Database = {
           printer_trigger: string
           printer_width: number
           public_base_url: string | null
+          purchase_list_enabled: boolean
           queue_sort: Database["public"]["Enums"]["queue_sort"]
           require_session_approval: boolean
           service_mode: string
           show_prices: boolean
+          show_sold_out_notice: boolean
+          special_enabled: boolean
+          special_item_id: string | null
+          special_text: string
           split_bar_kitchen: boolean
           stock_zero_action: string
+          tabs_enabled: boolean
           tax_id: string | null
           ticket_footer: string | null
           ticket_print_on_bill: boolean
           ticket_print_on_paid: boolean
           ticket_printer_enabled: boolean
           ticket_printer_width: number
+          timezone: string
           updated_at: string
           waiter_can_order: boolean
+          waitlist_enabled: boolean
         }
         Insert: {
           address?: string | null
           ask_nickname?: boolean
           auto_close_hours?: number
           bar_id: string
+          bizum_enabled?: boolean
+          bizum_label?: string
+          bizum_phone?: string
           free_tapa_with_drink?: boolean
+          hours?: Json
+          hours_enabled?: boolean
           kitchen_voice?: string
           kitchen_voice_auto?: boolean
           legal_name?: string | null
+          menu_default_language?: string
+          menu_languages?: string[]
           menu_print?: Json
           menu_sort?: string
+          offline_mode?: boolean
           order_voice_auto?: string
           payments_enabled?: boolean
           phone?: string | null
@@ -68,32 +92,48 @@ export type Database = {
           printer_trigger?: string
           printer_width?: number
           public_base_url?: string | null
+          purchase_list_enabled?: boolean
           queue_sort?: Database["public"]["Enums"]["queue_sort"]
           require_session_approval?: boolean
           service_mode?: string
           show_prices?: boolean
+          show_sold_out_notice?: boolean
+          special_enabled?: boolean
+          special_item_id?: string | null
+          special_text?: string
           split_bar_kitchen?: boolean
           stock_zero_action?: string
+          tabs_enabled?: boolean
           tax_id?: string | null
           ticket_footer?: string | null
           ticket_print_on_bill?: boolean
           ticket_print_on_paid?: boolean
           ticket_printer_enabled?: boolean
           ticket_printer_width?: number
+          timezone?: string
           updated_at?: string
           waiter_can_order?: boolean
+          waitlist_enabled?: boolean
         }
         Update: {
           address?: string | null
           ask_nickname?: boolean
           auto_close_hours?: number
           bar_id?: string
+          bizum_enabled?: boolean
+          bizum_label?: string
+          bizum_phone?: string
           free_tapa_with_drink?: boolean
+          hours?: Json
+          hours_enabled?: boolean
           kitchen_voice?: string
           kitchen_voice_auto?: boolean
           legal_name?: string | null
+          menu_default_language?: string
+          menu_languages?: string[]
           menu_print?: Json
           menu_sort?: string
+          offline_mode?: boolean
           order_voice_auto?: string
           payments_enabled?: boolean
           phone?: string | null
@@ -102,20 +142,28 @@ export type Database = {
           printer_trigger?: string
           printer_width?: number
           public_base_url?: string | null
+          purchase_list_enabled?: boolean
           queue_sort?: Database["public"]["Enums"]["queue_sort"]
           require_session_approval?: boolean
           service_mode?: string
           show_prices?: boolean
+          show_sold_out_notice?: boolean
+          special_enabled?: boolean
+          special_item_id?: string | null
+          special_text?: string
           split_bar_kitchen?: boolean
           stock_zero_action?: string
+          tabs_enabled?: boolean
           tax_id?: string | null
           ticket_footer?: string | null
           ticket_print_on_bill?: boolean
           ticket_print_on_paid?: boolean
           ticket_printer_enabled?: boolean
           ticket_printer_width?: number
+          timezone?: string
           updated_at?: string
           waiter_can_order?: boolean
+          waitlist_enabled?: boolean
         }
         Relationships: [
           {
@@ -123,6 +171,13 @@ export type Database = {
             columns: ["bar_id"]
             isOneToOne: true
             referencedRelation: "bars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bar_settings_special_item_id_fkey"
+            columns: ["special_item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
             referencedColumns: ["id"]
           },
         ]
@@ -205,6 +260,7 @@ export type Database = {
           id: string
           label: string
           paid_at: string | null
+          payment_method: string | null
           payment_ref: string | null
           position: number
           split_id: string
@@ -217,6 +273,7 @@ export type Database = {
           id?: string
           label: string
           paid_at?: string | null
+          payment_method?: string | null
           payment_ref?: string | null
           position?: number
           split_id: string
@@ -229,6 +286,7 @@ export type Database = {
           id?: string
           label?: string
           paid_at?: string | null
+          payment_method?: string | null
           payment_ref?: string | null
           position?: number
           split_id?: string
@@ -334,6 +392,210 @@ export type Database = {
           },
         ]
       }
+      category_translations: {
+        Row: {
+          bar_id: string
+          category_id: string
+          lang: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          bar_id: string
+          category_id: string
+          lang: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          bar_id?: string
+          category_id?: string
+          lang?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "category_translations_bar_id_fkey"
+            columns: ["bar_id"]
+            isOneToOne: false
+            referencedRelation: "bars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "category_translations_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_tab_invoices: {
+        Row: {
+          bar_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          number: number
+          series: string
+          snapshot: Json
+          tab_id: string
+          total: number
+        }
+        Insert: {
+          bar_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          number: number
+          series: string
+          snapshot: Json
+          tab_id: string
+          total: number
+        }
+        Update: {
+          bar_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          number?: number
+          series?: string
+          snapshot?: Json
+          tab_id?: string
+          total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_tab_invoices_bar_id_fkey"
+            columns: ["bar_id"]
+            isOneToOne: false
+            referencedRelation: "bars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_tab_invoices_tab_id_fkey"
+            columns: ["tab_id"]
+            isOneToOne: false
+            referencedRelation: "customer_tabs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_tab_lines: {
+        Row: {
+          bar_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          item_id: string | null
+          name_snapshot: string
+          note: string
+          price_snapshot: number
+          qty: number
+          tab_id: string
+          tax_rate_snapshot: number
+        }
+        Insert: {
+          bar_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          item_id?: string | null
+          name_snapshot: string
+          note?: string
+          price_snapshot: number
+          qty?: number
+          tab_id: string
+          tax_rate_snapshot?: number
+        }
+        Update: {
+          bar_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          item_id?: string | null
+          name_snapshot?: string
+          note?: string
+          price_snapshot?: number
+          qty?: number
+          tab_id?: string
+          tax_rate_snapshot?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_tab_lines_bar_id_fkey"
+            columns: ["bar_id"]
+            isOneToOne: false
+            referencedRelation: "bars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_tab_lines_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_tab_lines_tab_id_fkey"
+            columns: ["tab_id"]
+            isOneToOne: false
+            referencedRelation: "customer_tabs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_tabs: {
+        Row: {
+          bar_id: string
+          closed_at: string | null
+          closed_by: string | null
+          created_by: string | null
+          id: string
+          name: string
+          note: string
+          opened_at: string
+          paid_method: string
+          phone: string
+          status: string
+        }
+        Insert: {
+          bar_id: string
+          closed_at?: string | null
+          closed_by?: string | null
+          created_by?: string | null
+          id?: string
+          name: string
+          note?: string
+          opened_at?: string
+          paid_method?: string
+          phone?: string
+          status?: string
+        }
+        Update: {
+          bar_id?: string
+          closed_at?: string | null
+          closed_by?: string | null
+          created_by?: string | null
+          id?: string
+          name?: string
+          note?: string
+          opened_at?: string
+          paid_method?: string
+          phone?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_tabs_bar_id_fkey"
+            columns: ["bar_id"]
+            isOneToOne: false
+            referencedRelation: "bars"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoice_counters: {
         Row: {
           bar_id: string
@@ -432,6 +694,48 @@ export type Database = {
             columns: ["split_part_id"]
             isOneToOne: false
             referencedRelation: "bill_split_parts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      item_translations: {
+        Row: {
+          bar_id: string
+          description: string | null
+          item_id: string
+          lang: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          bar_id: string
+          description?: string | null
+          item_id: string
+          lang: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          bar_id?: string
+          description?: string | null
+          item_id?: string
+          lang?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "item_translations_bar_id_fkey"
+            columns: ["bar_id"]
+            isOneToOne: false
+            referencedRelation: "bars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_translations_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
             referencedColumns: ["id"]
           },
         ]
@@ -1127,6 +1431,56 @@ export type Database = {
           },
         ]
       }
+      waitlist_entries: {
+        Row: {
+          bar_id: string
+          called_at: string | null
+          created_at: string
+          created_by: string | null
+          handled_by: string | null
+          id: string
+          name: string
+          people: number
+          phone: string
+          seated_at: string | null
+          status: string
+        }
+        Insert: {
+          bar_id: string
+          called_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          handled_by?: string | null
+          id?: string
+          name: string
+          people?: number
+          phone?: string
+          seated_at?: string | null
+          status?: string
+        }
+        Update: {
+          bar_id?: string
+          called_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          handled_by?: string | null
+          id?: string
+          name?: string
+          people?: number
+          phone?: string
+          seated_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "waitlist_entries_bar_id_fkey"
+            columns: ["bar_id"]
+            isOneToOne: false
+            referencedRelation: "bars"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -1145,6 +1499,10 @@ export type Database = {
       can_view_bar: { Args: { _bar_id: string }; Returns: boolean }
       claim_print: { Args: { _order_id: string }; Returns: boolean }
       claim_print_job: { Args: { _id: string }; Returns: boolean }
+      close_customer_tab: {
+        Args: { _method?: string; _tab: string }
+        Returns: string
+      }
       decide_session: {
         Args: { _decision: string; _merge?: boolean; _session_id: string }
         Returns: Json
@@ -1172,6 +1530,10 @@ export type Database = {
         }
         Returns: string
       }
+      join_waitlist: {
+        Args: { _bar: string; _name: string; _people?: number; _phone?: string }
+        Returns: string
+      }
       menu_popularity: {
         Args: { _bar_id: string }
         Returns: {
@@ -1185,6 +1547,7 @@ export type Database = {
         Args: { _action: string; _pool: string; _qty?: number }
         Returns: undefined
       }
+      waitlist_bar_by_slug: { Args: { _slug: string }; Returns: Json }
     }
     Enums: {
       allergen:

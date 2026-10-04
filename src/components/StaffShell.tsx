@@ -3,13 +3,16 @@ import { useQueryClient } from "@tanstack/react-query";
 import { LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ConnectionBadge } from "@/components/ConnectionBadge";
-import { useStaff } from "@/hooks/useStaff";
+import { useStaff, useBarSettings } from "@/hooks/useStaff";
 import { StockAlert } from "@/components/StockAlert";
+import type { BarSettings } from "@/lib/types";
 import type { ReactNode } from "react";
 
 const NAV = [
   { to: "/camarero", label: "Mesas", roles: ["admin", "waiter", "bar", "kitchen"] },
   { to: "/de-pie", label: "De pie", roles: ["admin", "waiter", "bar"] },
+  { to: "/fiado", label: "Fiado", roles: ["admin", "waiter", "bar"], flag: "tabs_enabled" },
+  { to: "/espera", label: "Espera", roles: ["admin", "waiter", "bar"], flag: "waitlist_enabled" },
   { to: "/comandas", label: "Comandas", roles: ["admin", "waiter"] },
   { to: "/barra", label: "Barra", roles: ["admin", "waiter", "bar"] },
   { to: "/cocina", label: "Cocina", roles: ["admin", "waiter", "kitchen"] },
@@ -21,13 +24,24 @@ const NAV = [
   { to: "/admin/personal", label: "Personal", roles: ["admin"] },
 ] as const;
 
+/** Las funciones opcionales solo aparecen en el menú si están encendidas. */
+function enabledFor(item: { flag?: string }, settings: BarSettings | null | undefined) {
+  if (!item.flag) return true;
+  return (settings as Record<string, unknown> | null | undefined)?.[item.flag] === true;
+}
+
 export function StaffShell({ title, children }: { title: string; children: ReactNode }) {
   const { data: staff } = useStaff();
+  const { data: settings } = useBarSettings(staff?.barId);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const roles = staff?.roles ?? [];
-  const visible = NAV.filter((n) => n.roles.some((r) => roles.includes(r)));
+  const visible = NAV.filter((n) => {
+    if (!n.roles.some((r) => roles.includes(r))) return false;
+    if (!("flag" in n)) return true;
+    return (settings as Record<string, unknown> | null | undefined)?.[n.flag] === true;
+  });
 
   async function signOut() {
     await queryClient.cancelQueries();

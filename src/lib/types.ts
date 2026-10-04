@@ -37,6 +37,22 @@ export type BarSettings = {
   public_base_url?: string | null;
   menu_print?: import("@/integrations/supabase/types").Json;
   menu_sort?: "alpha" | "popular" | "manual";
+  tabs_enabled?: boolean;
+  bizum_enabled?: boolean;
+  bizum_phone?: string;
+  bizum_label?: string;
+  offline_mode?: boolean;
+  waitlist_enabled?: boolean;
+  hours_enabled?: boolean;
+  hours?: import("@/integrations/supabase/types").Json;
+  timezone?: string;
+  special_enabled?: boolean;
+  special_text?: string;
+  special_item_id?: string | null;
+  show_sold_out_notice?: boolean;
+  purchase_list_enabled?: boolean;
+  menu_languages?: string[];
+  menu_default_language?: string;
 };
 
 export type Item = {

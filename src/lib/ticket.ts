@@ -51,6 +51,9 @@ export function kitchenTicketHtml(t: KitchenTicket) {
       .join("")}</table><hr>`;
 }
 
+/** Número de Bizum del bar, para imprimirlo junto al importe a pagar. */
+export type BizumInfo = { phone: string; label?: string | null } | null | undefined;
+
 export type InvoiceRow = {
   id: string;
   series: string;
@@ -74,7 +77,7 @@ export type InvoiceRow = {
 export const invoiceCode = (i: Pick<InvoiceRow, "series" | "number">) =>
   `${i.series}-${String(i.number).padStart(5, "0")}`;
 
-export function invoiceHtml(i: InvoiceRow) {
+export function invoiceHtml(i: InvoiceRow, bizum?: BizumInfo) {
   const s = i.snapshot;
   const date = new Date(i.created_at).toLocaleString("es-ES");
   return `<div class="c"><h2>${esc(s.bar.legal_name || s.bar.name)}</h2>
@@ -92,10 +95,11 @@ export function invoiceHtml(i: InvoiceRow) {
       .map((b) => `<tr><td>${b.rate}%</td><td class="r">${formatEUR(b.base)}</td><td class="r">${formatEUR(b.tax)}</td></tr>`)
       .join("")}</table><hr>
     <table><tr><td class="big">TOTAL</td><td class="r big">${formatEUR(i.total)}</td></tr></table>
+    ${bizum?.phone ? `<hr><div class="b">Paga con Bizum: ${esc(bizum.phone)}</div>${bizum.label ? `<div>${esc(bizum.label)}</div>` : ""}<div>Importe: ${formatEUR(i.total)}</div>` : ""}
     <div class="c" style="margin-top:6px">${esc(s.bar.footer || "¡Gracias por su visita!")}</div>`;
 }
 
-export async function downloadInvoicePdf(i: InvoiceRow) {
+export async function downloadInvoicePdf(i: InvoiceRow, bizum?: BizumInfo) {
   const { jsPDF } = await import("jspdf");
   const s = i.snapshot;
   const pdf = new jsPDF({ unit: "mm", format: "a5" });
@@ -129,6 +133,12 @@ export async function downloadInvoicePdf(i: InvoiceRow) {
   for (const b of s.breakdown) line(`IVA ${b.rate}%  Base ${formatEUR(b.base)}`, { right: `Cuota ${formatEUR(b.tax)}` });
   y += 2; rule();
   line("TOTAL", { bold: true, size: 14, right: formatEUR(i.total) });
+  if (bizum?.phone) {
+    y += 2; rule();
+    line(`Paga con Bizum: ${bizum.phone}`, { bold: true });
+    if (bizum.label) line(bizum.label);
+    line(`Importe: ${formatEUR(i.total)}`);
+  }
   y += 4;
   line(s.bar.footer || "¡Gracias por su visita!");
   pdf.save(`ticket-${invoiceCode(i)}.pdf`);
@@ -139,6 +149,7 @@ export type ProvisionalTicket = {
   tableNumber: number;
   nickname: string | null;
   lines: { name: string; price: number; taxRate: number; qty: number }[];
+  bizum?: BizumInfo;
 };
 
 /** Customer bill before payment (not an invoice), with VAT breakdown. */
@@ -175,5 +186,6 @@ export function provisionalTicketHtml(t: ProvisionalTicket) {
       .map((x) => `<tr><td>${x.rate}%</td><td class="r">${formatEUR(x.base)}</td><td class="r">${formatEUR(x.tax)}</td></tr>`)
       .join("")}</table><hr>
     <table><tr><td class="big">TOTAL</td><td class="r big">${formatEUR(r2(total))}</td></tr></table>
+    ${t.bizum?.phone ? `<hr><div class="b">Paga con Bizum: ${esc(t.bizum.phone)}</div>${t.bizum.label ? `<div>${esc(t.bizum.label)}</div>` : ""}<div>Importe: ${formatEUR(r2(total))}</div>` : ""}
     <div class="c note" style="margin-top:6px">Ticket provisional — no válido como factura</div>`;
 }

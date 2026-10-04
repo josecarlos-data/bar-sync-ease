@@ -59,6 +59,7 @@ type SplitRow = {
     position: number;
     amount: number;
     status: "pending" | "paid" | "with_waiter";
+    payment_method?: string | null;
     bill_split_assignments: { id: string; order_item_id: string; qty: number }[];
   }[];
 };
@@ -75,6 +76,7 @@ function WaiterPage() {
   const [detailFor, setDetailFor] = useState<{ sessionId: string; tableNumber: number; nickname: string | null } | null>(null);
   const [instructionFor, setInstructionFor] = useState<{ sessionId: string; tableNumber: number } | null>(null);
   const [ticketFor, setTicketFor] = useState<string | null>(null);
+  const [payMethod, setPayMethod] = useState("efectivo");
 
   useRealtime("waiter", ["order_items", "orders", "table_sessions", "service_calls", "bill_splits", "bill_split_parts", "bill_split_assignments"], !!barId);
 
@@ -219,10 +221,10 @@ function WaiterPage() {
     queryClient.invalidateQueries();
   }
 
-  async function markPartPaid(partId: string, amount: number) {
+  async function markPartPaid(partId: string, amount: number, method = "efectivo") {
     const { data: part, error } = await supabase
       .from("bill_split_parts")
-      .update({ status: "paid", paid_at: new Date().toISOString(), amount })
+      .update({ status: "paid", paid_at: new Date().toISOString(), amount, payment_method: method })
       .eq("id", partId)
       .select("split_id")
       .single();
@@ -459,6 +461,20 @@ function WaiterPage() {
                           : "Cuenta dividida por consumo"}
                         {split.status === "requested" && " · solicitada"}
                       </p>
+                      <div className="mt-1 flex items-center gap-1 text-xs">
+                        <span className="text-muted-foreground">Cobrar en:</span>
+                        {(["efectivo", "tarjeta", ...(settings?.bizum_enabled ? ["bizum"] : [])] as const).map((m) => (
+                          <button
+                            key={m}
+                            onClick={() => setPayMethod(m)}
+                            className={`rounded-full px-2 py-0.5 font-semibold capitalize ${
+                              payMethod === m ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground"
+                            }`}
+                          >
+                            {m === "bizum" ? "Bizum" : m === "tarjeta" ? "Tarjeta" : "Efectivo"}
+                          </button>
+                        ))}
+                      </div>
                       <ul className="mt-2 space-y-1">
                         {[...split.bill_split_parts]
                           .sort((a, b) => a.position - b.position)
@@ -480,10 +496,12 @@ function WaiterPage() {
                                   {formatEUR(c.amounts.get(part.id) ?? 0)}
                                 </span>
                                 {part.status === "paid" ? (
-                                  <span className="text-xs font-bold text-success">Pagada</span>
+                                  <span className="text-xs font-bold text-success">
+                                    Pagada{part.payment_method ? ` · ${part.payment_method}` : ""}
+                                  </span>
                                 ) : (
                                   <button
-                                    onClick={() => markPartPaid(part.id, c.amounts.get(part.id) ?? 0)}
+                                    onClick={() => markPartPaid(part.id, c.amounts.get(part.id) ?? 0, payMethod)}
                                     disabled={blocked}
                                     className="rounded-md border border-border px-2 py-1 text-xs font-semibold disabled:opacity-40"
                                   >

@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import type { BarSettings } from "@/lib/types";
 import { BusinessDataCard } from "@/components/BusinessDataCard";
+import { FeatureSwitchesCard } from "@/components/FeatureSwitchesCard";
 
 export const Route = createFileRoute("/_authenticated/admin/ajustes")({
   head: () => ({
@@ -360,6 +361,8 @@ function SettingsPage() {
               className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2"
             />
           </div>
+
+          <FeatureSwitchesCard settings={settings} onSave={update} />
 
           <BusinessDataCard settings={settings} onSave={update} />
         </div>

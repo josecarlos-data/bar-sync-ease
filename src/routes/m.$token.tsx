@@ -15,6 +15,8 @@ import { ConnectionBadge } from "@/components/ConnectionBadge";
 import { SplitBill, type SplitLine } from "@/components/SplitBill";
 import { useItemImages, resolveImage } from "@/lib/images";
 import { allergenLabel, formatEUR } from "@/lib/allergens";
+import { openStatus, parseHours } from "@/lib/hours";
+import { detectLang, rememberLang, storedLang, t, type Lang } from "@/lib/i18n";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -56,10 +58,18 @@ function GuestPage() {
   const queryClient = useQueryClient();
 
   const [phase, setPhase] = useState<"loading" | "nickname" | "ready" | "error" | "occupied" | "notice">("loading");
-  const [occupied, setOccupied] = useState<{ nickname: string | null; openedAt: string | null; orderCount: number } | null>(null);
+  const [occupied, setOccupied] = useState<{
+    nickname: string | null;
+    openedAt: string | null;
+    orderCount: number;
+    barId: string;
+    slug: string;
+    waitlistEnabled: boolean;
+  } | null>(null);
   const [message, setMessage] = useState("");
   const [tableInfo, setTableInfo] = useState<{ number: number; name: string | null } | null>(null);
   const [session, setSession] = useState<Joined | null>(null);
+  const [lang, setLang] = useState<Lang>("es");
   const [nickname, setNickname] = useState("");
   const [cart, setCart] = useState<CartLine[]>([]);
   const [tab, setTab] = useState<"carta" | "cuenta" | "ticket">("carta");
@@ -82,7 +92,17 @@ function GuestPage() {
         | Joined
         | { error: string }
         | { needsNickname: true; table: { number: number; name: string | null } }
-        | { alreadyOpen: { nickname: string | null; openedAt: string | null; orderCount: number }; table: { number: number; name: string | null } };
+        | {
+            alreadyOpen: {
+              nickname: string | null;
+              openedAt: string | null;
+              orderCount: number;
+              barId: string;
+              slug: string;
+              waitlistEnabled: boolean;
+            };
+            table: { number: number; name: string | null };
+          };
 
       if ("error" in result) {
         setMessage(result.error);
@@ -133,6 +153,35 @@ function GuestPage() {
       };
     },
   });
+
+  const { data: tr } = useQuery({
+    queryKey: ["guest-translations", session?.barId, lang],
+    enabled: !!session && lang !== "es",
+    queryFn: async () => {
+      const [it, ct] = await Promise.all([
+        supabase
+          .from("item_translations")
+          .select("item_id, name, description")
+          .eq("bar_id", session!.barId)
+          .eq("lang", lang),
+        supabase
+          .from("category_translations")
+          .select("category_id, name")
+          .eq("bar_id", session!.barId)
+          .eq("lang", lang),
+      ]);
+      return { items: it.data ?? [], cats: ct.data ?? [] };
+    },
+  });
+
+  useEffect(() => {
+    const avail = (menu?.settings?.menu_languages ?? ["es"]) as string[];
+    if (avail.length < 2) {
+      setLang("es");
+      return;
+    }
+    setLang(storedLang(avail) ?? detectLang(avail));
+  }, [menu?.settings?.menu_languages]);
 
   const { data: liveStatus } = useQuery({
     queryKey: ["guest-session-status", session?.sessionId],
@@ -193,11 +242,25 @@ function GuestPage() {
     const fresh = readyIds.filter((id) => !readySeen.current.has(id));
     if (fresh.length > 0) {
       fresh.forEach((id) => readySeen.current.add(id));
-      toast.success("¡Tu pedido está listo!");
+      toast.success(t("readyToast", lang));
     }
   }, [bill]);
 
   const items = menu?.items ?? [];
+  const shownItems = useMemo(() => {
+    if (lang === "es" || !tr) return items;
+    return items.map((i) => {
+      const x = tr.items.find((v) => v.item_id === i.id);
+      return x ? { ...i, name: x.name, description: x.description ?? i.description } : i;
+    });
+  }, [items, tr, lang]);
+  const shownCategories = useMemo(() => {
+    if (lang === "es" || !tr) return menu?.categories ?? [];
+    return (menu?.categories ?? []).map((c) => {
+      const x = tr.cats.find((v) => v.category_id === c.id);
+      return x ? { ...c, name: x.name } : c;
+    });
+  }, [menu, tr, lang]);
   const settings = menu?.settings;
   const showPrices = settings?.show_prices ?? true;
   const { data: imageMap } = useItemImages(items.map((i) => i.image_url));
@@ -315,24 +378,25 @@ function GuestPage() {
             Mesa {tableInfo?.number}
             {occupied.nickname ? ` · abierta por "${occupied.nickname}"` : ""}
             {occupied.openedAt
-              ? ` a las ${new Date(occupied.openedAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}`
+              ? ` ${t("at", lang)} ${new Date(occupied.openedAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}`
               : ""}
-            {` · ${occupied.orderCount} comanda${occupied.orderCount === 1 ? "" : "s"}`}
+            {` · ${occupied.orderCount} ${occupied.orderCount === 1 ? t("orderOne", lang) : t("orderMany", lang)}`}
           </p>
           <Button className="w-full" onClick={() => { setPhase("loading"); attempt(undefined, true); }}>
-            Somos del mismo grupo, unirme
+            {t("sameGroup", lang)}
           </Button>
           <Button
             variant="outline"
             className="w-full"
             onClick={async () => {
               await report({ data: { token } }).catch(() => {});
-              setMessage("Mesa abierta. Avisa al camarero. Ya le hemos enviado un aviso.");
+              setMessage(t("tableOpenNotice", lang));
               setPhase("notice");
             }}
           >
-            No, somos otros clientes
+            {t("otherClients", lang)}
           </Button>
+          {occupied.waitlistEnabled && <OccupiedWaitlist barId={occupied.barId} slug={occupied.slug} lang={lang} />}
         </div>
       </Centered>
     );
@@ -347,14 +411,13 @@ function GuestPage() {
       <Centered>
         <div className="w-full max-w-sm space-y-4 text-left">
           <h1 className="font-display text-2xl font-extrabold">
-            Mesa {tableInfo?.number} · ¡Bienvenidos!
+            {t("tableWord", lang)} {tableInfo?.number} · {t("welcome", lang)}
           </h1>
           <p className="text-sm text-muted-foreground">
-            Si queréis, poned un nombre para que el camarero os identifique. Si
-            no, entraréis como «Mesa {tableInfo?.number}».
+            {t("nicknameAsk", lang)} {t("orAs", lang)} «{t("tableWord", lang)} {tableInfo?.number}».
           </p>
           <Input
-            placeholder={`Mesa ${tableInfo?.number ?? ""} - Ayuntamiento`}
+            placeholder={`${t("tableWord", lang)} ${tableInfo?.number ?? ""}`}
             value={nickname}
             onChange={(e) => setNickname(e.target.value)}
             onKeyDown={(e) => {
@@ -368,7 +431,7 @@ function GuestPage() {
             }
             className="w-full rounded-lg bg-primary py-3 font-semibold text-primary-foreground"
           >
-            Entrar
+            {t("enterWord", lang)}
           </button>
         </div>
       </Centered>
@@ -384,10 +447,8 @@ function GuestPage() {
     return (
       <Centered>
         <div className="max-w-sm space-y-2">
-          <h1 className="font-display text-2xl font-extrabold">Mesa no aceptada</h1>
-          <p className="text-muted-foreground">
-            Esta mesa no ha sido aceptada. Avisa al camarero.
-          </p>
+          <h1 className="font-display text-2xl font-extrabold">{t("rejectedTitle", lang)}</h1>
+          <p className="text-muted-foreground">{t("rejectedText", lang)}</p>
         </div>
       </Centered>
     );
@@ -399,7 +460,7 @@ function GuestPage() {
         <div className="flex items-center justify-between gap-2">
           <div className="min-w-0">
             <h1 className="font-display truncate text-lg font-extrabold">
-              Mesa {tableInfo?.number}
+              {t("tableWord", lang)} {tableInfo?.number}
             </h1>
             <p className="truncate text-xs text-muted-foreground">{displayNickname(session?.nickname, tableInfo?.number)}</p>
           </div>
@@ -408,9 +469,9 @@ function GuestPage() {
         <div className="mt-2 flex gap-1">
           {(
             [
-              ["carta", "Carta"],
-              ["cuenta", "Cuenta"],
-              ...(showPrices ? ([["ticket", "Ticket"]] as const) : []),
+              ["carta", t("tabCarta", lang)],
+              ["cuenta", t("tabBill", lang)],
+              ...(showPrices ? ([["ticket", t("tabTicket", lang)]] as const) : []),
             ] as const
           ).map(([value, label]) => (
             <button
@@ -424,50 +485,88 @@ function GuestPage() {
             </button>
           ))}
         </div>
+        {(menu?.settings?.menu_languages ?? ["es"]).length > 1 && (
+          <div className="mt-2 flex flex-wrap gap-1">
+            {(menu?.settings?.menu_languages ?? ["es"]).map((code) => (
+              <button
+                key={code}
+                onClick={() => {
+                  const next = code as Lang;
+                  setLang(next);
+                  rememberLang(next);
+                }}
+                className={`rounded-full border px-2 py-0.5 text-[11px] font-bold uppercase ${
+                  lang === code
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border text-muted-foreground"
+                }`}
+              >
+                {code}
+              </button>
+            ))}
+          </div>
+        )}
       </header>
 
       {awaiting && (
         <p className="m-4 rounded-lg bg-warning px-4 py-3 text-sm font-semibold text-warning-foreground">
-          Podéis pedir ya. Vuestras comandas quedan pendientes de confirmar: llegarán a barra y
-          cocina en cuanto el camarero acepte la mesa.
+          {t("awaiting", lang)}
         </p>
       )}
 
       <main className="mx-auto w-full max-w-2xl px-4 py-4">
         {tab === "carta" && (
-          <MenuBrowser
-            categories={menu?.categories ?? []}
-            sort={menu?.settings?.menu_sort ?? "alpha"}
-            items={items}
-            cart={cart}
-            showPrices={showPrices}
-            favKey={`comandas:favs:${session?.sessionId ?? ""}`}
-            images={(item) => resolveImage(item.image_url, imageMap)}
-            stickyTop="top-[105px]"
-            onQty={changeQty}
-            onNote={(itemId, note) => setCart((prev) => prev.map((l) => (l.itemId === itemId ? { ...l, note } : l)))}
-          />
+          <div className="space-y-4">
+            {menu?.settings && (
+              <>
+                {menu.settings.hours_enabled && <HoursBanner settings={menu.settings} lang={lang} />}
+                {menu.settings.special_enabled && (
+                  <SpecialCard
+                    settings={menu.settings}
+                    items={shownItems}
+                    lang={lang}
+                    showPrices={showPrices}
+                    image={(item) => resolveImage(item.image_url, imageMap)}
+                  />
+                )}
+              </>
+            )}
+            <MenuBrowser
+              categories={shownCategories}
+              sort={menu?.settings?.menu_sort ?? "alpha"}
+              items={shownItems}
+              lang={lang}
+              cart={cart}
+              showPrices={showPrices}
+              favKey={`comandas:favs:${session?.sessionId ?? ""}`}
+              images={(item) => resolveImage(item.image_url, imageMap)}
+              stickyTop="top-[105px]"
+              showSoldOut={menu?.settings?.show_sold_out_notice !== false}
+              onQty={changeQty}
+              onNote={(itemId, note) => setCart((prev) => prev.map((l) => (l.itemId === itemId ? { ...l, note } : l)))}
+            />
+          </div>
         )}
 
         {tab === "cuenta" && (
           <div className="space-y-4">
             {(bill ?? []).length === 0 && (
-              <p className="text-sm text-muted-foreground">Todavía no habéis pedido nada.</p>
+              <p className="text-sm text-muted-foreground">{t("emptyBill", lang)}</p>
             )}
             {(bill ?? []).map((order, index) => (
               <article key={order.id} className="rounded-xl border border-border bg-card p-4">
                 <p className="mb-2 text-sm font-bold text-muted-foreground">
                   {awaiting && (
                     <span className="mb-1 block w-fit rounded-full bg-warning px-2 py-0.5 text-xs font-bold text-warning-foreground">
-                      Pendiente de confirmar
+                      {t("pendingConfirm", lang)}
                     </span>
                   )}
-                  Comanda {index + 1} ·{" "}
+                  {t("orderWord", lang)} {index + 1} ·{" "}
                   {new Date(order.created_at).toLocaleTimeString("es-ES", {
                     hour: "2-digit",
                     minute: "2-digit",
                   })}
-                  {order.created_by_role !== "client" && " · Añadida por el camarero"}
+                  {order.created_by_role !== "client" && ` · ${t("addedBy", lang)}`}
                 </p>
                 <ul className="space-y-1">
                   {order.order_items
@@ -477,7 +576,7 @@ function GuestPage() {
                         <span>
                           {line.qty} × {line.name_snapshot}
                           {line.status === "preparing" && (
-                            <span className="ml-2 text-xs font-bold text-warning-foreground">En preparación</span>
+                            <span className="ml-2 text-xs font-bold text-warning-foreground">{t("preparing", lang)}</span>
                           )}
                           {line.status === "ready" && (
                             <span className="ml-2 text-xs font-bold text-success">Listo</span>
@@ -535,11 +634,10 @@ function GuestPage() {
               </button>
             </div>
             {showPrices && billLines.length > 0 && liveStatus !== "rejected" && (
-              <ClientTicketButton sessionId={session!.sessionId} />
+              <ClientTicketButton sessionId={session!.sessionId} lang={lang} />
             )}
             <p className="text-xs text-muted-foreground">
-              ¿Algo está mal en la cuenta? Avisa al camarero: es quien puede corregir las comandas
-              ya enviadas.
+              {t("billHelp", lang)}
             </p>
           </div>
         )}
@@ -547,7 +645,7 @@ function GuestPage() {
         {tab === "ticket" && showPrices && (
           <LiveTicket
             sessionId={session!.sessionId}
-            barName="Ticket de mesa"
+            barName={t("ticketTitle", lang)}
             settings={settings}
             tableNumber={tableInfo?.number}
             nickname={session?.nickname}
@@ -561,7 +659,7 @@ function GuestPage() {
           <div className="mx-auto flex max-w-2xl items-center gap-3">
             <div className="flex-1">
               <p className="text-sm font-semibold">
-                {cart.reduce((n, l) => n + l.qty, 0)} artículos
+                {cart.reduce((n, l) => n + l.qty, 0)} {t("articlesWord", lang)}
               </p>
               {showPrices && (
                 <p className="tabular font-display text-lg font-extrabold">
@@ -574,7 +672,7 @@ function GuestPage() {
               onClick={() => setConfirming(true)}
               className="flex items-center gap-2 rounded-lg bg-primary px-5 py-3 font-semibold text-primary-foreground disabled:opacity-50"
             >
-              <UtensilsCrossed className="h-4 w-4" /> Enviar comanda
+              <UtensilsCrossed className="h-4 w-4" /> {t("sendOrder", lang)}
             </button>
           </div>
         </div>
@@ -583,7 +681,7 @@ function GuestPage() {
       <Dialog open={confirming} onOpenChange={setConfirming}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>¿Enviamos la comanda?</DialogTitle>
+            <DialogTitle>{t("confirmTitle", lang)}</DialogTitle>
           </DialogHeader>
           <ul className="space-y-1 text-sm">
             {cart.map((line) => {
@@ -613,93 +711,19 @@ function GuestPage() {
               }}
               className="rounded-lg border border-border px-4 py-3 font-semibold"
             >
-              Eliminar comanda
+              {t("clearOrder", lang)}
             </button>
             <button
               onClick={sendOrder}
               disabled={sending}
               className="flex-1 rounded-lg bg-primary px-4 py-3 font-semibold text-primary-foreground disabled:opacity-60"
             >
-              {sending ? "Enviando…" : "Confirmar y enviar"}
+              {sending ? t("sendingWord", lang) : t("confirmSend", lang)}
             </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
-  );
-}
-
-function ItemRow({
-  item,
-  image,
-  showPrices,
-  qty,
-  note,
-  onQty,
-  onNote,
-}: {
-  item: Item;
-  image: string | null;
-  showPrices: boolean;
-  qty: number;
-  note: string;
-  onQty: (delta: number) => void;
-  onNote: (note: string) => void;
-}) {
-  return (
-    <article className="rounded-xl border border-border bg-card p-3">
-      <div className="flex gap-3">
-        {image && (
-          <img
-            src={image}
-            alt={item.name}
-            loading="lazy"
-            className="h-16 w-16 shrink-0 rounded-lg object-cover"
-          />
-        )}
-        <div className="min-w-0 flex-1">
-          <p className="font-semibold">{item.name}</p>
-          {item.description && (
-            <p className="text-sm text-muted-foreground">{item.description}</p>
-          )}
-          {item.allergens.length > 0 && (
-            <p className="mt-1 text-xs text-muted-foreground">
-              Alérgenos: {item.allergens.map(allergenLabel).join(", ")}
-            </p>
-          )}
-          {showPrices && (
-            <p className="tabular mt-1 font-semibold">{formatEUR(Number(item.price))}</p>
-          )}
-        </div>
-        <div className="flex items-center gap-2 self-center">
-          {qty > 0 && (
-            <button
-              onClick={() => onQty(-1)}
-              aria-label={`Quitar uno de ${item.name}`}
-              className="rounded-md border border-border p-2"
-            >
-              <Minus className="h-4 w-4" />
-            </button>
-          )}
-          {qty > 0 && <span className="tabular w-4 text-center font-bold">{qty}</span>}
-          <button
-            onClick={() => onQty(1)}
-            aria-label={`Añadir ${item.name}`}
-            className="rounded-md bg-primary p-2 text-primary-foreground"
-          >
-            <Plus className="h-4 w-4" />
-          </button>
-        </div>
-      </div>
-      {qty > 0 && (
-        <Input
-          className="mt-2"
-          placeholder="Nota: sin cebolla, poco hecho…"
-          value={note}
-          onChange={(e) => onNote(e.target.value)}
-        />
-      )}
-    </article>
   );
 }
 
@@ -711,7 +735,115 @@ function Centered({ children }: { children: React.ReactNode }) {
   );
 }
 
-function ClientTicketButton({ sessionId }: { sessionId: string }) {
+/** Quien espera mesa puede apuntarse sin salir de esta pantalla. */
+function OccupiedWaitlist({ barId, slug, lang = "es" }: { barId: string; slug: string; lang?: Lang }) {
+  const [name, setName] = useState("");
+  const [people, setPeople] = useState(2);
+  const [phone, setPhone] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
+
+  async function joinList() {
+    const clean = name.trim();
+    if (!clean) { toast.error(t("joinNameError", lang)); return; }
+    setBusy(true);
+    const { error } = await supabase.rpc("join_waitlist", {
+      _bar: barId,
+      _name: clean,
+      _phone: phone.trim(),
+      _people: people,
+    });
+    setBusy(false);
+    if (error) { toast.error(t("joinFail", lang)); return; }
+    setDone(true);
+  }
+
+  if (done) {
+    return (
+      <div className="rounded-xl border border-border bg-secondary p-3 text-sm">
+        <p className="font-semibold">{t("joinedTitle", lang)}, {name.trim()}</p>
+        <p className="text-muted-foreground">
+          {people} {people === 1 ? t("personOne", lang) : t("personMany", lang)}. {t("joinedHint", lang)}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-xl border border-border p-3">
+      <p className="mb-2 text-sm font-semibold">{t("waitlistAsk", lang)}</p>
+      <div className="space-y-2">
+        <Input placeholder={t("yourName", lang)} value={name} onChange={(e) => setName(e.target.value)} maxLength={40} />
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">{t("peopleWord", lang)}</span>
+          <Input
+            type="number"
+            min={1}
+            max={20}
+            className="w-20"
+            value={people}
+            onChange={(e) => setPeople(Math.min(20, Math.max(1, Number(e.target.value) || 1)))}
+          />
+        </div>
+        <Input placeholder={t("phoneOptional", lang)} value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={20} />
+        <Button className="w-full" variant="outline" disabled={busy} onClick={joinList}>
+          {busy ? t("joining", lang) : t("joinList", lang)}
+        </Button>
+        {slug && (
+          <p className="text-xs text-muted-foreground">
+            {t("noQr", lang)} /apuntarse?bar={slug}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Aviso de horario del bar: abierto, a punto de cerrar o cuándo abre. */
+function HoursBanner({ settings, lang = "es" }: { settings: BarSettings; lang?: Lang }) {
+  const status = openStatus(parseHours(settings.hours), settings.timezone ?? "Europe/Madrid", lang);
+  return (
+    <p
+      className={`rounded-lg px-3 py-2 text-sm font-semibold ${
+        status.open ? "bg-secondary text-secondary-foreground" : "bg-warning px-4 py-3 text-warning-foreground"
+      }`}
+    >
+      {status.text}
+    </p>
+  );
+}
+
+/** «Especial de hoy»: plato enlazado de la carta o texto suelto. */
+function SpecialCard({
+  settings,
+  items,
+  showPrices,
+  image,
+  lang = "es",
+}: {
+  settings: BarSettings;
+  items: Item[];
+  showPrices: boolean;
+  image: (item: Item) => string | null;
+  lang?: Lang;
+}) {
+  const item = settings.special_item_id ? items.find((i) => i.id === settings.special_item_id) : undefined;
+  const text = settings.special_text?.trim() || item?.name || "";
+  if (!text) return null;
+  const src = item ? image(item) : null;
+  return (
+    <div className="flex items-center gap-3 rounded-xl border border-primary/40 bg-primary/5 p-3">
+      {src && <img src={src} alt="" className="h-14 w-14 shrink-0 rounded-lg object-cover" />}
+      <div className="min-w-0">
+        <p className="text-xs font-bold tracking-wide text-primary uppercase">{t("special", lang)}</p>
+        <p className="font-semibold">{text}</p>
+        {item && showPrices && <p className="text-sm text-muted-foreground">{formatEUR(Number(item.price))}</p>}
+      </div>
+    </div>
+  );
+}
+
+function ClientTicketButton({ sessionId, lang = "es" }: { sessionId: string; lang?: Lang }) {
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -719,7 +851,7 @@ function ClientTicketButton({ sessionId }: { sessionId: string }) {
         onClick={() => setOpen(true)}
         className="flex w-full items-center justify-center gap-1 rounded-lg border border-border py-3 font-semibold"
       >
-        <FileText className="h-4 w-4" /> Ticket o factura (PDF)
+        <FileText className="h-4 w-4" /> {t("ticketPdf", lang)}
       </button>
       {open && <InvoiceDialog sessionId={sessionId} staff={false} onClose={() => setOpen(false)} />}
     </>

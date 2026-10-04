@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, Heart, Minus, Plus, Search, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { allergenLabel, formatEUR } from "@/lib/allergens";
+import { t, type Lang } from "@/lib/i18n";
 import { buildSections, tagLabel, type MenuSort } from "@/lib/menu";
 import { useMenuPopularity } from "@/hooks/useMenuPopularity";
 import { Input } from "@/components/ui/input";
@@ -28,6 +29,8 @@ export function MenuBrowser({
   images,
   stickyTop = "top-0",
   sort = "alpha",
+  showSoldOut = true,
+  lang = "es",
 }: {
   categories: Category[];
   items: Item[];
@@ -39,6 +42,8 @@ export function MenuBrowser({
   images?: (item: Item) => string | null;
   stickyTop?: string;
   sort?: MenuSort;
+  showSoldOut?: boolean;
+  lang?: Lang;
 }) {
   const [query, setQuery] = useState("");
   const [exclude, setExclude] = useState<string[]>([]);
@@ -139,6 +144,7 @@ export function MenuBrowser({
         qty={line?.qty ?? 0}
         note={line?.note ?? ""}
         fav={favs.includes(item.id)}
+        lang={lang}
         onFav={() => toggleFav(item.id)}
         onQty={(d) => onQty(item.id, d)}
         onNote={(n) => onNote(item.id, n)}
@@ -152,9 +158,9 @@ export function MenuBrowser({
         <div className="flex gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input className="pl-9" placeholder="Buscar en la carta…" value={query} onChange={(e) => setQuery(e.target.value)} />
+            <Input className="pl-9" placeholder={t("search", lang)} value={query} onChange={(e) => setQuery(e.target.value)} />
             {query && (
-              <Button variant="ghost" size="icon" aria-label="Borrar búsqueda" onClick={() => setQuery("")} className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2">
+              <Button variant="ghost" size="icon" aria-label={t("clearSearch", lang)} onClick={() => setQuery("")} className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2">
                 <X className="h-4 w-4" />
               </Button>
             )}
@@ -162,7 +168,7 @@ export function MenuBrowser({
           <Button variant="outline" size="sm" className={exclude.length ? "border-primary bg-primary text-primary-foreground" : ""}
             onClick={() => setShowFilters((v) => !v)}
           >
-            Alérgenos{exclude.length ? ` (${exclude.length})` : ""}
+            {t("allergens", lang)}{exclude.length ? ` (${exclude.length})` : ""}
           </Button>
         </div>
         {showFilters && (
@@ -175,7 +181,7 @@ export function MenuBrowser({
                   onClick={() => setExclude((p) => (on ? p.filter((x) => x !== a) : [...p, a]))}
                   className="h-7 rounded-full px-2.5 text-xs"
                 >
-                  Sin {allergenLabel(a).toLowerCase()}
+                  {t("sin", lang)} {allergenLabel(a).toLowerCase()}
                 </Button>
               );
             })}
@@ -206,14 +212,14 @@ export function MenuBrowser({
       {favItems.length > 0 && !query && (
         <section id="sec-favs" className="scroll-mt-48 rounded-xl border border-border bg-secondary/40 p-3">
           <h2 className="font-display mb-1 flex items-center gap-2 text-lg font-bold">
-            <Heart className="h-4 w-4 fill-current text-destructive" /> Mis favoritas
+            <Heart className="h-4 w-4 fill-current text-destructive" /> {t("favorites", lang)}
           </h2>
-          <p className="mb-2 text-xs text-muted-foreground">Las que tenéis en mente. Añadid las que queráis pedir.</p>
+          <p className="mb-2 text-xs text-muted-foreground">{t("favoritesHint", lang)}</p>
           <div className="space-y-2">{favItems.filter((i) => i.available).map(renderItem)}</div>
         </section>
       )}
 
-      {sections.length === 0 && <p className="py-8 text-center text-sm text-muted-foreground">No hay nada que coincida.</p>}
+      {sections.length === 0 && <p className="py-8 text-center text-sm text-muted-foreground">{t("noMatch", lang)}</p>}
 
       {sections.map((s) => (
         <section key={s.category.id} id={`sec-${s.category.id}`} className="scroll-mt-48">
@@ -233,14 +239,14 @@ export function MenuBrowser({
         </section>
       ))}
 
-      {soldOut.length > 0 && (
+      {showSoldOut && soldOut.length > 0 && (
         <section className="rounded-xl bg-muted p-3">
-          <h2 className="font-display mb-2 text-lg font-bold text-muted-foreground">Agotado</h2>
+          <h2 className="font-display mb-2 text-lg font-bold text-muted-foreground">{t("soldOut", lang)}</h2>
           <ul className="space-y-1">
             {soldOut.map((item) => (
               <li key={item.id} className="flex items-center justify-between text-sm text-muted-foreground">
                 <span className="line-through">{item.name}</span>
-                <span className="rounded-full bg-background px-2 py-0.5 text-xs font-bold">Agotado</span>
+                <span className="rounded-full bg-background px-2 py-0.5 text-xs font-bold">{t("soldOut", lang)}</span>
               </li>
             ))}
           </ul>
@@ -260,6 +266,7 @@ function MenuItemRow({
   onFav,
   onQty,
   onNote,
+  lang,
 }: {
   item: Item;
   image: string | null;
@@ -270,6 +277,7 @@ function MenuItemRow({
   onFav: () => void;
   onQty: (d: number) => void;
   onNote: (n: string) => void;
+  lang: Lang;
 }) {
   const [open, setOpen] = useState(false);
   const hasDetail = !!(item.description?.trim() || image);
@@ -277,7 +285,7 @@ function MenuItemRow({
     <article className={`rounded-xl border bg-card p-3 ${qty > 0 ? "border-primary" : "border-border"}`}>
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="icon"
-          aria-label={fav ? `Quitar ${item.name} de favoritas` : `Marcar ${item.name} como favorita`}
+          aria-label={fav ? `${t("favRemove", lang)} ${item.name}` : `${t("favAdd", lang)} ${item.name}`}
           onClick={onFav}
           className="h-8 w-8 shrink-0"
         >
@@ -287,9 +295,9 @@ function MenuItemRow({
           <div className="w-full">
           <p className="flex flex-wrap items-center gap-1.5 font-semibold leading-tight">
             {item.name}
-            {(item.tags ?? []).map((t) => (
-              <span key={t} className="rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-bold uppercase text-accent-foreground">
-                {tagLabel(t)}
+            {(item.tags ?? []).map((tag) => (
+              <span key={tag} className="rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-bold uppercase text-accent-foreground">
+                {tagLabel(tag)}
               </span>
             ))}
             {hasDetail && <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />}
@@ -302,12 +310,12 @@ function MenuItemRow({
         </Button>
         <div className="flex shrink-0 items-center gap-2">
           {qty > 0 && (
-            <Button variant="outline" size="icon" onClick={() => onQty(-1)} aria-label={`Quitar uno de ${item.name}`} className="h-9 w-9">
+            <Button variant="outline" size="icon" onClick={() => onQty(-1)} aria-label={`${t("removeWord", lang)} ${item.name}`} className="h-9 w-9">
               <Minus className="h-4 w-4" />
             </Button>
           )}
           {qty > 0 && <span className="tabular w-4 text-center font-bold">{qty}</span>}
-          <Button size="icon" onClick={() => onQty(1)} aria-label={`Añadir ${item.name}`} className="h-9 w-9">
+          <Button size="icon" onClick={() => onQty(1)} aria-label={`${t("addWord", lang)} ${item.name}`} className="h-9 w-9">
             <Plus className="h-4 w-4" />
           </Button>
         </div>
@@ -317,12 +325,12 @@ function MenuItemRow({
           {image && <img src={image} alt={item.name} loading="lazy" className="h-20 w-20 shrink-0 rounded-lg object-cover" />}
           <div className="text-sm text-muted-foreground">
             {item.description && <p>{item.description}</p>}
-            {item.allergens.length > 0 && <p className="mt-1 text-xs">Alérgenos: {item.allergens.map(allergenLabel).join(", ")}</p>}
+            {item.allergens.length > 0 && <p className="mt-1 text-xs">{t("allergenPrefix", lang)} {item.allergens.map(allergenLabel).join(", ")}</p>}
           </div>
         </div>
       )}
       {qty > 0 && (
-        <Input className="mt-2" placeholder="Nota: sin cebolla, poco hecho…" value={note} onChange={(e) => onNote(e.target.value)} />
+        <Input className="mt-2" placeholder={t("notePlaceholder", lang)} value={note} onChange={(e) => onNote(e.target.value)} />
       )}
     </article>
   );

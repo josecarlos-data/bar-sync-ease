@@ -11,13 +11,16 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as ApuntarseRouteImport } from './routes/apuntarse'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedBarraRouteImport } from './routes/_authenticated/barra'
 import { Route as AuthenticatedCamareroRouteImport } from './routes/_authenticated/camarero'
 import { Route as AuthenticatedCocinaRouteImport } from './routes/_authenticated/cocina'
 import { Route as AuthenticatedComandasRouteImport } from './routes/_authenticated/comandas'
 import { Route as AuthenticatedDePieRouteImport } from './routes/_authenticated/de-pie'
+import { Route as AuthenticatedEsperaRouteImport } from './routes/_authenticated/espera'
 import { Route as AuthenticatedExistenciasRouteImport } from './routes/_authenticated/existencias'
+import { Route as AuthenticatedFiadoRouteImport } from './routes/_authenticated/fiado'
 import { Route as AuthenticatedHistorialRouteImport } from './routes/_authenticated/historial'
 import { Route as MTokenRouteImport } from './routes/m.$token'
 import { Route as AuthenticatedAdminAjustesRouteImport } from './routes/_authenticated/admin.ajustes'
@@ -33,6 +36,11 @@ const IndexRoute = IndexRouteImport.update({
 } as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApuntarseRoute = ApuntarseRouteImport.update({
+  id: '/apuntarse',
+  path: '/apuntarse',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -65,12 +73,22 @@ const AuthenticatedDePieRoute = AuthenticatedDePieRouteImport.update({
   path: '/de-pie',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedEsperaRoute = AuthenticatedEsperaRouteImport.update({
+  id: '/espera',
+  path: '/espera',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedExistenciasRoute =
   AuthenticatedExistenciasRouteImport.update({
     id: '/existencias',
     path: '/existencias',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedFiadoRoute = AuthenticatedFiadoRouteImport.update({
+  id: '/fiado',
+  path: '/fiado',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedHistorialRoute = AuthenticatedHistorialRouteImport.update({
   id: '/historial',
   path: '/historial',
@@ -113,13 +131,16 @@ const AuthenticatedAdminPersonalRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/apuntarse': typeof ApuntarseRoute
   '/auth': typeof AuthRoute
   '/barra': typeof AuthenticatedBarraRoute
   '/camarero': typeof AuthenticatedCamareroRoute
   '/cocina': typeof AuthenticatedCocinaRoute
   '/comandas': typeof AuthenticatedComandasRoute
   '/de-pie': typeof AuthenticatedDePieRoute
+  '/espera': typeof AuthenticatedEsperaRoute
   '/existencias': typeof AuthenticatedExistenciasRoute
+  '/fiado': typeof AuthenticatedFiadoRoute
   '/historial': typeof AuthenticatedHistorialRoute
   '/m/$token': typeof MTokenRoute
   '/admin/ajustes': typeof AuthenticatedAdminAjustesRoute
@@ -130,13 +151,16 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/apuntarse': typeof ApuntarseRoute
   '/auth': typeof AuthRoute
   '/barra': typeof AuthenticatedBarraRoute
   '/camarero': typeof AuthenticatedCamareroRoute
   '/cocina': typeof AuthenticatedCocinaRoute
   '/comandas': typeof AuthenticatedComandasRoute
   '/de-pie': typeof AuthenticatedDePieRoute
+  '/espera': typeof AuthenticatedEsperaRoute
   '/existencias': typeof AuthenticatedExistenciasRoute
+  '/fiado': typeof AuthenticatedFiadoRoute
   '/historial': typeof AuthenticatedHistorialRoute
   '/m/$token': typeof MTokenRoute
   '/admin/ajustes': typeof AuthenticatedAdminAjustesRoute
@@ -149,13 +173,16 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/apuntarse': typeof ApuntarseRoute
   '/auth': typeof AuthRoute
   '/_authenticated/barra': typeof AuthenticatedBarraRoute
   '/_authenticated/camarero': typeof AuthenticatedCamareroRoute
   '/_authenticated/cocina': typeof AuthenticatedCocinaRoute
   '/_authenticated/comandas': typeof AuthenticatedComandasRoute
   '/_authenticated/de-pie': typeof AuthenticatedDePieRoute
+  '/_authenticated/espera': typeof AuthenticatedEsperaRoute
   '/_authenticated/existencias': typeof AuthenticatedExistenciasRoute
+  '/_authenticated/fiado': typeof AuthenticatedFiadoRoute
   '/_authenticated/historial': typeof AuthenticatedHistorialRoute
   '/m/$token': typeof MTokenRoute
   '/_authenticated/admin/ajustes': typeof AuthenticatedAdminAjustesRoute
@@ -168,13 +195,16 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/apuntarse'
     | '/auth'
     | '/barra'
     | '/camarero'
     | '/cocina'
     | '/comandas'
     | '/de-pie'
+    | '/espera'
     | '/existencias'
+    | '/fiado'
     | '/historial'
     | '/m/$token'
     | '/admin/ajustes'
@@ -185,13 +215,16 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/apuntarse'
     | '/auth'
     | '/barra'
     | '/camarero'
     | '/cocina'
     | '/comandas'
     | '/de-pie'
+    | '/espera'
     | '/existencias'
+    | '/fiado'
     | '/historial'
     | '/m/$token'
     | '/admin/ajustes'
@@ -203,13 +236,16 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/apuntarse'
     | '/auth'
     | '/_authenticated/barra'
     | '/_authenticated/camarero'
     | '/_authenticated/cocina'
     | '/_authenticated/comandas'
     | '/_authenticated/de-pie'
+    | '/_authenticated/espera'
     | '/_authenticated/existencias'
+    | '/_authenticated/fiado'
     | '/_authenticated/historial'
     | '/m/$token'
     | '/_authenticated/admin/ajustes'
@@ -222,6 +258,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  ApuntarseRoute: typeof ApuntarseRoute
   AuthRoute: typeof AuthRoute
   MTokenRoute: typeof MTokenRoute
 }
@@ -240,6 +277,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/apuntarse': {
+      id: '/apuntarse'
+      path: '/apuntarse'
+      fullPath: '/apuntarse'
+      preLoaderRoute: typeof ApuntarseRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -284,11 +328,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDePieRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/espera': {
+      id: '/_authenticated/espera'
+      path: '/espera'
+      fullPath: '/espera'
+      preLoaderRoute: typeof AuthenticatedEsperaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/existencias': {
       id: '/_authenticated/existencias'
       path: '/existencias'
       fullPath: '/existencias'
       preLoaderRoute: typeof AuthenticatedExistenciasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/fiado': {
+      id: '/_authenticated/fiado'
+      path: '/fiado'
+      fullPath: '/fiado'
+      preLoaderRoute: typeof AuthenticatedFiadoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/historial': {
@@ -349,7 +407,9 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCocinaRoute: typeof AuthenticatedCocinaRoute
   AuthenticatedComandasRoute: typeof AuthenticatedComandasRoute
   AuthenticatedDePieRoute: typeof AuthenticatedDePieRoute
+  AuthenticatedEsperaRoute: typeof AuthenticatedEsperaRoute
   AuthenticatedExistenciasRoute: typeof AuthenticatedExistenciasRoute
+  AuthenticatedFiadoRoute: typeof AuthenticatedFiadoRoute
   AuthenticatedHistorialRoute: typeof AuthenticatedHistorialRoute
   AuthenticatedAdminAjustesRoute: typeof AuthenticatedAdminAjustesRoute
   AuthenticatedAdminArticulosRoute: typeof AuthenticatedAdminArticulosRoute
@@ -364,7 +424,9 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCocinaRoute: AuthenticatedCocinaRoute,
   AuthenticatedComandasRoute: AuthenticatedComandasRoute,
   AuthenticatedDePieRoute: AuthenticatedDePieRoute,
+  AuthenticatedEsperaRoute: AuthenticatedEsperaRoute,
   AuthenticatedExistenciasRoute: AuthenticatedExistenciasRoute,
+  AuthenticatedFiadoRoute: AuthenticatedFiadoRoute,
   AuthenticatedHistorialRoute: AuthenticatedHistorialRoute,
   AuthenticatedAdminAjustesRoute: AuthenticatedAdminAjustesRoute,
   AuthenticatedAdminArticulosRoute: AuthenticatedAdminArticulosRoute,
@@ -379,6 +441,7 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  ApuntarseRoute: ApuntarseRoute,
   AuthRoute: AuthRoute,
   MTokenRoute: MTokenRoute,
 }

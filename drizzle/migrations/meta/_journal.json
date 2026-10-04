@@ -71,6 +71,41 @@
       "when": 1791146916236,
       "tag": "0009_ticket_printer",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791150176077,
+      "tag": "0010_phase_a_village_features",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1791150293124,
+      "tag": "0011_waitlist_public_lookup",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1791150402052,
+      "tag": "0012_sold_out_notice_default_on",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1791150719138,
+      "tag": "0013_fix_waitlist_created_by_and_tab_close",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1791150773888,
+      "tag": "0014_item_and_category_translations",
+      "breakpoints": true
     }
   ]
 }
