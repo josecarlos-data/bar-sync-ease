@@ -265,6 +265,27 @@ function SettingsPage() {
           </div>
 
           <div className="rounded-xl border border-border bg-card p-4">
+            <p className="font-semibold">Dirección pública de la carta (para los QR)</p>
+            <p className="text-xs text-muted-foreground">
+              La dirección de la app publicada, por ejemplo https://mi-bar.lovable.app. Los QR de las mesas la usarán siempre.
+            </p>
+            <input
+              defaultValue={settings.public_base_url ?? ""}
+              placeholder="https://..."
+              onBlur={(e) => {
+                let v = e.target.value.trim().replace(/\/+$/, "");
+                if (v && !/^https:\/\/[^\s/]+\.[^\s/]+/.test(v)) {
+                  toast.error("Escribe una dirección que empiece por https://");
+                  return;
+                }
+                const val = v || null;
+                if (val !== (settings.public_base_url ?? null)) update({ public_base_url: val } as Partial<BarSettings>);
+              }}
+              className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2"
+            />
+          </div>
+
+          <div className="rounded-xl border border-border bg-card p-4">
             <p className="font-semibold">Datos del negocio (salen en tickets y facturas)</p>
             <div className="mt-2 space-y-2">
               {(

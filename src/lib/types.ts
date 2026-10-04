@@ -28,6 +28,7 @@ export type BarSettings = {
   address?: string | null;
   phone?: string | null;
   ticket_footer?: string | null;
+  public_base_url?: string | null;
 };
 
 export type Item = {

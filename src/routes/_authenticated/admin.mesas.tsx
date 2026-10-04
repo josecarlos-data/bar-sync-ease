@@ -6,7 +6,7 @@ import QRCode from "qrcode";
 import { Download, Plus } from "lucide-react";
 import { StaffShell } from "@/components/StaffShell";
 import { supabase } from "@/integrations/supabase/client";
-import { useStaff } from "@/hooks/useStaff";
+import { useBarSettings, useStaff } from "@/hooks/useStaff";
 import type { BarTable } from "@/lib/types";
 
 export const Route = createFileRoute("/_authenticated/admin/mesas")({
@@ -28,6 +28,7 @@ function randomToken() {
 function TablesPage() {
   const { data: staff } = useStaff();
   const barId = staff?.barId ?? null;
+  const { data: settings } = useBarSettings(barId);
   const queryClient = useQueryClient();
 
   const { data: tables = [] } = useQuery({
@@ -62,8 +63,17 @@ function TablesPage() {
     queryClient.invalidateQueries();
   }
 
+  const base = settings?.public_base_url || (typeof window === "undefined" ? "" : window.location.origin);
+  const isPrivate = /id-preview--|preview--|lovableproject\.com|localhost/.test(base);
+
   return (
     <StaffShell title="Mesas y QR">
+      {isPrivate && (
+        <div className="mb-4 rounded-xl border border-destructive bg-destructive/10 p-3 text-sm text-destructive">
+          <p className="font-semibold">Estos QR no funcionarán con clientes.</p>
+          <p>Apuntan a la vista previa privada. Publica la app y escribe su dirección en Ajustes → «Dirección pública de la carta».</p>
+        </div>
+      )}
       <button
         onClick={addTable}
         className="mb-4 flex items-center gap-1 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground"
@@ -73,17 +83,16 @@ function TablesPage() {
 
       <div className="grid gap-3 sm:grid-cols-2">
         {tables.map((table) => (
-          <TableCard key={table.id} table={table} onRegenerate={() => regenerate(table)} />
+          <TableCard key={table.id} table={table} base={base} onRegenerate={() => regenerate(table)} />
         ))}
       </div>
     </StaffShell>
   );
 }
 
-function TableCard({ table, onRegenerate }: { table: BarTable; onRegenerate: () => void }) {
+function TableCard({ table, base, onRegenerate }: { table: BarTable; base: string; onRegenerate: () => void }) {
   const [dataUrl, setDataUrl] = useState<string | null>(null);
-  const url =
-    typeof window === "undefined" ? "" : `${window.location.origin}/m/${table.qr_token}`;
+  const url = base ? `${base}/m/${table.qr_token}` : "";
 
   useEffect(() => {
     if (!url) return;

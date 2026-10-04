@@ -30,6 +30,7 @@ export type Database = {
           printer_scope: string
           printer_trigger: string
           printer_width: number
+          public_base_url: string | null
           queue_sort: Database["public"]["Enums"]["queue_sort"]
           require_session_approval: boolean
           show_prices: boolean
@@ -55,6 +56,7 @@ export type Database = {
           printer_scope?: string
           printer_trigger?: string
           printer_width?: number
+          public_base_url?: string | null
           queue_sort?: Database["public"]["Enums"]["queue_sort"]
           require_session_approval?: boolean
           show_prices?: boolean
@@ -80,6 +82,7 @@ export type Database = {
           printer_scope?: string
           printer_trigger?: string
           printer_width?: number
+          public_base_url?: string | null
           queue_sort?: Database["public"]["Enums"]["queue_sort"]
           require_session_approval?: boolean
           show_prices?: boolean
