@@ -1,4 +1,4 @@
-import { cartDrinks, houseTapaLines, priceCart, pricedTotal, proposeRounds, tapaMode } from "@/lib/tapas";
+import { cartDrinks, choiceAllowance, houseTapaLines, priceCart, pricedTotal, proposeRounds, tapaMode } from "@/lib/tapas";
 import { displayNickname } from "@/lib/tableLabel";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
@@ -684,6 +684,14 @@ function GuestPage() {
               <p className="text-sm font-semibold">
                 {cart.reduce((n, l) => n + l.qty, 0)} {t("articlesWord", lang)}
               </p>
+              {tmode === "choice" && (() => {
+                const a = choiceAllowance(cart, items, sessionTapaLines);
+                return a.drinks > 0 ? (
+                  <p className="text-xs font-semibold text-primary">
+                    Tapas con bebida: {Math.min(a.drinks, a.used + priced.filter((l) => l.tapa_kind).reduce((x, l) => x + l.qty, 0))} de {a.drinks}
+                  </p>
+                ) : null;
+              })()}
               {showPrices && (
                 <p className="tabular font-display text-lg font-extrabold">
                   {formatEUR(cartTotal)}
