@@ -29,7 +29,7 @@ export type BarSettings = {
   phone?: string | null;
   ticket_footer?: string | null;
   public_base_url?: string | null;
-  menu_print?: Record<string, unknown>;
+  menu_print?: import("@/integrations/supabase/types").Json;
 };
 
 export type Item = {
