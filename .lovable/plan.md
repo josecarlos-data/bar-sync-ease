@@ -19,7 +19,7 @@ Hoy existe el interruptor «tapa gratis con bebida» y las marcas «es bebida»/
 
 ## Reglas
 - El emparejamiento se hace por mesa y sobre el total de la sesión (bebidas de rondas anteriores cuentan), así sirve si piden la tapa después.
-- Se asigna primero a las tapas con más suplemento ahorrado... no: el cliente paga el suplemento siempre; el derecho cubre el precio base. Las tapas gratis se asignan en orden de pedido.
+- Si hay más tapas que bebidas, se incluyen las primeras pedidas; las demás van a precio normal. El suplemento se cobra siempre.
 - La cuenta dividida, el fiado y las facturas usan los precios ya aplicados.
 
 ## Detalles técnicos
