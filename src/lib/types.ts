@@ -29,6 +29,7 @@ export type BarSettings = {
   phone?: string | null;
   ticket_footer?: string | null;
   public_base_url?: string | null;
+  menu_print?: Record<string, unknown>;
 };
 
 export type Item = {
@@ -46,6 +47,8 @@ export type Item = {
   is_drink: boolean;
   is_tapa: boolean;
   position: number;
+  group_name?: string | null;
+  tags?: string[];
 };
 
 export type Category = { id: string; bar_id: string; name: string; position: number };
