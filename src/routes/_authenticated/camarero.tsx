@@ -233,7 +233,26 @@ function WaiterPage() {
     if (split) setTicketFor(split.session_id);
   }
 
+  async function setLines(ids: string[], status: "ready" | "served") {
+    if (!ids.length) return;
+    const now = new Date().toISOString();
+    const patch = status === "served" ? { status, served_at: now } : { status, ready_at: now };
+    const { error } = await supabase.from("order_items").update(patch).in("id", ids);
+    if (error) { toast.error("No se pudo actualizar"); return; }
+    toast.success(status === "served" ? (ids.length > 1 ? `${ids.length} servidos` : "Servido") : "Listo");
+    queryClient.invalidateQueries();
+  }
+
   const tables = data?.tables ?? [];
+  const solo = settings?.service_mode === "solo";
+  const tableBySession = new Map(
+    (data?.sessions ?? []).map((s) => [s.id, tables.find((t) => t.id === s.table_id)?.number ?? 0]),
+  );
+  const kitchenQueue = solo
+    ? (data?.lines ?? [])
+        .filter((l) => l.destination === "kitchen" && (l.status === "pending" || l.status === "preparing"))
+        .sort((a, b) => a.created_at.localeCompare(b.created_at))
+    : [];
 
   return (
     <StaffShell title="Mesas">
@@ -269,6 +288,28 @@ function WaiterPage() {
           userId={staff.userId}
           onClose={() => setInstructionFor(null)}
         />
+      )}
+      {solo && kitchenQueue.length > 0 && (
+        <section className="mb-4 rounded-xl border-2 border-warning bg-card p-3">
+          <p className="mb-2 font-display text-lg font-bold">Por preparar en cocina ({kitchenQueue.length})</p>
+          <ul className="space-y-2">
+            {kitchenQueue.map((l) => (
+              <li key={l.id} className="flex items-center justify-between gap-2 rounded-lg bg-secondary px-3 py-2">
+                <span className="min-w-0">
+                  <span className="mr-2 rounded bg-foreground px-1.5 py-0.5 text-xs font-bold text-background">
+                    Mesa {tableBySession.get(l.orders?.session_id ?? "") ?? "?"}
+                  </span>
+                  <b className="tabular">{l.qty}×</b> {l.name_snapshot}
+                  {l.note && <span className="block text-xs text-muted-foreground">{l.note}</span>}
+                </span>
+                <span className="flex shrink-0 gap-1">
+                  <button onClick={() => setLines([l.id], "ready")} className="rounded-md border border-border bg-card px-2 py-1.5 text-xs font-semibold">Listo</button>
+                  <button onClick={() => setLines([l.id], "served")} className="rounded-md bg-success px-2 py-1.5 text-xs font-semibold text-success-foreground">Servido</button>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
       <div className="grid gap-3 sm:grid-cols-2">
         {tables.map((table) => {
