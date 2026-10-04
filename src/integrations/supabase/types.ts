@@ -430,6 +430,7 @@ export type Database = {
           group_name: string | null
           id: string
           image_url: string | null
+          ingredients: string | null
           is_drink: boolean
           is_tapa: boolean
           name: string
@@ -451,6 +452,7 @@ export type Database = {
           group_name?: string | null
           id?: string
           image_url?: string | null
+          ingredients?: string | null
           is_drink?: boolean
           is_tapa?: boolean
           name: string
@@ -472,6 +474,7 @@ export type Database = {
           group_name?: string | null
           id?: string
           image_url?: string | null
+          ingredients?: string | null
           is_drink?: boolean
           is_tapa?: boolean
           name?: string

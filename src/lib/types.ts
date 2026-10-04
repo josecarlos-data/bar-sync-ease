@@ -49,6 +49,7 @@ export type Item = {
   is_tapa: boolean;
   position: number;
   group_name?: string | null;
+  ingredients?: string | null;
   tags?: string[];
 };
 

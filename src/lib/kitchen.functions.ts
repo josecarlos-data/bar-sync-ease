@@ -143,3 +143,62 @@ export const speakInstruction = createServerFn({ method: "POST" })
       return { ok: false, error: "No se pudo generar la voz" };
     }
   });
+
+const ALLERGEN_CODES = ["gluten","crustaceos","huevos","pescado","cacahuetes","soja","lacteos","frutos_cascara","apio","mostaza","sesamo","sulfitos","altramuces","moluscos"] as const;
+const SuggestInput = z.object({ barId: z.string().uuid(), name: z.string().trim().max(200), ingredients: z.string().trim().min(2).max(2000) });
+export type AllergenSuggestion = {
+  allergens: { code: (typeof ALLERGEN_CODES)[number]; certainty: "sure" | "doubt"; reason: string }[];
+  questions: string[];
+  tips: string[];
+  description: string | null;
+};
+type SuggestResult = ({ ok: true } & AllergenSuggestion) | { ok: false; error: string };
+
+export const suggestAllergens = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => SuggestInput.parse(d))
+  .handler(async ({ data, context }): Promise<SuggestResult> => {
+    const { data: isAdmin } = await context.supabase.rpc("is_admin_of", { _bar_id: data.barId });
+    if (!isAdmin) return { ok: false, error: "Solo el administrador puede usar el asistente" };
+    const key = process.env["LOVABLE_API_KEY"];
+    if (!key) return { ok: false, error: "IA no configurada" };
+    const { createOpenAI } = await import("@ai-sdk/openai");
+    const { streamText, Output } = await import("ai");
+    const { createLovableAiGatewayRunIdFetch } = await import("./ai-gateway.server");
+    const runIdFetch = createLovableAiGatewayRunIdFetch();
+    const lovable = createOpenAI({
+      baseURL: "https://ai.gateway.lovable.dev/v1",
+      apiKey: key,
+      headers: { "Lovable-API-Key": key, "X-Lovable-AIG-SDK": "vercel-ai-sdk" },
+      fetch: runIdFetch.fetch,
+    });
+    try {
+      const result = streamText({
+        model: lovable.responses("openai/gpt-6-astra"),
+        system:
+          "Eres asesor de seguridad alimentaria para bares en España. Identificas los 14 alérgenos de declaración obligatoria (Reglamento UE 1169/2011, anexo II; RD 126/2015) a partir de los ingredientes de un plato. Códigos permitidos: " +
+          ALLERGEN_CODES.join(", ") +
+          ". Reglas: 'sure' si el ingrediente lo contiene claramente; 'doubt' si es habitual que lo contenga según marca o receta (tomate frito, caldos de pastilla, embutidos, salsas comerciales, especias mezcladas). ANTE LA DUDA, INCLÚYELO como 'doubt'. 'reason' corto en español nombrando el ingrediente causante. 'questions': hasta 3 preguntas concretas para resolver dudas. 'tips': hasta 3 consejos prácticos aplicables (revisar etiquetas, freidora compartida, contaminación cruzada se avisa aparte). 'description': descripción breve y apetecible para la carta (máx 90 caracteres) usando los ingredientes, o null. No inventes ingredientes.",
+        prompt: `Plato: ${data.name || "(sin nombre)"}\nIngredientes: ${data.ingredients}`,
+        output: Output.object({
+          schema: z.object({
+            allergens: z.array(z.object({ code: z.enum(ALLERGEN_CODES), certainty: z.enum(["sure", "doubt"]), reason: z.string() })),
+            questions: z.array(z.string()),
+            tips: z.array(z.string()),
+            description: z.string().nullable(),
+          }),
+        }),
+        providerOptions: { openai: { forceReasoning: true, reasoningEffort: "low", store: false, include: ["reasoning.encrypted_content"] } },
+      });
+      const out = await result.output;
+      const seen = new Set<string>();
+      const allergens = out.allergens.filter((a) => (seen.has(a.code) ? false : (seen.add(a.code), true)));
+      return { ok: true, allergens, questions: out.questions.slice(0, 3), tips: out.tips.slice(0, 3), description: out.description };
+    } catch (e) {
+      const status = (e as { statusCode?: number }).statusCode;
+      if (status === 402) return { ok: false, error: "Sin créditos de IA. Recarga en Ajustes → Planes y créditos." };
+      if (status === 429) return { ok: false, error: "Demasiadas peticiones. Prueba en unos segundos." };
+      console.error("suggestAllergens", e);
+      return { ok: false, error: "No se pudieron detectar los alérgenos" };
+    }
+  });
