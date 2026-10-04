@@ -8,6 +8,7 @@ import { openSessionForTable } from "@/lib/bar.functions";
 import { allergenLabel, formatEUR } from "@/lib/allergens";
 import { MenuBrowser } from "@/components/MenuBrowser";
 import { useBarSettings } from "@/hooks/useStaff";
+import { useMenuPopularity } from "@/hooks/useMenuPopularity";
 import { Input } from "@/components/ui/input";
 import type { Category, Item } from "@/lib/types";
 
@@ -51,6 +52,15 @@ export function StaffOrderDialog({
   });
   const items = data?.items ?? [];
   const categories = data?.categories ?? [];
+  const popularity = useMenuPopularity(barId, true);
+  const topItems = useMemo(
+    () =>
+      items
+        .filter((i) => i.available && (popularity[i.id] ?? 0) > 0)
+        .sort((a, b) => (popularity[b.id] ?? 0) - (popularity[a.id] ?? 0))
+        .slice(0, 8),
+    [items, popularity],
+  );
 
   const total = useMemo(
     () =>
@@ -71,7 +81,7 @@ export function StaffOrderDialog({
     });
   }
 
-  async function send() {
+  async function send(alreadyServed: boolean) {
     if (!cart.length) return;
     setSending(true);
     try {
@@ -87,6 +97,7 @@ export function StaffOrderDialog({
         .select("id")
         .single();
       if (error || !order) throw error ?? new Error("orden");
+      const now = new Date().toISOString();
       const lines = cart.map((l) => {
         const it = items.find((i) => i.id === l.itemId)!;
         return {
@@ -99,6 +110,7 @@ export function StaffOrderDialog({
           qty: l.qty,
           note: l.note.trim() || null,
           destination: it.destination,
+          ...(alreadyServed ? { status: "served" as const, ready_at: now, served_at: now } : {}),
         };
       });
       const { error: le } = await supabase.from("order_items").insert(lines);
@@ -167,6 +179,25 @@ export function StaffOrderDialog({
         {!hasSession && (
           <Input className="mb-4" placeholder="Apodo de la mesa (opcional)" value={nickname} onChange={(e) => setNickname(e.target.value)} />
         )}
+        {topItems.length > 0 && (
+          <div className="mb-4">
+            <p className="mb-1.5 text-xs font-bold uppercase tracking-wide text-muted-foreground">Lo más pedido</p>
+            <div className="flex flex-wrap gap-1.5">
+              {topItems.map((it) => {
+                const q = cart.find((l) => l.itemId === it.id)?.qty;
+                return (
+                  <button
+                    key={it.id}
+                    onClick={() => changeQty(it.id, 1)}
+                    className={`rounded-full border px-3 py-1.5 text-sm font-semibold ${q ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card"}`}
+                  >
+                    {q ? `${q}× ` : "+ "}{it.name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
         <MenuBrowser
           categories={categories}
           sort={settings?.menu_sort ?? "alpha"}
@@ -192,11 +223,15 @@ export function StaffOrderDialog({
               })}
             </ul>
             <div className="flex gap-2">
-              <button onClick={() => setConfirming(false)} className="flex-1 rounded-lg border border-border py-2.5 font-semibold">Volver</button>
-              <button disabled={sending || !cart.length} onClick={send} className="flex-1 rounded-lg bg-primary py-2.5 font-semibold text-primary-foreground disabled:opacity-50">
-                {sending ? "Enviando…" : "Confirmar"}
+              <button onClick={() => setConfirming(false)} className="rounded-lg border border-border px-3 py-2.5 font-semibold">Volver</button>
+              <button disabled={sending || !cart.length} onClick={() => send(false)} className="flex-1 rounded-lg bg-primary py-2.5 font-semibold text-primary-foreground disabled:opacity-50">
+                {sending ? "Enviando…" : "Enviar a preparar"}
+              </button>
+              <button disabled={sending || !cart.length} onClick={() => send(true)} className="flex-1 rounded-lg bg-success py-2.5 font-semibold text-success-foreground disabled:opacity-50">
+                Ya servido
               </button>
             </div>
+            <p className="text-xs text-muted-foreground">"Ya servido": para lo que pones al momento (una caña, un café). Se cobra igual pero no va a la cola.</p>
           </div>
         ) : (
           <button disabled={!cart.length} onClick={() => setConfirming(true)} className="w-full rounded-lg bg-primary py-3 font-semibold text-primary-foreground disabled:opacity-50">
