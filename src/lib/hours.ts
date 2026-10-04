@@ -108,7 +108,7 @@ export function isOpenNow(hours: WeekHours, timezone: string, date = new Date())
 export type OpenStatus = { open: boolean; text: string };
 
 /** Frase para el cliente: «Abierto hasta las 23:00» o «Cerrado · abre hoy a las 20:00». */
-export function openStatus(hours: WeekHours, timezone: string, date = new Date(), lang: Lang = "es"): OpenStatus {
+export function openStatus(hours: WeekHours, timezone: string, lang: Lang = "es", date = new Date()): OpenStatus {
   const now = wallClock(date, timezone);
   const minutes = now.hour * 60 + now.minute;
 
