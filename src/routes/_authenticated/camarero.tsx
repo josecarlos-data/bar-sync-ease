@@ -5,7 +5,8 @@ import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { BellRing, Check, FileText, ListChecks, Plus, Receipt, Sparkles, X } from "lucide-react";
+import { BellRing, Check, FileText, ListChecks, Plus, Receipt, Sparkles, UserRound, X } from "lucide-react";
+import { ChargeToTabDialog } from "@/components/ChargeToTabDialog";
 import { StaffOrderDialog } from "@/components/StaffOrderDialog";
 import { KitchenInstructionDialog } from "@/components/KitchenInstructionDialog";
 import { StaffShell } from "@/components/StaffShell";
@@ -76,6 +77,7 @@ function WaiterPage() {
   const [detailFor, setDetailFor] = useState<{ sessionId: string; tableNumber: number; nickname: string | null } | null>(null);
   const [instructionFor, setInstructionFor] = useState<{ sessionId: string; tableNumber: number } | null>(null);
   const [ticketFor, setTicketFor] = useState<string | null>(null);
+  const [chargeFor, setChargeFor] = useState<{ sessionId: string; label: string; amount: number; partId?: string; partLabel?: string } | null>(null);
   const [payMethod, setPayMethod] = useState("efectivo");
 
   useRealtime("waiter", ["order_items", "orders", "table_sessions", "service_calls", "bill_splits", "bill_split_parts", "bill_split_assignments"], !!barId);
@@ -500,13 +502,25 @@ function WaiterPage() {
                                     Pagada{part.payment_method ? ` · ${part.payment_method}` : ""}
                                   </span>
                                 ) : (
-                                  <button
-                                    onClick={() => markPartPaid(part.id, c.amounts.get(part.id) ?? 0, payMethod)}
-                                    disabled={blocked}
-                                    className="rounded-md border border-border px-2 py-1 text-xs font-semibold disabled:opacity-40"
-                                  >
-                                    Cobrada
-                                  </button>
+                                  <>
+                                    {settings?.tabs_enabled && (
+                                      <button
+                                        onClick={() => setChargeFor({ sessionId: session!.id, label: tableLabel(table.number), amount: c.amounts.get(part.id) ?? 0, partId: part.id, partLabel: part.label })}
+                                        disabled={blocked || (c.amounts.get(part.id) ?? 0) <= 0}
+                                        className="rounded-md border border-primary px-2 py-1 text-xs font-semibold text-primary disabled:opacity-40"
+                                        aria-label={`Cargar ${part.label} a la cuenta de alguien`}
+                                      >
+                                        A cuenta
+                                      </button>
+                                    )}
+                                    <button
+                                      onClick={() => markPartPaid(part.id, c.amounts.get(part.id) ?? 0, payMethod)}
+                                      disabled={blocked}
+                                      className="rounded-md border border-border px-2 py-1 text-xs font-semibold disabled:opacity-40"
+                                    >
+                                      Cobrada
+                                    </button>
+                                  </>
                                 )}
                               </span>
                             </li>
@@ -565,6 +579,17 @@ function WaiterPage() {
                     {lines.length > 0 && barId && (
                       <PrintToBarButton barId={barId} sessionId={session.id} userId={staff?.userId} settings={settings} />
                     )}
+                    {settings?.tabs_enabled && lines.length > 0 && barId && (
+                      <button
+                        onClick={() => {
+                          const paid = (split?.bill_split_parts ?? []).filter((p) => p.status === "paid").reduce((s, p) => s + Number(p.amount), 0);
+                          setChargeFor({ sessionId: session.id, label: tableLabel(table.number), amount: total - paid });
+                        }}
+                        className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-primary py-2.5 text-sm font-semibold text-primary"
+                      >
+                        <UserRound className="h-4 w-4" /> A la cuenta de…
+                      </button>
+                    )}
                     <button
                       onClick={() => closeSession(session.id)}
                       className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-border py-2.5 text-sm font-semibold"
@@ -579,6 +604,7 @@ function WaiterPage() {
         })}
       </div>
       {ticketFor && <InvoiceDialog sessionId={ticketFor} staff onClose={() => setTicketFor(null)} />}
+      {chargeFor && barId && <ChargeToTabDialog barId={barId} {...chargeFor} onClose={() => setChargeFor(null)} />}
       {tables.length === 0 && (
         <p className="text-sm text-muted-foreground">
           Todavía no hay mesas. Créalas en el apartado QR.

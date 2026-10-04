@@ -47,6 +47,7 @@ type TabLine = {
   tax_rate_snapshot: number;
   qty: number;
   created_at: string;
+  note?: string;
 };
 
 function FiadoPage() {
@@ -174,7 +175,7 @@ function FiadoPage() {
                 <ul className="mb-2 space-y-1 text-sm">
                   {tl.slice(-3).map((l) => (
                     <li key={l.id} className="flex justify-between gap-2">
-                      <span>{l.qty}× {l.name_snapshot}</span>
+                      <span>{l.qty}× {l.name_snapshot}{l.note ? <span className="ml-1 text-xs text-muted-foreground">· {l.note}</span> : null}</span>
                       <span className="text-muted-foreground">{formatEUR(Number(l.price_snapshot) * l.qty)}</span>
                     </li>
                   ))}
