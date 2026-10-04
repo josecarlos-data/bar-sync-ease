@@ -1,3 +1,4 @@
+import { displayNickname } from "@/lib/tableLabel";
 import { computeSplit } from "@/lib/split";
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
@@ -348,7 +349,7 @@ function WaiterPage() {
                 <div>
                   <p className="font-display text-2xl font-extrabold">Mesa {table.number}</p>
                   <p className="text-sm text-muted-foreground">
-                    {session?.nickname ?? table.name ?? "Sin ocupar"}
+                    {session ? (displayNickname(session.nickname, table.number) ?? table.name ?? "Ocupada") : (table.name ?? "Sin ocupar")}
                   </p>
                 </div>
                 <span

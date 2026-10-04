@@ -1,3 +1,4 @@
+import { displayNickname } from "@/lib/tableLabel";
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -108,7 +109,7 @@ export function SessionApprovalDialog({ barId }: { barId: string | null }) {
       <header className="bg-warning px-5 py-4 text-warning-foreground">
         <p className="text-xs font-bold tracking-wide uppercase">Mesa pendiente de aceptar</p>
         <h2 className="font-display text-3xl font-extrabold">Mesa {current.tables?.number ?? "?"}</h2>
-        <p className="font-semibold">{current.nickname ?? "Sin apodo"}</p>
+        <p className="font-semibold">{displayNickname(current.nickname) ?? "Sin apodo"}</p>
         <p className="text-sm opacity-90">Abierta a las {hhmm(current.opened_at)}</p>
         {queue.length > 1 && (
           <p className="mt-1 text-sm font-semibold">

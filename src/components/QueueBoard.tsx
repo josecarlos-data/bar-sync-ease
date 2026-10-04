@@ -1,4 +1,4 @@
-import { tableLabel } from "@/lib/tableLabel";
+import { tableLabel, displayNickname } from "@/lib/tableLabel";
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -266,7 +266,7 @@ function OrderCard({
         <div className="flex items-baseline gap-2">
           <span className="font-display text-2xl font-extrabold">{tableLabel(table?.number)}</span>
           <span className="truncate text-sm font-semibold text-muted-foreground">
-            {session?.nickname ?? ""}
+            {displayNickname(session?.nickname, table?.number) ?? ""}
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -357,5 +357,5 @@ function orderSpeech(lines: QueueLine[], instructions: string[], full: boolean):
     .map((l) => `${NUMS[l.qty] ?? l.qty} ${l.name_snapshot}${l.note ? `, ${l.note}` : ""}`)
     .join(". ");
   const extra = instructions.length ? `. Indicaciones: ${instructions.join(". ")}` : "";
-  return `${mesa}${session?.nickname ? `, ${session.nickname}` : ""}. ${items}${extra}.`;
+  return `${mesa}${displayNickname(session?.nickname, session?.tables?.number) ? `, ${displayNickname(session?.nickname, session?.tables?.number)}` : ""}. ${items}${extra}.`;
 }

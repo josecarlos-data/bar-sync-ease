@@ -27,6 +27,11 @@ const TOGGLES: { key: keyof BarSettings; label: string; help: string }[] = [
     help: "Desactívalo para una sola cola.",
   },
   {
+    key: "ask_nickname",
+    label: "Pedir apodo al escanear el QR",
+    help: "Si lo desactivas, el cliente entra directo a la carta sin poner nombre.",
+  },
+  {
     key: "waiter_can_order",
     label: "El camarero puede pedir por cualquier mesa",
     help: "Activo por defecto.",

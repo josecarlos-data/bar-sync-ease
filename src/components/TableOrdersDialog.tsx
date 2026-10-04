@@ -1,4 +1,4 @@
-import { tableLabel } from "@/lib/tableLabel";
+import { tableLabel, displayNickname } from "@/lib/tableLabel";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { CheckCheck, X } from "lucide-react";
@@ -70,7 +70,7 @@ export function TableOrdersDialog({
       <header className="flex items-center justify-between border-b border-border px-4 py-3">
         <div>
           <p className="font-display text-2xl font-extrabold">{tableLabel(tableNumber)}</p>
-          <p className="text-sm text-muted-foreground">{nickname ?? "Sin apodo"}</p>
+          <p className="text-sm text-muted-foreground">{displayNickname(nickname, tableNumber) ?? ""}</p>
         </div>
         <button onClick={onClose} aria-label="Cerrar" className="rounded-lg border border-border p-2">
           <X className="h-5 w-5" />
