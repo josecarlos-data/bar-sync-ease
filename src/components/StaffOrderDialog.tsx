@@ -1,3 +1,4 @@
+import { tableLabel } from "@/lib/tableLabel";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -171,7 +172,7 @@ export function StaffOrderDialog({
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-background">
       <header className="flex items-center justify-between border-b border-border px-4 py-3">
-        <h2 className="font-display text-lg font-bold">Añadir comanda · Mesa {tableNumber}</h2>
+        <h2 className="font-display text-lg font-bold">Añadir comanda · {tableLabel(tableNumber)}</h2>
         <button aria-label="Cerrar" onClick={onClose} className="rounded-md border border-border p-2">
           <X className="h-4 w-4" />
         </button>

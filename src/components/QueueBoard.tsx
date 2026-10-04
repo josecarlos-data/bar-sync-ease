@@ -1,3 +1,4 @@
+import { tableLabel } from "@/lib/tableLabel";
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -263,7 +264,7 @@ function OrderCard({
     <article className="overflow-hidden rounded-xl border border-border bg-card">
       <header className="flex items-center justify-between gap-3 bg-secondary px-4 py-2">
         <div className="flex items-baseline gap-2">
-          <span className="font-display text-2xl font-extrabold">Mesa {table?.number ?? "?"}</span>
+          <span className="font-display text-2xl font-extrabold">{tableLabel(table?.number)}</span>
           <span className="truncate text-sm font-semibold text-muted-foreground">
             {session?.nickname ?? ""}
           </span>
@@ -350,7 +351,7 @@ const NUMS = ["cero", "una", "dos", "tres", "cuatro", "cinco", "seis", "siete", 
 
 function orderSpeech(lines: QueueLine[], instructions: string[], full: boolean): string {
   const session = lines[0]?.orders?.table_sessions;
-  const mesa = `Mesa ${session?.tables?.number ?? ""}`;
+  const mesa = tableLabel(session?.tables?.number);
   if (!full) return `Nueva comanda, ${mesa}.`;
   const items = lines
     .map((l) => `${NUMS[l.qty] ?? l.qty} ${l.name_snapshot}${l.note ? `, ${l.note}` : ""}`)

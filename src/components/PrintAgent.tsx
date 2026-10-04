@@ -1,3 +1,4 @@
+import { tableLabel } from "@/lib/tableLabel";
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Printer } from "lucide-react";
@@ -60,7 +61,7 @@ export function PrintAgent({ barId, settings, destination }: { barId: string; se
         if (!claimed) return;
         printHtml(
           kitchenTicketHtml({
-            tableNumber: o.table_sessions?.tables?.number ?? "?",
+            tableNumber: tableLabel(o.table_sessions?.tables?.number).replace(/^Mesa /, ""),
             nickname: o.table_sessions?.nickname ?? null,
             createdAt: o.created_at,
             label: settings.printer_trigger === "ready" ? "PREPARADA" : "Comanda",

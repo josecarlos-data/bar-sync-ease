@@ -68,3 +68,5 @@
 - [x] "Ya servido" y "Lo más pedido" al apuntar comanda
 - [x] Franja "Por preparar en cocina" en Mesas (bar pequeño)
 - [ ] Cuentas de barra sin mesa (varias a la vez) — de momento crear mesas "Barra" en QR
+
+- [x] Cuentas de barra para clientes de pie (pantalla "De pie", sin QR)

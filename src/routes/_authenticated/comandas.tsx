@@ -1,3 +1,4 @@
+import { tableLabel } from "@/lib/tableLabel";
 import { useEffect, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -139,7 +140,7 @@ function LiveOrdersPage() {
               >
                 <header className="flex items-center justify-between bg-secondary px-3 py-2">
                   <span>
-                    <span className="font-display text-xl font-extrabold">Mesa {order.table_sessions?.tables?.number ?? "?"}</span>
+                    <span className="font-display text-xl font-extrabold">{tableLabel(order.table_sessions?.tables?.number)}</span>
                     <span className="ml-2 text-sm text-muted-foreground">{order.table_sessions?.nickname ?? ""}</span>
                   </span>
                   <span className="text-right text-xs">
