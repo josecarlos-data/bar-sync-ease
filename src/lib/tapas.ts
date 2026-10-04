@@ -90,7 +90,7 @@ export function proposeRounds(n: number, session: SessionTapaLine[], forceNew = 
   const out: { round: number; qty: number }[] = [];
   let left = n;
   if (!forceNew && last >= 2 && (c[last] ?? 0) < (c[last - 1] ?? 0)) {
-    const fill = Math.min(left, c[last - 1] - c[last]);
+    const fill = Math.min(left, (c[last - 1] ?? 0) - (c[last] ?? 0));
     if (fill > 0) out.push({ round: last, qty: fill });
     left -= fill;
   }
