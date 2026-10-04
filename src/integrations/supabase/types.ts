@@ -17,6 +17,7 @@ export type Database = {
       bar_settings: {
         Row: {
           address: string | null
+          ask_nickname: boolean
           auto_close_hours: number
           bar_id: string
           free_tapa_with_drink: boolean
@@ -46,6 +47,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          ask_nickname?: boolean
           auto_close_hours?: number
           bar_id: string
           free_tapa_with_drink?: boolean
@@ -75,6 +77,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          ask_nickname?: boolean
           auto_close_hours?: number
           bar_id?: string
           free_tapa_with_drink?: boolean

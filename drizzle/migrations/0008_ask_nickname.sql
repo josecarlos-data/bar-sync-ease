@@ -1,0 +1,1 @@
+ALTER TABLE public.bar_settings ADD COLUMN ask_nickname boolean NOT NULL DEFAULT true;
