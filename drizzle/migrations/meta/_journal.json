@@ -8,6 +8,13 @@
       "when": 1791066230519,
       "tag": "0000_stock_pools",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791131538146,
+      "tag": "0001_public_base_url",
+      "breakpoints": true
     }
   ]
 }
