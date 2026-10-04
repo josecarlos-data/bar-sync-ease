@@ -39,6 +39,9 @@ type LineRow = {
   price_snapshot: number;
   name_snapshot: string;
   status: "pending" | "preparing" | "ready" | "served";
+  note: string | null;
+  destination: "bar" | "kitchen";
+  created_at: string;
   orders: { session_id: string } | null;
 };
 type CallRow = { id: string; session_id: string; type: "waiter" | "bill" };
@@ -100,7 +103,7 @@ function WaiterPage() {
       if (sessionIds.length) {
         const { data: lineData } = await supabase
           .from("order_items")
-          .select("id, qty, price_snapshot, name_snapshot, status, orders!inner(session_id)")
+          .select("id, qty, price_snapshot, name_snapshot, status, note, destination, created_at, orders!inner(session_id)")
           .eq("bar_id", barId!)
           .is("deleted_at", null)
           .in("orders.session_id", sessionIds);
