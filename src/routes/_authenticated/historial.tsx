@@ -38,6 +38,7 @@ type HistSession = {
   decided_at: string | null;
   decision: string | null;
   decided_by: string | null;
+  charged_tab: { name: string } | null;
   tables: { number: number; name: string | null } | null;
   orders: {
     id: string;
@@ -62,7 +63,7 @@ function HistoryPage() {
       const { data: sessions } = await supabase
         .from("table_sessions")
         .select(
-          "id, nickname, status, opened_at, decided_at, decision, decided_by, tables(number, name), orders(id, created_at, order_items(id, name_snapshot, qty, note, deleted_at))",
+          "id, nickname, status, opened_at, decided_at, decision, decided_by, charged_tab:customer_tabs!table_sessions_charged_tab_id_fkey(name), tables(number, name), orders(id, created_at, order_items(id, name_snapshot, qty, note, deleted_at))",
         )
         .eq("bar_id", barId!)
         .in("status", ["rejected", "closed"])
@@ -126,6 +127,11 @@ function HistoryPage() {
                 <div>
                   <p className="font-display text-xl font-extrabold">{tableLabel(s.tables?.number)}</p>
                   <p className="text-sm text-muted-foreground">{displayNickname(s.nickname, s.tables?.number) ?? ""}</p>
+                  {s.charged_tab && (
+                    <p className="mt-1 inline-block rounded-full bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary">
+                      Cargada a la cuenta de {s.charged_tab.name}
+                    </p>
+                  )}
                   <p className="text-xs text-muted-foreground">
                     {new Date(s.opened_at).toLocaleString("es-ES", {
                       day: "2-digit",
