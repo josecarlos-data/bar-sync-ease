@@ -7,13 +7,14 @@ import { BellRing, FileText, Minus, Plus, Receipt, UtensilsCrossed } from "lucid
 import { LiveTicket } from "@/components/LiveTicket";
 import { InvoiceDialog } from "@/components/InvoiceDialog";
 import { supabase } from "@/integrations/supabase/client";
-import { joinTable } from "@/lib/bar.functions";
+import { joinTable, reportOccupied } from "@/lib/bar.functions";
 import { useRealtime } from "@/hooks/useRealtime";
 import { ConnectionBadge } from "@/components/ConnectionBadge";
 import { SplitBill, type SplitLine } from "@/components/SplitBill";
 import { useItemImages, resolveImage } from "@/lib/images";
 import { allergenLabel, formatEUR } from "@/lib/allergens";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -49,9 +50,11 @@ type CartLine = { itemId: string; qty: number; note: string };
 function GuestPage() {
   const { token } = Route.useParams();
   const join = useServerFn(joinTable);
+  const report = useServerFn(reportOccupied);
   const queryClient = useQueryClient();
 
-  const [phase, setPhase] = useState<"loading" | "nickname" | "ready" | "error">("loading");
+  const [phase, setPhase] = useState<"loading" | "nickname" | "ready" | "error" | "occupied" | "notice">("loading");
+  const [occupied, setOccupied] = useState<{ nickname: string | null; openedAt: string | null; orderCount: number } | null>(null);
   const [message, setMessage] = useState("");
   const [tableInfo, setTableInfo] = useState<{ number: number; name: string | null } | null>(null);
   const [session, setSession] = useState<Joined | null>(null);
@@ -61,34 +64,48 @@ function GuestPage() {
   const [confirming, setConfirming] = useState(false);
   const [sending, setSending] = useState(false);
 
-  async function attempt(nick?: string) {
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) {
-      const { error } = await supabase.auth.signInAnonymously();
-      if (error) {
-        setMessage("No se pudo abrir la mesa. Vuelve a escanear el QR.");
+  async function attempt(nick?: string, confirmJoin?: boolean) {
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) {
+        const { error } = await supabase.auth.signInAnonymously();
+        if (error) {
+          console.error("[mesa] signInAnonymously falló:", error);
+          setMessage("No hemos podido conectar. Inténtalo de nuevo.");
+          setPhase("error");
+          return;
+        }
+      }
+      const result = (await join({ data: { token, ...(nick ? { nickname: nick } : {}), ...(confirmJoin ? { confirmJoin: true } : {}) } })) as
+        | Joined
+        | { error: string }
+        | { needsNickname: true; table: { number: number; name: string | null } }
+        | { alreadyOpen: { nickname: string | null; openedAt: string | null; orderCount: number }; table: { number: number; name: string | null } };
+
+      if ("error" in result) {
+        setMessage(result.error);
         setPhase("error");
         return;
       }
-    }
-    const result = (await join({ data: nick ? { token, nickname: nick } : { token } })) as
-      | Joined
-      | { error: string }
-      | { needsNickname: true; table: { number: number; name: string | null } };
-
-    if ("error" in result) {
-      setMessage(result.error);
-      setPhase("error");
-      return;
-    }
-    if ("needsNickname" in result) {
+      if ("needsNickname" in result) {
+        setTableInfo(result.table);
+        setPhase("nickname");
+        return;
+      }
+      if ("alreadyOpen" in result) {
+        setTableInfo(result.table);
+        setOccupied(result.alreadyOpen);
+        setPhase("occupied");
+        return;
+      }
+      setSession(result);
       setTableInfo(result.table);
-      setPhase("nickname");
-      return;
+      setPhase("ready");
+    } catch (e) {
+      console.error("[mesa] error al abrir la mesa:", e);
+      setMessage("No hemos podido conectar. Inténtalo de nuevo.");
+      setPhase("error");
     }
-    setSession(result);
-    setTableInfo(result.table);
-    setPhase("ready");
   }
 
   useEffect(() => {
@@ -277,6 +294,49 @@ function GuestPage() {
   }
 
   if (phase === "error") {
+    return (
+      <Centered>
+        <div className="space-y-4">
+          <p>{message}</p>
+          <Button onClick={() => { setPhase("loading"); attempt(); }}>Reintentar</Button>
+        </div>
+      </Centered>
+    );
+  }
+
+  if (phase === "occupied" && occupied) {
+    return (
+      <Centered>
+        <div className="w-full max-w-sm space-y-4 text-left">
+          <h1 className="font-display text-2xl font-extrabold">Esta mesa ya está abierta</h1>
+          <p className="text-sm text-muted-foreground">
+            Mesa {tableInfo?.number}
+            {occupied.nickname ? ` · abierta por "${occupied.nickname}"` : ""}
+            {occupied.openedAt
+              ? ` a las ${new Date(occupied.openedAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}`
+              : ""}
+            {` · ${occupied.orderCount} comanda${occupied.orderCount === 1 ? "" : "s"}`}
+          </p>
+          <Button className="w-full" onClick={() => { setPhase("loading"); attempt(undefined, true); }}>
+            Somos del mismo grupo, unirme
+          </Button>
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={async () => {
+              await report({ data: { token } }).catch(() => {});
+              setMessage("Mesa abierta. Avisa al camarero. Ya le hemos enviado un aviso.");
+              setPhase("notice");
+            }}
+          >
+            No, somos otros clientes
+          </Button>
+        </div>
+      </Centered>
+    );
+  }
+
+  if (phase === "notice") {
     return <Centered>{message}</Centered>;
   }
 

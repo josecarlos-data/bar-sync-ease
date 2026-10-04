@@ -9,7 +9,7 @@ const DEFAULT_BAR = "11111111-1111-1111-1111-111111111111";
  */
 export const joinTable = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { token: string; nickname?: string }) => data)
+  .inputValidator((data: { token: string; nickname?: string; confirmJoin?: boolean }) => data)
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -67,7 +67,29 @@ export const joinTable = createServerFn({ method: "POST" })
         .single();
       if (error || !created) return { error: "No se pudo abrir la mesa." as const };
       session = created;
+    } else if (!data.confirmJoin) {
+      const { data: member } = await supabaseAdmin
+        .from("session_members")
+        .select("id")
+        .eq("session_id", session.id)
+        .eq("user_id", context.userId)
+        .maybeSingle();
+      if (!member) {
+        const [{ data: s }, { count }] = await Promise.all([
+          supabaseAdmin.from("table_sessions").select("opened_at").eq("id", session.id).maybeSingle(),
+          supabaseAdmin.from("orders").select("id", { count: "exact", head: true }).eq("session_id", session.id),
+        ]);
+        return {
+          alreadyOpen: {
+            nickname: session.nickname,
+            openedAt: s?.opened_at ?? null,
+            orderCount: count ?? 0,
+          },
+          table: { number: table.number, name: table.name },
+        };
+      }
     }
+
 
     await supabaseAdmin
       .from("session_members")
@@ -88,6 +110,23 @@ export const joinTable = createServerFn({ method: "POST" })
       nickname: session.nickname,
       table: { number: table.number, name: table.name },
     };
+  });
+
+/** Nuevos clientes encuentran la mesa sin cerrar: avisa al camarero. */
+export const reportOccupied = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { token: string }) => data)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: table } = await supabaseAdmin
+      .from("tables").select("id, bar_id").eq("qr_token", data.token).maybeSingle();
+    if (!table) return { ok: false };
+    const { data: s } = await supabaseAdmin
+      .from("table_sessions").select("id").eq("table_id", table.id)
+      .in("status", ["pending", "open"]).maybeSingle();
+    if (!s) return { ok: false };
+    await supabaseAdmin.from("service_calls").insert({ bar_id: table.bar_id, session_id: s.id, type: "waiter" });
+    return { ok: true };
   });
 
 /**
