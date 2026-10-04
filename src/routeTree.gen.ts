@@ -16,6 +16,7 @@ import { Route as AuthenticatedBarraRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedCamareroRouteImport } from './routes/_authenticated/camarero'
 import { Route as AuthenticatedCocinaRouteImport } from './routes/_authenticated/cocina'
 import { Route as AuthenticatedComandasRouteImport } from './routes/_authenticated/comandas'
+import { Route as AuthenticatedDePieRouteImport } from './routes/_authenticated/de-pie'
 import { Route as AuthenticatedExistenciasRouteImport } from './routes/_authenticated/existencias'
 import { Route as AuthenticatedHistorialRouteImport } from './routes/_authenticated/historial'
 import { Route as MTokenRouteImport } from './routes/m.$token'
@@ -57,6 +58,11 @@ const AuthenticatedCocinaRoute = AuthenticatedCocinaRouteImport.update({
 const AuthenticatedComandasRoute = AuthenticatedComandasRouteImport.update({
   id: '/comandas',
   path: '/comandas',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDePieRoute = AuthenticatedDePieRouteImport.update({
+  id: '/de-pie',
+  path: '/de-pie',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedExistenciasRoute =
@@ -112,6 +118,7 @@ export interface FileRoutesByFullPath {
   '/camarero': typeof AuthenticatedCamareroRoute
   '/cocina': typeof AuthenticatedCocinaRoute
   '/comandas': typeof AuthenticatedComandasRoute
+  '/de-pie': typeof AuthenticatedDePieRoute
   '/existencias': typeof AuthenticatedExistenciasRoute
   '/historial': typeof AuthenticatedHistorialRoute
   '/m/$token': typeof MTokenRoute
@@ -128,6 +135,7 @@ export interface FileRoutesByTo {
   '/camarero': typeof AuthenticatedCamareroRoute
   '/cocina': typeof AuthenticatedCocinaRoute
   '/comandas': typeof AuthenticatedComandasRoute
+  '/de-pie': typeof AuthenticatedDePieRoute
   '/existencias': typeof AuthenticatedExistenciasRoute
   '/historial': typeof AuthenticatedHistorialRoute
   '/m/$token': typeof MTokenRoute
@@ -146,6 +154,7 @@ export interface FileRoutesById {
   '/_authenticated/camarero': typeof AuthenticatedCamareroRoute
   '/_authenticated/cocina': typeof AuthenticatedCocinaRoute
   '/_authenticated/comandas': typeof AuthenticatedComandasRoute
+  '/_authenticated/de-pie': typeof AuthenticatedDePieRoute
   '/_authenticated/existencias': typeof AuthenticatedExistenciasRoute
   '/_authenticated/historial': typeof AuthenticatedHistorialRoute
   '/m/$token': typeof MTokenRoute
@@ -164,6 +173,7 @@ export interface FileRouteTypes {
     | '/camarero'
     | '/cocina'
     | '/comandas'
+    | '/de-pie'
     | '/existencias'
     | '/historial'
     | '/m/$token'
@@ -180,6 +190,7 @@ export interface FileRouteTypes {
     | '/camarero'
     | '/cocina'
     | '/comandas'
+    | '/de-pie'
     | '/existencias'
     | '/historial'
     | '/m/$token'
@@ -197,6 +208,7 @@ export interface FileRouteTypes {
     | '/_authenticated/camarero'
     | '/_authenticated/cocina'
     | '/_authenticated/comandas'
+    | '/_authenticated/de-pie'
     | '/_authenticated/existencias'
     | '/_authenticated/historial'
     | '/m/$token'
@@ -265,6 +277,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedComandasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/de-pie': {
+      id: '/_authenticated/de-pie'
+      path: '/de-pie'
+      fullPath: '/de-pie'
+      preLoaderRoute: typeof AuthenticatedDePieRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/existencias': {
       id: '/_authenticated/existencias'
       path: '/existencias'
@@ -329,6 +348,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCamareroRoute: typeof AuthenticatedCamareroRoute
   AuthenticatedCocinaRoute: typeof AuthenticatedCocinaRoute
   AuthenticatedComandasRoute: typeof AuthenticatedComandasRoute
+  AuthenticatedDePieRoute: typeof AuthenticatedDePieRoute
   AuthenticatedExistenciasRoute: typeof AuthenticatedExistenciasRoute
   AuthenticatedHistorialRoute: typeof AuthenticatedHistorialRoute
   AuthenticatedAdminAjustesRoute: typeof AuthenticatedAdminAjustesRoute
@@ -343,6 +363,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCamareroRoute: AuthenticatedCamareroRoute,
   AuthenticatedCocinaRoute: AuthenticatedCocinaRoute,
   AuthenticatedComandasRoute: AuthenticatedComandasRoute,
+  AuthenticatedDePieRoute: AuthenticatedDePieRoute,
   AuthenticatedExistenciasRoute: AuthenticatedExistenciasRoute,
   AuthenticatedHistorialRoute: AuthenticatedHistorialRoute,
   AuthenticatedAdminAjustesRoute: AuthenticatedAdminAjustesRoute,
