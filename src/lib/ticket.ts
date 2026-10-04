@@ -133,3 +133,47 @@ export async function downloadInvoicePdf(i: InvoiceRow) {
   line(s.bar.footer || "¡Gracias por su visita!");
   pdf.save(`ticket-${invoiceCode(i)}.pdf`);
 }
+
+export type ProvisionalTicket = {
+  bar: InvoiceRow["snapshot"]["bar"];
+  tableNumber: number;
+  nickname: string | null;
+  lines: { name: string; price: number; taxRate: number; qty: number }[];
+};
+
+/** Customer bill before payment (not an invoice), with VAT breakdown. */
+export function provisionalTicketHtml(t: ProvisionalTicket) {
+  const r2 = (n: number) => Math.round(n * 100) / 100;
+  const grouped = new Map<string, { name: string; price: number; qty: number; taxRate: number }>();
+  for (const l of t.lines) {
+    const k = `${l.name}|${l.price}|${l.taxRate}`;
+    const g = grouped.get(k);
+    if (g) g.qty += l.qty; else grouped.set(k, { ...l });
+  }
+  const byRate = new Map<number, number>();
+  let total = 0;
+  for (const l of grouped.values()) {
+    const sub = l.price * l.qty;
+    total += sub;
+    byRate.set(l.taxRate, (byRate.get(l.taxRate) ?? 0) + sub);
+  }
+  const breakdown = [...byRate.entries()].sort((a, b) => a[0] - b[0]).map(([rate, gross]) => {
+    const base = r2(gross / (1 + rate / 100));
+    return { rate, base, tax: r2(gross - base) };
+  });
+  const b = t.bar;
+  return `<div class="c"><h2>${esc(b.legal_name || b.name)}</h2>
+    ${b.tax_id ? `<div>NIF ${esc(b.tax_id)}</div>` : ""}
+    ${b.address ? `<div>${esc(b.address)}</div>` : ""}
+    ${b.phone ? `<div>Tel. ${esc(b.phone)}</div>` : ""}</div><hr>
+    <div class="b">CUENTA — ${esc(tableLabel(t.tableNumber))}${t.nickname ? ` · ${esc(t.nickname)}` : ""}</div>
+    <div>${new Date().toLocaleString("es-ES")}</div><hr>
+    <table>${[...grouped.values()]
+      .map((l) => `<tr><td>${l.qty} ${esc(l.name)}</td><td class="r">${formatEUR(l.price * l.qty)}</td></tr>`)
+      .join("")}</table>
+    <hr><table><tr><td>IVA</td><td class="r">Base</td><td class="r">Cuota</td></tr>${breakdown
+      .map((x) => `<tr><td>${x.rate}%</td><td class="r">${formatEUR(x.base)}</td><td class="r">${formatEUR(x.tax)}</td></tr>`)
+      .join("")}</table><hr>
+    <table><tr><td class="big">TOTAL</td><td class="r big">${formatEUR(r2(total))}</td></tr></table>
+    <div class="c note" style="margin-top:6px">Ticket provisional — no válido como factura</div>`;
+}
