@@ -253,6 +253,7 @@ export function StaffOrderDialog({
           items={items.filter((i) => i.available)}
           cart={cart}
           favKey={`comandas:staff-favs:${barId}`}
+          tapaChoice={mode === "choice"}
           onQty={changeQty}
           onNote={(itemId, note) => setCart((p) => p.map((l) => (l.itemId === itemId ? { ...l, note } : l)))}
         />
