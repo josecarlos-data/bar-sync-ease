@@ -154,6 +154,35 @@ function GuestPage() {
     },
   });
 
+  const { data: tr } = useQuery({
+    queryKey: ["guest-translations", session?.barId, lang],
+    enabled: !!session && lang !== "es",
+    queryFn: async () => {
+      const [it, ct] = await Promise.all([
+        supabase
+          .from("item_translations")
+          .select("item_id, name, description")
+          .eq("bar_id", session!.barId)
+          .eq("lang", lang),
+        supabase
+          .from("category_translations")
+          .select("category_id, name")
+          .eq("bar_id", session!.barId)
+          .eq("lang", lang),
+      ]);
+      return { items: it.data ?? [], cats: ct.data ?? [] };
+    },
+  });
+
+  useEffect(() => {
+    const avail = (menu?.settings?.menu_languages ?? ["es"]) as string[];
+    if (avail.length < 2) {
+      setLang("es");
+      return;
+    }
+    setLang(storedLang(avail) ?? detectLang(avail));
+  }, [menu?.settings?.menu_languages]);
+
   const { data: liveStatus } = useQuery({
     queryKey: ["guest-session-status", session?.sessionId],
     enabled: !!session,
@@ -213,11 +242,25 @@ function GuestPage() {
     const fresh = readyIds.filter((id) => !readySeen.current.has(id));
     if (fresh.length > 0) {
       fresh.forEach((id) => readySeen.current.add(id));
-      toast.success("¡Tu pedido está listo!");
+      toast.success(t("readyToast", lang));
     }
   }, [bill]);
 
   const items = menu?.items ?? [];
+  const shownItems = useMemo(() => {
+    if (lang === "es" || !tr) return items;
+    return items.map((i) => {
+      const x = tr.items.find((v) => v.item_id === i.id);
+      return x ? { ...i, name: x.name, description: x.description ?? i.description } : i;
+    });
+  }, [items, tr, lang]);
+  const shownCategories = useMemo(() => {
+    if (lang === "es" || !tr) return menu?.categories ?? [];
+    return (menu?.categories ?? []).map((c) => {
+      const x = tr.cats.find((v) => v.category_id === c.id);
+      return x ? { ...c, name: x.name } : c;
+    });
+  }, [menu, tr, lang]);
   const settings = menu?.settings;
   const showPrices = settings?.show_prices ?? true;
   const { data: imageMap } = useItemImages(items.map((i) => i.image_url));
