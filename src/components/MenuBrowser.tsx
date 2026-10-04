@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, Heart, Minus, Plus, Search, X } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { allergenLabel, formatEUR } from "@/lib/allergens";
-import { buildSections, tagLabel } from "@/lib/menu";
+import { buildSections, tagLabel, type MenuSort } from "@/lib/menu";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import type { Category, Item } from "@/lib/types";
 
 type CartLine = { itemId: string; qty: number; note: string };
@@ -23,6 +26,7 @@ export function MenuBrowser({
   favKey,
   images,
   stickyTop = "top-0",
+  sort = "alpha",
 }: {
   categories: Category[];
   items: Item[];
@@ -33,14 +37,25 @@ export function MenuBrowser({
   favKey: string;
   images?: (item: Item) => string | null;
   stickyTop?: string;
+  sort?: MenuSort;
 }) {
   const [query, setQuery] = useState("");
-  const [sort, setSort] = useState<"group" | "alpha">("group");
   const [exclude, setExclude] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [favs, setFavs] = useState<string[]>([]);
   const [active, setActive] = useState<string | null>(null);
   const navRef = useRef<HTMLDivElement>(null);
+  const barId = items[0]?.bar_id;
+  const { data: popularity } = useQuery({
+    queryKey: ["menu-popularity", barId],
+    enabled: !!barId && sort === "popular",
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("menu_popularity", { _bar_id: barId ?? "" });
+      if (error) throw error;
+      return Object.fromEntries((data ?? []).map((row) => [row.item_id, Number(row.units)])) as Record<string, number>;
+    },
+  });
 
   useEffect(() => {
     try {
@@ -69,28 +84,51 @@ export function MenuBrowser({
 
   const available = filtered.filter((i) => i.available);
   const soldOut = filtered.filter((i) => !i.available);
-  const sections = useMemo(() => buildSections(categories, available, sort), [categories, available, sort]);
+  const sections = useMemo(() => buildSections(categories, available, sort, popularity), [categories, available, sort, popularity]);
   const favItems = items.filter((i) => favs.includes(i.id));
 
-  // Sección activa al hacer scroll
+  // La sección activa es la última cuyo encabezado ha alcanzado el índice fijo.
   useEffect(() => {
-    const els = sections.map((s) => document.getElementById(`sec-${s.category.id}`)).filter(Boolean) as HTMLElement[];
-    if (!els.length) return;
-    const obs = new IntersectionObserver(
-      (entries) => {
-        const visible = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
-        if (visible[0]) setActive(visible[0].target.id.replace("sec-", ""));
-      },
-      { rootMargin: "-160px 0px -60% 0px" },
-    );
-    els.forEach((el) => obs.observe(el));
-    return () => obs.disconnect();
+    if (!sections.length) return;
+    let frame = 0;
+    const updateActive = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const threshold = (navRef.current?.getBoundingClientRect().bottom ?? 0) + 16;
+        let selected = sections[0].category.id;
+        for (const section of sections) {
+          const top = document.getElementById(`sec-${section.category.id}`)?.getBoundingClientRect().top;
+          if (top !== undefined && top <= threshold) selected = section.category.id;
+        }
+        setActive(selected);
+      });
+    };
+    updateActive();
+    window.addEventListener("scroll", updateActive, true);
+    window.addEventListener("resize", updateActive);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", updateActive, true);
+      window.removeEventListener("resize", updateActive);
+    };
   }, [sections]);
 
   useEffect(() => {
     if (!active) return;
-    navRef.current?.querySelector(`[data-cat="${active}"]`)?.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" });
+    const nav = navRef.current;
+    const chip = [...(nav?.children ?? [])].find((child) => child.getAttribute("data-cat") === active) as HTMLElement | undefined;
+    if (nav && chip) nav.scrollTo({ left: chip.offsetLeft - nav.offsetLeft - nav.clientWidth / 2 + chip.clientWidth / 2, behavior: "smooth" });
   }, [active]);
+
+  function jumpTo(id: string) {
+    const el = document.getElementById(id);
+    const navBottom = navRef.current?.getBoundingClientRect().bottom ?? 0;
+    if (!el) return;
+    const scrollParent = el.closest(".overflow-y-auto");
+    if (scrollParent) scrollParent.scrollBy({ top: el.getBoundingClientRect().top - navBottom - 12, behavior: "smooth" });
+    else window.scrollBy({ top: el.getBoundingClientRect().top - navBottom - 12, behavior: "smooth" });
+    if (id.startsWith("sec-") && id !== "sec-favs") setActive(id.slice(4));
+  }
 
   const renderItem = (item: Item) => {
     const line = cart.find((l) => l.itemId === item.id);
@@ -118,60 +156,51 @@ export function MenuBrowser({
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input className="pl-9" placeholder="Buscar en la carta…" value={query} onChange={(e) => setQuery(e.target.value)} />
             {query && (
-              <button aria-label="Borrar búsqueda" onClick={() => setQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 p-1">
+              <Button variant="ghost" size="icon" aria-label="Borrar búsqueda" onClick={() => setQuery("")} className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2">
                 <X className="h-4 w-4" />
-              </button>
+              </Button>
             )}
           </div>
-          <button
-            onClick={() => setSort(sort === "group" ? "alpha" : "group")}
-            className="rounded-md border border-border px-3 text-xs font-semibold"
-          >
-            {sort === "group" ? "Por grupo" : "A-Z"}
-          </button>
-          <button
+          <Button variant="outline" size="sm" className={exclude.length ? "border-primary bg-primary text-primary-foreground" : ""}
             onClick={() => setShowFilters((v) => !v)}
-            className={`rounded-md border px-3 text-xs font-semibold ${exclude.length ? "border-primary bg-primary text-primary-foreground" : "border-border"}`}
           >
             Alérgenos{exclude.length ? ` (${exclude.length})` : ""}
-          </button>
+          </Button>
         </div>
         {showFilters && (
           <div className="flex flex-wrap gap-1.5">
             {FILTERS.map((a) => {
               const on = exclude.includes(a);
               return (
-                <button
+                <Button variant={on ? "default" : "outline"} size="sm"
                   key={a}
                   onClick={() => setExclude((p) => (on ? p.filter((x) => x !== a) : [...p, a]))}
-                  className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${on ? "border-primary bg-primary text-primary-foreground" : "border-border"}`}
+                  className="h-7 rounded-full px-2.5 text-xs"
                 >
                   Sin {allergenLabel(a).toLowerCase()}
-                </button>
+                </Button>
               );
             })}
           </div>
         )}
         <div ref={navRef} className="flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none]">
           {favItems.length > 0 && (
-            <button
-              onClick={() => document.getElementById("sec-favs")?.scrollIntoView({ behavior: "smooth" })}
-              className="flex shrink-0 items-center gap-1 rounded-full border border-border px-3 py-1 text-sm font-semibold"
+            <Button variant="outline" size="sm"
+              onClick={() => jumpTo("sec-favs")}
+              className="h-8 shrink-0 rounded-full"
             >
               <Heart className="h-3.5 w-3.5 fill-current text-destructive" /> {favItems.length}
-            </button>
+            </Button>
           )}
           {sections.map((s) => (
-            <button
+            <Button variant={active === s.category.id ? "default" : "outline"} size="sm"
               key={s.category.id}
               data-cat={s.category.id}
-              onClick={() => document.getElementById(`sec-${s.category.id}`)?.scrollIntoView({ behavior: "smooth" })}
-              className={`shrink-0 rounded-full px-3 py-1 text-sm font-semibold ${
-                active === s.category.id ? "bg-foreground text-background" : "border border-border text-muted-foreground"
-              }`}
+              onClick={() => jumpTo(`sec-${s.category.id}`)}
+              className="h-8 shrink-0 rounded-full"
             >
               {s.category.name}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
@@ -245,18 +274,19 @@ function MenuItemRow({
   onNote: (n: string) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const hasDetail = !!(item.description || item.allergens.length || image);
+  const hasDetail = !!(item.description?.trim() || image);
   return (
     <article className={`rounded-xl border bg-card p-3 ${qty > 0 ? "border-primary" : "border-border"}`}>
       <div className="flex items-center gap-2">
-        <button
+        <Button variant="ghost" size="icon"
           aria-label={fav ? `Quitar ${item.name} de favoritas` : `Marcar ${item.name} como favorita`}
           onClick={onFav}
-          className="shrink-0 p-1"
+          className="h-8 w-8 shrink-0"
         >
           <Heart className={`h-5 w-5 ${fav ? "fill-current text-destructive" : "text-muted-foreground"}`} />
-        </button>
-        <button className="min-w-0 flex-1 text-left" onClick={() => hasDetail && setOpen((v) => !v)}>
+        </Button>
+        <Button variant="ghost" aria-expanded={hasDetail ? open : undefined} disabled={!hasDetail} className="h-auto min-w-0 flex-1 justify-start whitespace-normal p-0 text-left hover:bg-transparent disabled:opacity-100" onClick={() => setOpen((v) => !v)}>
+          <div className="w-full">
           <p className="flex flex-wrap items-center gap-1.5 font-semibold leading-tight">
             {item.name}
             {(item.tags ?? []).map((t) => (
@@ -270,17 +300,18 @@ function MenuItemRow({
             {showPrices && <span className="tabular font-semibold text-foreground">{formatEUR(Number(item.price))}</span>}
             {item.allergens.length > 0 && <span>{showPrices ? " · " : ""}{item.allergens.map(allergenLabel).join(", ")}</span>}
           </p>
-        </button>
+          </div>
+        </Button>
         <div className="flex shrink-0 items-center gap-2">
           {qty > 0 && (
-            <button onClick={() => onQty(-1)} aria-label={`Quitar uno de ${item.name}`} className="rounded-md border border-border p-2">
+            <Button variant="outline" size="icon" onClick={() => onQty(-1)} aria-label={`Quitar uno de ${item.name}`} className="h-9 w-9">
               <Minus className="h-4 w-4" />
-            </button>
+            </Button>
           )}
           {qty > 0 && <span className="tabular w-4 text-center font-bold">{qty}</span>}
-          <button onClick={() => onQty(1)} aria-label={`Añadir ${item.name}`} className="rounded-md bg-primary p-2 text-primary-foreground">
+          <Button size="icon" onClick={() => onQty(1)} aria-label={`Añadir ${item.name}`} className="h-9 w-9">
             <Plus className="h-4 w-4" />
-          </button>
+          </Button>
         </div>
       </div>
       {open && (

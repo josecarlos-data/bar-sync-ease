@@ -30,6 +30,7 @@ export type BarSettings = {
   ticket_footer?: string | null;
   public_base_url?: string | null;
   menu_print?: import("@/integrations/supabase/types").Json;
+  menu_sort?: "alpha" | "popular" | "manual";
 };
 
 export type Item = {
