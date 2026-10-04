@@ -2,7 +2,9 @@ import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ImagePlus, Plus, Pencil } from "lucide-react";
+import { ArrowDown, ArrowUp, ImagePlus, Plus, Pencil, Printer } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { ITEM_TAGS, buildSections } from "@/lib/menu";
 import { StaffShell } from "@/components/StaffShell";
 import { supabase } from "@/integrations/supabase/client";
 import { useStaff } from "@/hooks/useStaff";
@@ -114,6 +116,8 @@ function ItemsPage() {
       destination: (draft.destination ?? "bar") as Destination,
       is_drink: draft.is_drink ?? false,
       is_tapa: draft.is_tapa ?? false,
+      group_name: draft.group_name?.trim() || null,
+      tags: draft.tags ?? [],
     };
     const { error } = draft.id
       ? await supabase.from("items").update(payload).eq("id", draft.id)
@@ -124,6 +128,21 @@ function ItemsPage() {
     setDraft(null);
     queryClient.invalidateQueries();
   }
+
+  async function move(list: Item[], index: number, dir: -1 | 1) {
+    const other = list[index + dir];
+    const item = list[index];
+    if (!other) return;
+    const a = item.position, b = other.position;
+    await Promise.all([
+      supabase.from("items").update({ position: a === b ? b + dir : b }).eq("id", item.id),
+      supabase.from("items").update({ position: a }).eq("id", other.id),
+    ]);
+    queryClient.invalidateQueries();
+  }
+
+  const groupNames = [...new Set(items.map((i) => i.group_name).filter(Boolean))] as string[];
+  const sections = buildSections(categories, items);
 
   return (
     <StaffShell title="Carta">
@@ -140,16 +159,23 @@ function ItemsPage() {
         >
           Nueva categoría
         </button>
+        <Link
+          to="/admin/carta-impresa"
+          className="ml-auto flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-sm font-semibold"
+        >
+          <Printer className="h-4 w-4" /> Carta impresa
+        </Link>
       </div>
 
       <div className="space-y-6">
-        {categories.map((cat) => (
+        {sections.map(({ category: cat, groups }) => (
           <section key={cat.id}>
             <h2 className="font-display mb-2 text-lg font-bold">{cat.name}</h2>
+            {groups.map((g) => (
+            <div key={g.name ?? "_"} className="mb-3">
+              {g.name && <h3 className="mb-1 text-xs font-bold uppercase tracking-wider text-muted-foreground">{g.name}</h3>}
             <div className="space-y-2">
-              {items
-                .filter((i) => i.category_id === cat.id)
-                .map((item) => (
+              {g.items.map((item, idx) => (
                   <div
                     key={item.id}
                     className="flex items-center gap-3 rounded-xl border border-border bg-card p-3"
@@ -170,6 +196,10 @@ function ItemsPage() {
                         {formatEUR(item.price)} · {item.destination === "bar" ? "Barra" : "Cocina"}
                       </p>
                     </div>
+                    <div className="flex flex-col">
+                      <button aria-label="Subir" disabled={idx === 0} onClick={() => move(g.items, idx, -1)} className="p-0.5 disabled:opacity-30"><ArrowUp className="h-3.5 w-3.5" /></button>
+                      <button aria-label="Bajar" disabled={idx === g.items.length - 1} onClick={() => move(g.items, idx, 1)} className="p-0.5 disabled:opacity-30"><ArrowDown className="h-3.5 w-3.5" /></button>
+                    </div>
                     <Switch
                       checked={item.available}
                       onCheckedChange={() => toggleAvailable(item)}
@@ -185,6 +215,8 @@ function ItemsPage() {
                   </div>
                 ))}
             </div>
+            </div>
+            ))}
           </section>
         ))}
       </div>
@@ -234,6 +266,31 @@ function ItemsPage() {
                   </option>
                 ))}
               </select>
+
+              <Input
+                list="group-names"
+                placeholder="Grupo dentro de la sección (p. ej. Cerdo, Frías…)"
+                value={draft.group_name ?? ""}
+                onChange={(e) => setDraft({ ...draft, group_name: e.target.value })}
+              />
+              <datalist id="group-names">
+                {groupNames.map((g) => <option key={g} value={g} />)}
+              </datalist>
+              <div className="flex flex-wrap gap-1.5">
+                {ITEM_TAGS.map((t) => {
+                  const on = (draft.tags ?? []).includes(t.value);
+                  return (
+                    <button
+                      key={t.value}
+                      type="button"
+                      onClick={() => setDraft({ ...draft, tags: on ? (draft.tags ?? []).filter((x) => x !== t.value) : [...(draft.tags ?? []), t.value] })}
+                      className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${on ? "border-primary bg-primary text-primary-foreground" : "border-border"}`}
+                    >
+                      {t.label}
+                    </button>
+                  );
+                })}
+              </div>
 
               <div className="flex gap-2">
                 {(
