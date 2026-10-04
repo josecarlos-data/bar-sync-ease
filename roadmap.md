@@ -70,3 +70,7 @@
 - [ ] Cuentas de barra sin mesa (varias a la vez) — de momento crear mesas "Barra" en QR
 
 - [x] Cuentas de barra para clientes de pie (pantalla "De pie", sin QR)
+
+## Tapa con la bebida
+- [ ] Modos Desactivado / Granada (rondas) / Almería (elige con suplemento), ajustes y artículos
+- [ ] Integrar en Añadir comanda (camarero/De pie) y carta del cliente
