@@ -195,7 +195,7 @@ function PrintMenuPage() {
           </p>
         </aside>
         <div className="overflow-auto rounded-xl bg-muted p-4">
-          <div id="print-area" style={{ zoom: opts.format === "a3" ? 0.45 : 0.62 }}>
+          <div id="print-area" style={{ zoom: { tri: 0.42, di: 0.42, a4: 0.55, a5: 0.75, a3: 0.36 }[opts.format] }}>
             <Sheets opts={opts} sections={sections} qr={qr} />
           </div>
         </div>
