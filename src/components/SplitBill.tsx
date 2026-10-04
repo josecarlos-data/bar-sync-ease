@@ -5,6 +5,7 @@ import { CreditCard, Minus, Plus, Split, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatEUR } from "@/lib/allergens";
 import { Input } from "@/components/ui/input";
+import { computeSplit } from "@/lib/split";
 
 export type SplitLine = { id: string; name: string; price: number; qty: number };
 
@@ -71,6 +72,10 @@ export function SplitBill({
 
   const parts = split?.bill_split_parts ?? [];
 
+  const calc = useMemo(
+    () => computeSplit(split?.mode ?? "groups", parts, lines),
+    [split?.mode, parts, lines],
+  );
   const assignedByLine = useMemo(() => {
     const map = new Map<string, number>();
     for (const part of parts) {
@@ -81,20 +86,48 @@ export function SplitBill({
     return map;
   }, [parts]);
 
-  const remainingLines = lines
-    .map((l) => ({ ...l, left: round2(l.qty - (assignedByLine.get(l.id) ?? 0)) }))
-    .filter((l) => l.left > 0.001);
-
-  const remainingAmount = round2(remainingLines.reduce((s, l) => s + l.price * l.left, 0));
+  const remainingLines = calc.unassignedLines;
+  const remainingAmount = calc.unassigned;
+  const anyPaid = parts.some((p) => p.status === "paid");
 
   function partAmount(part: PartRow) {
-    if (split?.mode === "equal") return Number(part.amount);
-    return round2(
-      part.bill_split_assignments.reduce((sum, a) => {
-        const line = lines.find((l) => l.id === a.order_item_id);
-        return sum + (line ? line.price * Number(a.qty) : 0);
-      }, 0),
-    );
+    return calc.amounts.get(part.id) ?? 0;
+  }
+
+  async function notifyIfRequested() {
+    if (split?.status === "requested") {
+      await onRequestWaiter();
+      toast.success("Cuenta actualizada: el camarero ya puede cobrar");
+    }
+  }
+
+  async function addGroup() {
+    if (!split) return;
+    setBusy(true);
+    const used = parts.filter((p) => p.status !== "with_waiter").length;
+    await supabase.from("bill_split_parts").insert({
+      bar_id: barId,
+      split_id: split.id,
+      label: `Grupo ${GROUP_LABELS[used] ?? used + 1}`,
+      position: used,
+    });
+    setBusy(false);
+    queryClient.invalidateQueries({ queryKey: ["bill-split", sessionId] });
+  }
+
+  async function addLaterPart() {
+    if (!split) return;
+    setBusy(true);
+    await supabase.from("bill_split_parts").insert({
+      bar_id: barId,
+      split_id: split.id,
+      label: "Consumo posterior",
+      position: parts.length,
+      amount: remainingAmount,
+    });
+    setBusy(false);
+    await notifyIfRequested();
+    queryClient.invalidateQueries({ queryKey: ["bill-split", sessionId] });
   }
 
   async function reset() {
@@ -177,18 +210,25 @@ export function SplitBill({
         .from("bill_split_assignments")
         .insert({ bar_id: barId, part_id: part.id, order_item_id: lineId, qty: next });
     }
+    if (delta > 0 && remainingAmount - line.price * delta <= 0.009) await notifyIfRequested();
     queryClient.invalidateQueries({ queryKey: ["bill-split", sessionId] });
   }
 
   async function shareRemainder() {
     if (!split || remainingLines.length === 0) return;
     setBusy(true);
-    const groupParts = parts.filter((p) => p.status !== "with_waiter");
+    const groupParts = parts.filter((p) => p.status === "pending");
+    if (groupParts.length === 0) {
+      setBusy(false);
+      toast.error("Todos los grupos han pagado. Crea un grupo nuevo o déjalo con el camarero.");
+      return;
+    }
     for (const line of remainingLines) {
       const share = round2(line.left / groupParts.length);
-      for (const part of groupParts) {
+      for (const [i, part] of groupParts.entries()) {
+        const portion = i === groupParts.length - 1 ? round2(line.left - share * (groupParts.length - 1)) : share;
         const existing = part.bill_split_assignments.find((a) => a.order_item_id === line.id);
-        const qty = round2((existing ? Number(existing.qty) : 0) + share);
+        const qty = round2((existing ? Number(existing.qty) : 0) + portion);
         if (existing) {
           await supabase.from("bill_split_assignments").update({ qty }).eq("id", existing.id);
         } else {
@@ -199,6 +239,7 @@ export function SplitBill({
       }
     }
     setBusy(false);
+    await notifyIfRequested();
     queryClient.invalidateQueries({ queryKey: ["bill-split", sessionId] });
   }
 
@@ -233,23 +274,23 @@ export function SplitBill({
       }
     }
     setBusy(false);
+    await notifyIfRequested();
     queryClient.invalidateQueries({ queryKey: ["bill-split", sessionId] });
   }
 
   async function requestBill() {
     if (!split) return;
-    if (split.mode === "groups" && remainingAmount > 0.009) {
+    if (remainingAmount > 0.009) {
       toast.error("Asigna todo lo que queda antes de pedir la cuenta");
       return;
     }
     setBusy(true);
-    if (split.mode === "groups") {
-      for (const part of parts) {
-        await supabase
-          .from("bill_split_parts")
-          .update({ amount: partAmount(part) })
-          .eq("id", part.id);
-      }
+    for (const part of parts) {
+      if (part.status === "paid") continue;
+      await supabase
+        .from("bill_split_parts")
+        .update({ amount: partAmount(part) })
+        .eq("id", part.id);
     }
     await supabase.from("bill_splits").update({ status: "requested" }).eq("id", split.id);
     await onRequestWaiter();
@@ -321,7 +362,7 @@ export function SplitBill({
             ? `A partes iguales entre ${split.people}`
             : `Por consumo · ${parts.filter((p) => p.status !== "with_waiter").length} grupos`}
         </p>
-        {!requested && (
+        {!requested && !anyPaid && (
           <button
             onClick={async () => {
               await reset();
@@ -344,7 +385,7 @@ export function SplitBill({
               </span>
             </div>
 
-            {split.mode === "groups" && part.status !== "with_waiter" && !requested && (
+            {split.mode === "groups" && part.status === "pending" && (!requested || remainingAmount > 0.009) && (
               <ul className="mt-2 space-y-1">
                 {lines.map((line) => {
                   const assigned =
@@ -404,21 +445,47 @@ export function SplitBill({
         ))}
       </ul>
 
-      {split.mode === "groups" && !requested && remainingAmount > 0.009 && (
-        <div className="rounded-lg bg-secondary p-3">
-          <p className="text-sm font-semibold">
-            Sin asignar: {formatEUR(remainingAmount)}
-          </p>
+      {split.mode === "equal" && remainingAmount > 0.009 && (
+        <div className="rounded-lg border border-warning bg-warning/15 p-3">
+          <p className="text-sm font-semibold">Consumo nuevo: {formatEUR(remainingAmount)}</p>
           <p className="text-xs text-muted-foreground">
-            No se puede pedir la cuenta hasta repartir lo que queda.
+            Ya habéis pagado todas las partes. Añadidlo como parte nueva para que el camarero pueda cobrar.
           </p>
-          <div className="mt-2 flex gap-2">
+          <button disabled={busy} onClick={addLaterPart} className="mt-2 w-full rounded-lg border border-border bg-card py-2 text-xs font-semibold">
+            Añadir "Consumo posterior"
+          </button>
+        </div>
+      )}
+
+      {split.mode === "groups" && remainingAmount > 0.009 && (
+        <div className={requested ? "rounded-lg border border-warning bg-warning/15 p-3" : "rounded-lg bg-secondary p-3"}>
+          <p className="text-sm font-semibold">
+            {requested ? "Nuevo sin asignar" : "Sin asignar"}: {formatEUR(remainingAmount)}
+          </p>
+          <ul className="mt-1 text-xs text-muted-foreground">
+            {remainingLines.map((l) => (
+              <li key={l.id}>{l.left % 1 === 0 ? l.left : l.left.toFixed(2)} × {l.name}</li>
+            ))}
+          </ul>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {requested
+              ? "Habéis pedido algo nuevo: repartidlo para que el camarero pueda cobrar."
+              : "No se puede pedir la cuenta hasta repartir lo que queda."}
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button
+              disabled={busy}
+              onClick={addGroup}
+              className="flex-1 rounded-lg border border-border bg-card py-2 text-xs font-semibold"
+            >
+              Nuevo grupo
+            </button>
             <button
               disabled={busy}
               onClick={shareRemainder}
               className="flex-1 rounded-lg border border-border bg-card py-2 text-xs font-semibold"
             >
-              Repartir entre los grupos
+              Repartir entre pendientes
             </button>
             <button
               disabled={busy}

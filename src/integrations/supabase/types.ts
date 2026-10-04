@@ -1103,6 +1103,7 @@ export type Database = {
         }[]
       }
       session_is_open: { Args: { _session_id: string }; Returns: boolean }
+      split_unassigned: { Args: { _split_id: string }; Returns: number }
       stock_action: {
         Args: { _action: string; _pool: string; _qty?: number }
         Returns: undefined
