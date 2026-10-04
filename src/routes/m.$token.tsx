@@ -436,6 +436,7 @@ function GuestPage() {
         {tab === "carta" && (
           <MenuBrowser
             categories={menu?.categories ?? []}
+            sort={menu?.settings?.menu_sort ?? "alpha"}
             items={items}
             cart={cart}
             showPrices={showPrices}

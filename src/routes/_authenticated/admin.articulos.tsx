@@ -9,6 +9,9 @@ import { StaffShell } from "@/components/StaffShell";
 import { supabase } from "@/integrations/supabase/client";
 import { useStaff } from "@/hooks/useStaff";
 import { useItemImages, resolveImage } from "@/lib/images";
+import { useBarSettings } from "@/hooks/useStaff";
+import type { MenuSort } from "@/lib/menu";
+import { Button } from "@/components/ui/button";
 import { ALLERGENS, formatEUR } from "@/lib/allergens";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -47,6 +50,7 @@ const EMPTY: Draft = {
 function ItemsPage() {
   const { data: staff } = useStaff();
   const barId = staff?.barId ?? null;
+  const { data: settings } = useBarSettings(barId);
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<Draft | null>(null);
   const [saving, setSaving] = useState(false);
@@ -141,6 +145,14 @@ function ItemsPage() {
     queryClient.invalidateQueries();
   }
 
+  async function setMenuSort(value: MenuSort) {
+    if (!barId) return;
+    const { error } = await supabase.from("bar_settings").update({ menu_sort: value }).eq("bar_id", barId);
+    if (error) { toast.error("No se pudo guardar el orden"); return; }
+    queryClient.invalidateQueries({ queryKey: ["bar-settings", barId] });
+    toast.success("Orden de la carta guardado");
+  }
+
   const groupNames = [...new Set(items.map((i) => i.group_name).filter(Boolean))] as string[];
   const sections = buildSections(categories, items);
 
@@ -165,6 +177,16 @@ function ItemsPage() {
         >
           <Printer className="h-4 w-4" /> Carta impresa
         </Link>
+      </div>
+
+      <div className="mb-5 border-b border-border pb-4">
+        <p className="mb-2 text-sm font-semibold">Orden de la carta virtual</p>
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Orden de la carta virtual">
+          {([ ["alpha", "Alfabético"], ["popular", "Más vendidos"], ["manual", "Manual"] ] as const).map(([value, label]) => (
+            <Button key={value} variant={(settings?.menu_sort ?? "alpha") === value ? "default" : "outline"} size="sm" aria-pressed={(settings?.menu_sort ?? "alpha") === value} onClick={() => setMenuSort(value)}>{label}</Button>
+          ))}
+        </div>
+        <p className="mt-2 text-xs text-muted-foreground">Se respeta el orden de secciones y grupos. Más vendidos cuenta las unidades de los últimos 30 días; manual usa las flechas de cada grupo.</p>
       </div>
 
       <div className="space-y-6">

@@ -82,7 +82,7 @@ export function MenuBrowser({
     });
   }, [items, query, exclude]);
 
-  const available = filtered.filter((i) => i.available);
+  const available = useMemo(() => filtered.filter((i) => i.available), [filtered]);
   const soldOut = filtered.filter((i) => !i.available);
   const sections = useMemo(() => buildSections(categories, available, sort, popularity), [categories, available, sort, popularity]);
   const favItems = items.filter((i) => favs.includes(i.id));
