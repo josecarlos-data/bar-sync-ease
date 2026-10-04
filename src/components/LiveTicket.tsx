@@ -1,3 +1,4 @@
+import { tableLabel } from "@/lib/tableLabel";
 import { useQuery } from "@tanstack/react-query";
 import { Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -81,7 +82,7 @@ export function LiveTicket({
     if (s?.tax_id) c(`NIF ${s.tax_id}`, 8);
     if (s?.address) c(s.address, 8);
     c("TICKET PROVISIONAL - NO VÁLIDO COMO FACTURA", 8, true);
-    c(`Mesa ${tableNumber ?? ""}${nickname ? ` · ${nickname}` : ""} · ${now}`, 8);
+    c(`${tableLabel(tableNumber)}${nickname ? ` · ${nickname}` : ""} · ${now}`, 8);
     y += 2;
     grouped.forEach((l) => row(`${l.qty} x ${l.name}`.slice(0, 34), formatEUR(l.price * l.qty)));
     y += 2;
@@ -105,7 +106,7 @@ export function LiveTicket({
           {s?.address && <p className="text-xs">{s.address}</p>}
           <p className="mt-2 rounded bg-warning/20 px-2 py-1 text-xs font-bold">Ticket provisional — no válido como factura</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Mesa {tableNumber}{nickname ? ` · ${nickname}` : ""} · {now}
+            {tableLabel(tableNumber)}{nickname ? ` · ${nickname}` : ""} · {now}
           </p>
         </div>
         <hr className="my-2 border-dashed border-border" />

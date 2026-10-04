@@ -1,3 +1,4 @@
+import { tableLabel } from "@/lib/tableLabel";
 import { formatEUR } from "@/lib/allergens";
 
 const esc = (s: unknown) =>
@@ -81,7 +82,7 @@ export function invoiceHtml(i: InvoiceRow) {
     ${s.bar.address ? `<div>${esc(s.bar.address)}</div>` : ""}
     ${s.bar.phone ? `<div>Tel. ${esc(s.bar.phone)}</div>` : ""}</div><hr>
     <div class="b">${i.kind === "full" ? "FACTURA" : "FACTURA SIMPLIFICADA"} ${invoiceCode(i)}</div>
-    <div>${date} · Mesa ${esc(s.table.number)}${s.part_label ? ` · Parte ${esc(s.part_label)}` : ""}</div>
+    <div>${date} · ${esc(tableLabel(s.table.number))}${s.part_label ? ` · Parte ${esc(s.part_label)}` : ""}</div>
     ${i.kind === "full" ? `<hr><div>Cliente: ${esc(i.customer_name)}</div><div>NIF: ${esc(i.customer_tax_id)}</div>${i.customer_address ? `<div>${esc(i.customer_address)}</div>` : ""}` : ""}
     <hr><table>${s.lines
       .map((l) => `<tr><td>${l.qty} ${esc(l.name)}</td><td class="r">${formatEUR(l.total)}</td></tr>`)
@@ -114,7 +115,7 @@ export async function downloadInvoicePdf(i: InvoiceRow) {
   if (s.bar.phone) line(`Tel. ${s.bar.phone}`);
   y += 2; rule();
   line(`${i.kind === "full" ? "FACTURA" : "FACTURA SIMPLIFICADA"} ${invoiceCode(i)}`, { bold: true, size: 12 });
-  line(`${new Date(i.created_at).toLocaleString("es-ES")} · Mesa ${s.table.number}${s.part_label ? ` · Parte ${s.part_label}` : ""}`);
+  line(`${new Date(i.created_at).toLocaleString("es-ES")} · ${tableLabel(s.table.number)}${s.part_label ? ` · Parte ${s.part_label}` : ""}`);
   if (i.kind === "full") {
     y += 2; rule();
     line(`Cliente: ${i.customer_name ?? ""}`);
