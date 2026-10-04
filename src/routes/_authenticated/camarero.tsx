@@ -376,6 +376,42 @@ function WaiterPage() {
                     </span>
                   </div>
 
+                  {(() => {
+                    const unserved = lines.filter((l) => l.status !== "served");
+                    if (!unserved.length) return null;
+                    const readyFirst = [...unserved].sort(
+                      (a, b) => Number(b.status === "ready") - Number(a.status === "ready"),
+                    );
+                    return (
+                      <div className="mt-3 rounded-lg border border-border p-2">
+                        <button
+                          onClick={() => setLines(unserved.map((l) => l.id), "served")}
+                          className="flex w-full items-center justify-center gap-1 rounded-lg bg-success py-2.5 text-sm font-bold text-success-foreground"
+                        >
+                          <Check className="h-4 w-4" /> Servir todo ({unserved.reduce((s, l) => s + l.qty, 0)})
+                        </button>
+                        <p className="mt-2 text-xs text-muted-foreground">Toca una línea para servirla sola:</p>
+                        <ul className="mt-1 flex flex-wrap gap-1.5">
+                          {readyFirst.map((l) => (
+                            <li key={l.id}>
+                              <button
+                                onClick={() => setLines([l.id], "served")}
+                                className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                                  l.status === "ready"
+                                    ? "bg-success/20 text-foreground ring-1 ring-success"
+                                    : "bg-secondary text-secondary-foreground"
+                                }`}
+                              >
+                                {l.qty}× {l.name_snapshot}
+                                {l.status === "ready" ? " · listo" : ""}
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    );
+                  })()}
+
                   {calls.length > 0 && (
                     <ul className="mt-3 space-y-2">
                       {calls.map((call) => (
