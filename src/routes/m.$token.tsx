@@ -711,93 +711,19 @@ function GuestPage() {
               }}
               className="rounded-lg border border-border px-4 py-3 font-semibold"
             >
-              Eliminar comanda
+              {t("clearOrder", lang)}
             </button>
             <button
               onClick={sendOrder}
               disabled={sending}
               className="flex-1 rounded-lg bg-primary px-4 py-3 font-semibold text-primary-foreground disabled:opacity-60"
             >
-              {sending ? "Enviando…" : "Confirmar y enviar"}
+              {sending ? t("sendingWord", lang) : t("confirmSend", lang)}
             </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
-  );
-}
-
-function ItemRow({
-  item,
-  image,
-  showPrices,
-  qty,
-  note,
-  onQty,
-  onNote,
-}: {
-  item: Item;
-  image: string | null;
-  showPrices: boolean;
-  qty: number;
-  note: string;
-  onQty: (delta: number) => void;
-  onNote: (note: string) => void;
-}) {
-  return (
-    <article className="rounded-xl border border-border bg-card p-3">
-      <div className="flex gap-3">
-        {image && (
-          <img
-            src={image}
-            alt={item.name}
-            loading="lazy"
-            className="h-16 w-16 shrink-0 rounded-lg object-cover"
-          />
-        )}
-        <div className="min-w-0 flex-1">
-          <p className="font-semibold">{item.name}</p>
-          {item.description && (
-            <p className="text-sm text-muted-foreground">{item.description}</p>
-          )}
-          {item.allergens.length > 0 && (
-            <p className="mt-1 text-xs text-muted-foreground">
-              Alérgenos: {item.allergens.map(allergenLabel).join(", ")}
-            </p>
-          )}
-          {showPrices && (
-            <p className="tabular mt-1 font-semibold">{formatEUR(Number(item.price))}</p>
-          )}
-        </div>
-        <div className="flex items-center gap-2 self-center">
-          {qty > 0 && (
-            <button
-              onClick={() => onQty(-1)}
-              aria-label={`Quitar uno de ${item.name}`}
-              className="rounded-md border border-border p-2"
-            >
-              <Minus className="h-4 w-4" />
-            </button>
-          )}
-          {qty > 0 && <span className="tabular w-4 text-center font-bold">{qty}</span>}
-          <button
-            onClick={() => onQty(1)}
-            aria-label={`Añadir ${item.name}`}
-            className="rounded-md bg-primary p-2 text-primary-foreground"
-          >
-            <Plus className="h-4 w-4" />
-          </button>
-        </div>
-      </div>
-      {qty > 0 && (
-        <Input
-          className="mt-2"
-          placeholder="Nota: sin cebolla, poco hecho…"
-          value={note}
-          onChange={(e) => onNote(e.target.value)}
-        />
-      )}
-    </article>
   );
 }
 
