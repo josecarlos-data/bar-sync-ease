@@ -4,6 +4,7 @@ import { ChevronDown, Heart, Minus, Plus, Search, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { allergenLabel, formatEUR } from "@/lib/allergens";
 import { buildSections, tagLabel, type MenuSort } from "@/lib/menu";
+import { useMenuPopularity } from "@/hooks/useMenuPopularity";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import type { Category, Item } from "@/lib/types";
@@ -46,16 +47,7 @@ export function MenuBrowser({
   const [active, setActive] = useState<string | null>(null);
   const navRef = useRef<HTMLDivElement>(null);
   const barId = items[0]?.bar_id;
-  const { data: popularity } = useQuery({
-    queryKey: ["menu-popularity", barId],
-    enabled: !!barId && sort === "popular",
-    staleTime: 60_000,
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc("menu_popularity", { _bar_id: barId ?? "" });
-      if (error) throw error;
-      return Object.fromEntries((data ?? []).map((row) => [row.item_id, Number(row.units)])) as Record<string, number>;
-    },
-  });
+  const { data: popularity } = useMenuPopularity(barId, sort === "popular");
 
   useEffect(() => {
     try {

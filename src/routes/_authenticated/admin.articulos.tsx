@@ -11,6 +11,7 @@ import { useStaff } from "@/hooks/useStaff";
 import { useItemImages, resolveImage } from "@/lib/images";
 import { useBarSettings } from "@/hooks/useStaff";
 import type { MenuSort } from "@/lib/menu";
+import { useMenuPopularity } from "@/hooks/useMenuPopularity";
 import { Button } from "@/components/ui/button";
 import { ALLERGENS, formatEUR } from "@/lib/allergens";
 import { Input } from "@/components/ui/input";
@@ -154,7 +155,9 @@ function ItemsPage() {
   }
 
   const groupNames = [...new Set(items.map((i) => i.group_name).filter(Boolean))] as string[];
-  const sections = buildSections(categories, items);
+  const menuSort: MenuSort = (settings?.menu_sort as MenuSort) ?? "alpha";
+  const { data: popularity = {} } = useMenuPopularity(barId, menuSort === "popular");
+  const sections = buildSections(categories, items, menuSort, popularity);
 
   return (
     <StaffShell title="Carta">
