@@ -1,3 +1,4 @@
+import { PrintToBarButton, TicketPrintAgent } from "@/components/TicketPrintAgent";
 import { displayNickname, tableLabel } from "@/lib/tableLabel";
 import { computeSplit } from "@/lib/split";
 import { useState } from "react";
@@ -261,6 +262,7 @@ function WaiterPage() {
       {isWaiterish && (
         <div className="mb-3">
           <SoundUnlockButton />
+          {barId && settings && <div className="mt-3"><TicketPrintAgent barId={barId} settings={settings} /></div>}
         </div>
       )}
       {isWaiterish && <SessionApprovalDialog barId={barId} />}
@@ -541,6 +543,9 @@ function WaiterPage() {
                       >
                         <FileText className="h-4 w-4" /> Ticket
                       </button>
+                    )}
+                    {lines.length > 0 && barId && (
+                      <PrintToBarButton barId={barId} sessionId={session.id} userId={staff?.userId} settings={settings} />
                     )}
                     <button
                       onClick={() => closeSession(session.id)}
