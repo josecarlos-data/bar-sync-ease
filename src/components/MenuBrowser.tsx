@@ -95,12 +95,12 @@ export function MenuBrowser({
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
         const threshold = (navRef.current?.getBoundingClientRect().bottom ?? 0) + 16;
-        let selected = sections[0].category.id;
+        let selected = sections[0]?.category.id;
         for (const section of sections) {
           const top = document.getElementById(`sec-${section.category.id}`)?.getBoundingClientRect().top;
           if (top !== undefined && top <= threshold) selected = section.category.id;
         }
-        setActive(selected);
+        if (selected) setActive(selected);
       });
     };
     updateActive();
