@@ -1,3 +1,4 @@
+import { PrintToBarButton } from "@/components/TicketPrintAgent";
 import { displayNickname, tableLabel } from "@/lib/tableLabel";
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
@@ -216,6 +217,7 @@ function CounterPage() {
                 <Button size="sm" variant="ghost" onClick={() => setDetailFor(a)}>
                   <ListChecks className="mr-1 h-4 w-4" /> Ver comandas
                 </Button>
+                {barId && <PrintToBarButton barId={barId} sessionId={a.id} userId={staff?.userId} settings={settings} />}
                 <Button size="sm" onClick={() => charge(a, pending.map((l) => l.id))}>
                   <Receipt className="mr-1 h-4 w-4" /> Cobrar {formatEUR(total)}
                 </Button>

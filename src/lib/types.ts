@@ -25,6 +25,10 @@ export type BarSettings = {
   printer_trigger?: "new" | "ready";
   printer_scope?: "kitchen" | "bar" | "both";
   printer_width?: number;
+  ticket_printer_enabled?: boolean;
+  ticket_print_on_bill?: boolean;
+  ticket_print_on_paid?: boolean;
+  ticket_printer_width?: number;
   legal_name?: string | null;
   tax_id?: string | null;
   address?: string | null;

@@ -42,6 +42,10 @@ export type Database = {
           stock_zero_action: string
           tax_id: string | null
           ticket_footer: string | null
+          ticket_print_on_bill: boolean
+          ticket_print_on_paid: boolean
+          ticket_printer_enabled: boolean
+          ticket_printer_width: number
           updated_at: string
           waiter_can_order: boolean
         }
@@ -72,6 +76,10 @@ export type Database = {
           stock_zero_action?: string
           tax_id?: string | null
           ticket_footer?: string | null
+          ticket_print_on_bill?: boolean
+          ticket_print_on_paid?: boolean
+          ticket_printer_enabled?: boolean
+          ticket_printer_width?: number
           updated_at?: string
           waiter_can_order?: boolean
         }
@@ -102,6 +110,10 @@ export type Database = {
           stock_zero_action?: string
           tax_id?: string | null
           ticket_footer?: string | null
+          ticket_print_on_bill?: boolean
+          ticket_print_on_paid?: boolean
+          ticket_printer_enabled?: boolean
+          ticket_printer_width?: number
           updated_at?: string
           waiter_can_order?: boolean
         }
@@ -690,6 +702,61 @@ export type Database = {
           },
         ]
       }
+      print_jobs: {
+        Row: {
+          bar_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          invoice_id: string | null
+          kind: string
+          printed_at: string | null
+          session_id: string
+        }
+        Insert: {
+          bar_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          invoice_id?: string | null
+          kind?: string
+          printed_at?: string | null
+          session_id: string
+        }
+        Update: {
+          bar_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          invoice_id?: string | null
+          kind?: string
+          printed_at?: string | null
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "print_jobs_bar_id_fkey"
+            columns: ["bar_id"]
+            isOneToOne: false
+            referencedRelation: "bars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "print_jobs_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "print_jobs_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "table_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           bar_id: string | null
@@ -1077,6 +1144,7 @@ export type Database = {
       }
       can_view_bar: { Args: { _bar_id: string }; Returns: boolean }
       claim_print: { Args: { _order_id: string }; Returns: boolean }
+      claim_print_job: { Args: { _id: string }; Returns: boolean }
       decide_session: {
         Args: { _decision: string; _merge?: boolean; _session_id: string }
         Returns: Json

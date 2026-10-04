@@ -295,6 +295,52 @@ function SettingsPage() {
           </div>
 
           <div className="rounded-xl border border-border bg-card p-4">
+            <label className="flex items-center justify-between gap-4">
+              <span>
+                <span className="block font-semibold">Impresora de tickets (barra)</span>
+                <span className="block text-sm text-muted-foreground">
+                  Imprime el ticket del cliente en la impresora de la barra. Si no marcas nada abajo, solo imprime al pulsar "Imprimir en barra".
+                </span>
+              </span>
+              <Switch checked={!!settings.ticket_printer_enabled} onCheckedChange={(v) => update({ ticket_printer_enabled: v })} />
+            </label>
+            {settings.ticket_printer_enabled && (
+              <div className="mt-3 space-y-3">
+                {(
+                  [
+                    ["ticket_print_on_bill", "Al pedir la cuenta (ticket provisional)"],
+                    ["ticket_print_on_paid", "Al cobrar (ticket definitivo)"],
+                  ] as const
+                ).map(([key, label]) => (
+                  <label key={key} className="flex items-center justify-between gap-4 text-sm">
+                    <span>{label}</span>
+                    <Switch checked={settings[key] !== false} onCheckedChange={(v) => update({ [key]: v } as Partial<BarSettings>)} />
+                  </label>
+                ))}
+                <div>
+                  <p className="text-sm font-semibold">Ancho del papel</p>
+                  <div className="mt-1 flex gap-2">
+                    {[58, 80].map((w) => (
+                      <button
+                        key={w}
+                        onClick={() => update({ ticket_printer_width: w })}
+                        className={`rounded-full px-4 py-1.5 text-sm font-semibold ${
+                          (settings.ticket_printer_width ?? 80) === w ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground"
+                        }`}
+                      >
+                        {w} mm
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  En el dispositivo con la impresora, activa "Este dispositivo imprime tickets de cliente" en la pantalla Barra.
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-xl border border-border bg-card p-4">
             <p className="font-semibold">Dirección pública de la carta (para los QR)</p>
             <p className="text-xs text-muted-foreground">
               La dirección de la app publicada, por ejemplo https://mi-bar.lovable.app. Los QR de las mesas la usarán siempre.
