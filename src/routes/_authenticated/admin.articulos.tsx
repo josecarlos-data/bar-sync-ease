@@ -132,7 +132,7 @@ function ItemsPage() {
   async function move(list: Item[], index: number, dir: -1 | 1) {
     const other = list[index + dir];
     const item = list[index];
-    if (!other) return;
+    if (!other || !item) return;
     const a = item.position, b = other.position;
     await Promise.all([
       supabase.from("items").update({ position: a === b ? b + dir : b }).eq("id", item.id),
