@@ -23,6 +23,7 @@ export type Database = {
           kitchen_voice: string
           kitchen_voice_auto: boolean
           legal_name: string | null
+          menu_print: Json
           order_voice_auto: string
           payments_enabled: boolean
           phone: string | null
@@ -49,6 +50,7 @@ export type Database = {
           kitchen_voice?: string
           kitchen_voice_auto?: boolean
           legal_name?: string | null
+          menu_print?: Json
           order_voice_auto?: string
           payments_enabled?: boolean
           phone?: string | null
@@ -75,6 +77,7 @@ export type Database = {
           kitchen_voice?: string
           kitchen_voice_auto?: boolean
           legal_name?: string | null
+          menu_print?: Json
           order_voice_auto?: string
           payments_enabled?: boolean
           phone?: string | null
@@ -421,6 +424,7 @@ export type Database = {
           created_at: string
           description: string | null
           destination: Database["public"]["Enums"]["item_destination"]
+          group_name: string | null
           id: string
           image_url: string | null
           is_drink: boolean
@@ -430,6 +434,7 @@ export type Database = {
           pool_portions: number
           position: number
           price: number
+          tags: string[]
           tax_rate: number
         }
         Insert: {
@@ -440,6 +445,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           destination?: Database["public"]["Enums"]["item_destination"]
+          group_name?: string | null
           id?: string
           image_url?: string | null
           is_drink?: boolean
@@ -449,6 +455,7 @@ export type Database = {
           pool_portions?: number
           position?: number
           price?: number
+          tags?: string[]
           tax_rate?: number
         }
         Update: {
@@ -459,6 +466,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           destination?: Database["public"]["Enums"]["item_destination"]
+          group_name?: string | null
           id?: string
           image_url?: string | null
           is_drink?: boolean
@@ -468,6 +476,7 @@ export type Database = {
           pool_portions?: number
           position?: number
           price?: number
+          tags?: string[]
           tax_rate?: number
         }
         Relationships: [
