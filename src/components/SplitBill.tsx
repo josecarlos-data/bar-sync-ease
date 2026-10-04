@@ -209,18 +209,25 @@ export function SplitBill({
         .from("bill_split_assignments")
         .insert({ bar_id: barId, part_id: part.id, order_item_id: lineId, qty: next });
     }
+    if (delta > 0 && remainingAmount - line.price * delta <= 0.009) await notifyIfRequested();
     queryClient.invalidateQueries({ queryKey: ["bill-split", sessionId] });
   }
 
   async function shareRemainder() {
     if (!split || remainingLines.length === 0) return;
     setBusy(true);
-    const groupParts = parts.filter((p) => p.status !== "with_waiter");
+    const groupParts = parts.filter((p) => p.status === "pending");
+    if (groupParts.length === 0) {
+      setBusy(false);
+      toast.error("Todos los grupos han pagado. Crea un grupo nuevo o déjalo con el camarero.");
+      return;
+    }
     for (const line of remainingLines) {
       const share = round2(line.left / groupParts.length);
-      for (const part of groupParts) {
+      for (const [i, part] of groupParts.entries()) {
+        const portion = i === groupParts.length - 1 ? round2(line.left - share * (groupParts.length - 1)) : share;
         const existing = part.bill_split_assignments.find((a) => a.order_item_id === line.id);
-        const qty = round2((existing ? Number(existing.qty) : 0) + share);
+        const qty = round2((existing ? Number(existing.qty) : 0) + portion);
         if (existing) {
           await supabase.from("bill_split_assignments").update({ qty }).eq("id", existing.id);
         } else {
@@ -231,6 +238,7 @@ export function SplitBill({
       }
     }
     setBusy(false);
+    await notifyIfRequested();
     queryClient.invalidateQueries({ queryKey: ["bill-split", sessionId] });
   }
 
@@ -265,23 +273,23 @@ export function SplitBill({
       }
     }
     setBusy(false);
+    await notifyIfRequested();
     queryClient.invalidateQueries({ queryKey: ["bill-split", sessionId] });
   }
 
   async function requestBill() {
     if (!split) return;
-    if (split.mode === "groups" && remainingAmount > 0.009) {
+    if (remainingAmount > 0.009) {
       toast.error("Asigna todo lo que queda antes de pedir la cuenta");
       return;
     }
     setBusy(true);
-    if (split.mode === "groups") {
-      for (const part of parts) {
-        await supabase
-          .from("bill_split_parts")
-          .update({ amount: partAmount(part) })
-          .eq("id", part.id);
-      }
+    for (const part of parts) {
+      if (part.status === "paid") continue;
+      await supabase
+        .from("bill_split_parts")
+        .update({ amount: partAmount(part) })
+        .eq("id", part.id);
     }
     await supabase.from("bill_splits").update({ status: "requested" }).eq("id", split.id);
     await onRequestWaiter();
