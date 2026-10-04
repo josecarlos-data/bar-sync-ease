@@ -94,7 +94,7 @@ export function MenuBrowser({
     const updateActive = () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
-        const threshold = (navRef.current?.getBoundingClientRect().bottom ?? 0) + 16;
+        const threshold = (navRef.current?.getBoundingClientRect().bottom ?? 0) + 40;
         let selected = sections[0]?.category.id;
         for (const section of sections) {
           const top = document.getElementById(`sec-${section.category.id}`)?.getBoundingClientRect().top;
