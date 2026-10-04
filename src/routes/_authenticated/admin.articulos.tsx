@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowDown, ArrowUp, ImagePlus, Plus, Pencil, Printer } from "lucide-react";
+import { ArrowDown, ArrowUp, HelpCircle, ImagePlus, Plus, Pencil, Printer } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { ITEM_TAGS, buildSections } from "@/lib/menu";
 import { StaffShell } from "@/components/StaffShell";
@@ -56,6 +56,7 @@ function ItemsPage() {
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<Draft | null>(null);
   const [saving, setSaving] = useState(false);
+  const [allergenHelpOpen, setAllergenHelpOpen] = useState(false);
 
   const { data } = useQuery({
     queryKey: ["admin-carta", barId],
