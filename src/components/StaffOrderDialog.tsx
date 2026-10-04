@@ -6,6 +6,7 @@ import { Minus, Plus, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { openSessionForTable } from "@/lib/bar.functions";
 import { allergenLabel, formatEUR } from "@/lib/allergens";
+import { MenuBrowser } from "@/components/MenuBrowser";
 import { Input } from "@/components/ui/input";
 import type { Category, Item } from "@/lib/types";
 
@@ -164,17 +165,14 @@ export function StaffOrderDialog({
         {!hasSession && (
           <Input className="mb-4" placeholder="Apodo de la mesa (opcional)" value={nickname} onChange={(e) => setNickname(e.target.value)} />
         )}
-        {categories.map((cat) => {
-          const catItems = items.filter((i) => i.category_id === cat.id);
-          if (!catItems.length) return null;
-          const sorted = [...catItems.filter((i) => i.available), ...catItems.filter((i) => !i.available)];
-          return (
-            <section key={cat.id} className="mb-4">
-              <h3 className="mb-2 text-sm font-bold uppercase text-muted-foreground">{cat.name}</h3>
-              <ul className="space-y-2">{sorted.map(renderItem)}</ul>
-            </section>
-          );
-        })}
+        <MenuBrowser
+          categories={categories}
+          items={items.filter((i) => i.available)}
+          cart={cart}
+          favKey={`comandas:staff-favs:${barId}`}
+          onQty={changeQty}
+          onNote={(itemId, note) => setCart((p) => p.map((l) => (l.itemId === itemId ? { ...l, note } : l)))}
+        />
       </div>
       <footer className="border-t border-border bg-card px-4 py-3">
         {confirming ? (

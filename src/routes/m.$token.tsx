@@ -9,6 +9,7 @@ import { InvoiceDialog } from "@/components/InvoiceDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { joinTable, reportOccupied } from "@/lib/bar.functions";
 import { useRealtime } from "@/hooks/useRealtime";
+import { MenuBrowser } from "@/components/MenuBrowser";
 import { ConnectionBadge } from "@/components/ConnectionBadge";
 import { SplitBill, type SplitLine } from "@/components/SplitBill";
 import { useItemImages, resolveImage } from "@/lib/images";
@@ -433,56 +434,17 @@ function GuestPage() {
 
       <main className="mx-auto w-full max-w-2xl px-4 py-4">
         {tab === "carta" && (
-          <div className="space-y-6">
-            {(menu?.categories ?? []).map((cat) => {
-              const catItems = available.filter((i) => i.category_id === cat.id);
-              if (catItems.length === 0) return null;
-              return (
-                <section key={cat.id}>
-                  <h2 className="font-display mb-2 text-xl font-bold">{cat.name}</h2>
-                  <div className="space-y-2">
-                    {catItems.map((item) => (
-                      <ItemRow
-                        key={item.id}
-                        item={item}
-                        image={resolveImage(item.image_url, imageMap)}
-                        showPrices={showPrices}
-                        qty={cart.find((l) => l.itemId === item.id)?.qty ?? 0}
-                        note={cart.find((l) => l.itemId === item.id)?.note ?? ""}
-                        onQty={(delta) => changeQty(item.id, delta)}
-                        onNote={(note) =>
-                          setCart((prev) =>
-                            prev.map((l) => (l.itemId === item.id ? { ...l, note } : l)),
-                          )
-                        }
-                      />
-                    ))}
-                  </div>
-                </section>
-              );
-            })}
-
-            {soldOut.length > 0 && (
-              <section className="rounded-xl bg-muted p-3">
-                <h2 className="font-display mb-2 text-lg font-bold text-muted-foreground">
-                  Agotados
-                </h2>
-                <ul className="space-y-1">
-                  {soldOut.map((item) => (
-                    <li
-                      key={item.id}
-                      className="flex items-center justify-between text-sm text-muted-foreground"
-                    >
-                      <span className="line-through">{item.name}</span>
-                      <span className="rounded-full bg-background px-2 py-0.5 text-xs font-bold">
-                        Agotado
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
-          </div>
+          <MenuBrowser
+            categories={menu?.categories ?? []}
+            items={items}
+            cart={cart}
+            showPrices={showPrices}
+            favKey={`comandas:favs:${session?.sessionId ?? ""}`}
+            images={(item) => resolveImage(item.image_url, imageMap)}
+            stickyTop="top-[105px]"
+            onQty={changeQty}
+            onNote={(itemId, note) => setCart((prev) => prev.map((l) => (l.itemId === itemId ? { ...l, note } : l)))}
+          />
         )}
 
         {tab === "cuenta" && (

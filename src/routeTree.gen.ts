@@ -21,6 +21,7 @@ import { Route as AuthenticatedHistorialRouteImport } from './routes/_authentica
 import { Route as MTokenRouteImport } from './routes/m.$token'
 import { Route as AuthenticatedAdminAjustesRouteImport } from './routes/_authenticated/admin.ajustes'
 import { Route as AuthenticatedAdminArticulosRouteImport } from './routes/_authenticated/admin.articulos'
+import { Route as AuthenticatedAdminCartaImpresaRouteImport } from './routes/_authenticated/admin.carta-impresa'
 import { Route as AuthenticatedAdminMesasRouteImport } from './routes/_authenticated/admin.mesas'
 import { Route as AuthenticatedAdminPersonalRouteImport } from './routes/_authenticated/admin.personal'
 
@@ -86,6 +87,12 @@ const AuthenticatedAdminArticulosRoute =
     path: '/admin/articulos',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminCartaImpresaRoute =
+  AuthenticatedAdminCartaImpresaRouteImport.update({
+    id: '/admin/carta-impresa',
+    path: '/admin/carta-impresa',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminMesasRoute = AuthenticatedAdminMesasRouteImport.update({
   id: '/admin/mesas',
   path: '/admin/mesas',
@@ -110,6 +117,7 @@ export interface FileRoutesByFullPath {
   '/m/$token': typeof MTokenRoute
   '/admin/ajustes': typeof AuthenticatedAdminAjustesRoute
   '/admin/articulos': typeof AuthenticatedAdminArticulosRoute
+  '/admin/carta-impresa': typeof AuthenticatedAdminCartaImpresaRoute
   '/admin/mesas': typeof AuthenticatedAdminMesasRoute
   '/admin/personal': typeof AuthenticatedAdminPersonalRoute
 }
@@ -125,6 +133,7 @@ export interface FileRoutesByTo {
   '/m/$token': typeof MTokenRoute
   '/admin/ajustes': typeof AuthenticatedAdminAjustesRoute
   '/admin/articulos': typeof AuthenticatedAdminArticulosRoute
+  '/admin/carta-impresa': typeof AuthenticatedAdminCartaImpresaRoute
   '/admin/mesas': typeof AuthenticatedAdminMesasRoute
   '/admin/personal': typeof AuthenticatedAdminPersonalRoute
 }
@@ -142,6 +151,7 @@ export interface FileRoutesById {
   '/m/$token': typeof MTokenRoute
   '/_authenticated/admin/ajustes': typeof AuthenticatedAdminAjustesRoute
   '/_authenticated/admin/articulos': typeof AuthenticatedAdminArticulosRoute
+  '/_authenticated/admin/carta-impresa': typeof AuthenticatedAdminCartaImpresaRoute
   '/_authenticated/admin/mesas': typeof AuthenticatedAdminMesasRoute
   '/_authenticated/admin/personal': typeof AuthenticatedAdminPersonalRoute
 }
@@ -159,6 +169,7 @@ export interface FileRouteTypes {
     | '/m/$token'
     | '/admin/ajustes'
     | '/admin/articulos'
+    | '/admin/carta-impresa'
     | '/admin/mesas'
     | '/admin/personal'
   fileRoutesByTo: FileRoutesByTo
@@ -174,6 +185,7 @@ export interface FileRouteTypes {
     | '/m/$token'
     | '/admin/ajustes'
     | '/admin/articulos'
+    | '/admin/carta-impresa'
     | '/admin/mesas'
     | '/admin/personal'
   id:
@@ -190,6 +202,7 @@ export interface FileRouteTypes {
     | '/m/$token'
     | '/_authenticated/admin/ajustes'
     | '/_authenticated/admin/articulos'
+    | '/_authenticated/admin/carta-impresa'
     | '/_authenticated/admin/mesas'
     | '/_authenticated/admin/personal'
   fileRoutesById: FileRoutesById
@@ -287,6 +300,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminArticulosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/carta-impresa': {
+      id: '/_authenticated/admin/carta-impresa'
+      path: '/admin/carta-impresa'
+      fullPath: '/admin/carta-impresa'
+      preLoaderRoute: typeof AuthenticatedAdminCartaImpresaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/mesas': {
       id: '/_authenticated/admin/mesas'
       path: '/admin/mesas'
@@ -313,6 +333,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedHistorialRoute: typeof AuthenticatedHistorialRoute
   AuthenticatedAdminAjustesRoute: typeof AuthenticatedAdminAjustesRoute
   AuthenticatedAdminArticulosRoute: typeof AuthenticatedAdminArticulosRoute
+  AuthenticatedAdminCartaImpresaRoute: typeof AuthenticatedAdminCartaImpresaRoute
   AuthenticatedAdminMesasRoute: typeof AuthenticatedAdminMesasRoute
   AuthenticatedAdminPersonalRoute: typeof AuthenticatedAdminPersonalRoute
 }
@@ -326,6 +347,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHistorialRoute: AuthenticatedHistorialRoute,
   AuthenticatedAdminAjustesRoute: AuthenticatedAdminAjustesRoute,
   AuthenticatedAdminArticulosRoute: AuthenticatedAdminArticulosRoute,
+  AuthenticatedAdminCartaImpresaRoute: AuthenticatedAdminCartaImpresaRoute,
   AuthenticatedAdminMesasRoute: AuthenticatedAdminMesasRoute,
   AuthenticatedAdminPersonalRoute: AuthenticatedAdminPersonalRoute,
 }
