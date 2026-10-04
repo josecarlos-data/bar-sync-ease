@@ -120,6 +120,13 @@
       "when": 1791153444413,
       "tag": "0016_fix_charge_session_to_tab_note",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1791155789164,
+      "tag": "0017_tapa_with_drink",
+      "breakpoints": true
     }
   ]
 }
