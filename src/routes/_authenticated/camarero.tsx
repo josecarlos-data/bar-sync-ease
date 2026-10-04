@@ -1,4 +1,4 @@
-import { displayNickname } from "@/lib/tableLabel";
+import { displayNickname, tableLabel } from "@/lib/tableLabel";
 import { computeSplit } from "@/lib/split";
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
