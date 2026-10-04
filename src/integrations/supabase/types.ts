@@ -54,6 +54,10 @@ export type Database = {
           split_bar_kitchen: boolean
           stock_zero_action: string
           tabs_enabled: boolean
+          tapa_extra_price: number
+          tapa_mode: string
+          tapa_rounds: Json
+          tapa_rounds_after: string
           tax_id: string | null
           ticket_footer: string | null
           ticket_print_on_bill: boolean
@@ -104,6 +108,10 @@ export type Database = {
           split_bar_kitchen?: boolean
           stock_zero_action?: string
           tabs_enabled?: boolean
+          tapa_extra_price?: number
+          tapa_mode?: string
+          tapa_rounds?: Json
+          tapa_rounds_after?: string
           tax_id?: string | null
           ticket_footer?: string | null
           ticket_print_on_bill?: boolean
@@ -154,6 +162,10 @@ export type Database = {
           split_bar_kitchen?: boolean
           stock_zero_action?: string
           tabs_enabled?: boolean
+          tapa_extra_price?: number
+          tapa_mode?: string
+          tapa_rounds?: Json
+          tapa_rounds_after?: string
           tax_id?: string | null
           ticket_footer?: string | null
           ticket_print_on_bill?: boolean
@@ -762,6 +774,7 @@ export type Database = {
           group_name: string | null
           id: string
           image_url: string | null
+          includes_tapa: boolean
           ingredients: string | null
           is_drink: boolean
           is_tapa: boolean
@@ -771,6 +784,7 @@ export type Database = {
           position: number
           price: number
           tags: string[]
+          tapa_supplement: number
           tax_rate: number
         }
         Insert: {
@@ -784,6 +798,7 @@ export type Database = {
           group_name?: string | null
           id?: string
           image_url?: string | null
+          includes_tapa?: boolean
           ingredients?: string | null
           is_drink?: boolean
           is_tapa?: boolean
@@ -793,6 +808,7 @@ export type Database = {
           position?: number
           price?: number
           tags?: string[]
+          tapa_supplement?: number
           tax_rate?: number
         }
         Update: {
@@ -806,6 +822,7 @@ export type Database = {
           group_name?: string | null
           id?: string
           image_url?: string | null
+          includes_tapa?: boolean
           ingredients?: string | null
           is_drink?: boolean
           is_tapa?: boolean
@@ -815,6 +832,7 @@ export type Database = {
           position?: number
           price?: number
           tags?: string[]
+          tapa_supplement?: number
           tax_rate?: number
         }
         Relationships: [
@@ -904,6 +922,8 @@ export type Database = {
           served_at: string | null
           started_at: string | null
           status: Database["public"]["Enums"]["line_status"]
+          tapa_kind: string | null
+          tapa_round: number | null
           tax_rate_snapshot: number
         }
         Insert: {
@@ -923,6 +943,8 @@ export type Database = {
           served_at?: string | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["line_status"]
+          tapa_kind?: string | null
+          tapa_round?: number | null
           tax_rate_snapshot?: number
         }
         Update: {
@@ -942,6 +964,8 @@ export type Database = {
           served_at?: string | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["line_status"]
+          tapa_kind?: string | null
+          tapa_round?: number | null
           tax_rate_snapshot?: number
         }
         Relationships: [

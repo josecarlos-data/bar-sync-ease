@@ -31,7 +31,9 @@ export function MenuBrowser({
   sort = "alpha",
   showSoldOut = true,
   lang = "es",
+  tapaChoice = false,
 }: {
+  tapaChoice?: boolean;
   categories: Category[];
   items: Item[];
   cart: CartLine[];
@@ -141,6 +143,7 @@ export function MenuBrowser({
         item={item}
         image={images?.(item) ?? null}
         showPrices={showPrices}
+        tapaChoice={tapaChoice}
         qty={line?.qty ?? 0}
         note={line?.note ?? ""}
         fav={favs.includes(item.id)}
@@ -267,7 +270,9 @@ function MenuItemRow({
   onQty,
   onNote,
   lang,
+  tapaChoice,
 }: {
+  tapaChoice?: boolean;
   item: Item;
   image: string | null;
   showPrices: boolean;
@@ -304,6 +309,11 @@ function MenuItemRow({
           </p>
           <p className="text-xs text-muted-foreground">
             {showPrices && <span className="tabular font-semibold text-foreground">{formatEUR(Number(item.price))}</span>}
+            {tapaChoice && item.is_tapa && (
+              <span className="ml-1 rounded bg-primary/10 px-1.5 py-0.5 text-[11px] font-bold text-primary">
+                {Number(item.tapa_supplement ?? 0) > 0 ? `Con bebida +${formatEUR(Number(item.tapa_supplement))}` : "Incluida con bebida"}
+              </span>
+            )}
             {item.allergens.length > 0 && <span>{showPrices ? " · " : ""}{item.allergens.map(allergenLabel).join(", ")}</span>}
           </p>
           </div>

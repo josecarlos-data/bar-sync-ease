@@ -53,6 +53,10 @@ export type BarSettings = {
   purchase_list_enabled?: boolean;
   menu_languages?: string[];
   menu_default_language?: string;
+  tapa_mode?: "off" | "house" | "choice" | string;
+  tapa_rounds?: import("@/integrations/supabase/types").Json;
+  tapa_rounds_after?: "cycle" | "repeat" | string;
+  tapa_extra_price?: number;
 };
 
 export type Item = {
@@ -73,6 +77,8 @@ export type Item = {
   group_name?: string | null;
   ingredients?: string | null;
   tags?: string[];
+  includes_tapa?: boolean;
+  tapa_supplement?: number;
 };
 
 export type Category = { id: string; bar_id: string; name: string; position: number };

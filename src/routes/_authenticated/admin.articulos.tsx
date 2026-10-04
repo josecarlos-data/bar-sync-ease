@@ -123,6 +123,8 @@ function ItemsPage() {
       destination: (draft.destination ?? "bar") as Destination,
       is_drink: draft.is_drink ?? false,
       is_tapa: draft.is_tapa ?? false,
+      includes_tapa: draft.includes_tapa ?? true,
+      tapa_supplement: Number(draft.tapa_supplement ?? 0),
       group_name: draft.group_name?.trim() || null,
       tags: draft.tags ?? [],
       ingredients: draft.ingredients?.trim() || null,
@@ -350,6 +352,15 @@ function ItemsPage() {
                   onCheckedChange={(v) => setDraft({ ...draft, is_drink: v })}
                 />
               </label>
+              {draft.is_drink && (
+                <label className="flex items-center justify-between rounded-lg border border-border p-3 text-sm font-semibold">
+                  <span>Incluye tapa<span className="block text-xs font-normal text-muted-foreground">Normalmente sí en cerveza, vino, mosto y refrescos; no en agua o café.</span></span>
+                  <Switch
+                    checked={draft.includes_tapa ?? true}
+                    onCheckedChange={(v) => setDraft({ ...draft, includes_tapa: v })}
+                  />
+                </label>
+              )}
               <label className="flex items-center justify-between rounded-lg border border-border p-3 text-sm font-semibold">
                 Puede servirse como tapa
                 <Switch
@@ -357,6 +368,19 @@ function ItemsPage() {
                   onCheckedChange={(v) => setDraft({ ...draft, is_tapa: v })}
                 />
               </label>
+              {draft.is_tapa && (
+                <label className="flex items-center justify-between gap-2 rounded-lg border border-border p-3 text-sm font-semibold">
+                  <span>Suplemento con bebida (€)<span className="block text-xs font-normal text-muted-foreground">0 = incluida. Ej.: 1 € para tapas especiales.</span></span>
+                  <Input
+                    type="number"
+                    step="0.5"
+                    min={0}
+                    className="w-24"
+                    value={draft.tapa_supplement ?? 0}
+                    onChange={(e) => setDraft({ ...draft, tapa_supplement: Number(e.target.value) })}
+                  />
+                </label>
+              )}
               <label className="flex items-center justify-between rounded-lg border border-border p-3 text-sm font-semibold">
                 Disponible
                 <Switch

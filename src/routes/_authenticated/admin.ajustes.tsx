@@ -38,11 +38,6 @@ const TOGGLES: { key: keyof BarSettings; label: string; help: string }[] = [
     help: "Activo por defecto.",
   },
   {
-    key: "free_tapa_with_drink",
-    label: "Tapa gratis con bebida",
-    help: "Con cada bebida el cliente elige una tapa sin coste (fase 2).",
-  },
-  {
     key: "payments_enabled",
     label: "Pasarela de pago",
     help: "Puedes activarla y desactivarla cuando quieras (fase 3).",
@@ -84,6 +79,65 @@ function SettingsPage() {
               />
             </label>
           ))}
+
+          <div className="rounded-xl border border-border bg-card p-4">
+            <p className="font-semibold">Tapa con la bebida</p>
+            <p className="text-sm text-muted-foreground">
+              <b>La pone el bar</b> (estilo Granada): cada bebida lleva tapa y la cocina la saca por rondas (1.ª, 2.ª, 3.ª…) para no repetir.
+              <b> La elige el cliente</b> (estilo Almería): cada bebida da derecho a una tapa de la carta; las especiales cobran su suplemento.
+              Qué bebidas incluyen tapa y el suplemento de cada tapa se marcan en Artículos.
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {([["off", "Desactivado"], ["house", "La pone el bar"], ["choice", "La elige el cliente"]] as const).map(([value, label]) => (
+                <button
+                  key={value}
+                  onClick={() => update({ tapa_mode: value })}
+                  className={`rounded-full px-4 py-1.5 text-sm font-semibold ${
+                    (settings.tapa_mode ?? "off") === value ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            {settings.tapa_mode === "house" && (
+              <div className="mt-3 space-y-2">
+                <label className="block text-sm font-semibold">Tapas por ronda (una por línea: 1.ª, 2.ª, 3.ª…)</label>
+                <textarea
+                  className="w-full rounded-md border border-input bg-background p-2 text-sm"
+                  rows={4}
+                  placeholder={"Patatas a lo pobre\nAlbóndigas\nMigas"}
+                  defaultValue={(Array.isArray(settings.tapa_rounds) ? (settings.tapa_rounds as string[]) : []).join("\n")}
+                  onBlur={(e) => update({ tapa_rounds: e.target.value.split("\n").map((x) => x.trim()).filter(Boolean) })}
+                />
+                <div className="flex flex-wrap items-center gap-2 text-sm">
+                  <span>Al acabar la lista:</span>
+                  {([["cycle", "Volver a empezar"], ["repeat", "Repetir la última"]] as const).map(([value, label]) => (
+                    <button
+                      key={value}
+                      onClick={() => update({ tapa_rounds_after: value })}
+                      className={`rounded-full px-3 py-1 font-semibold ${
+                        (settings.tapa_rounds_after ?? "cycle") === value ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <label className="flex items-center gap-2 text-sm">
+                  Precio de tapa extra (bebida sin tapa o tapa de más)
+                  <Input
+                    type="number"
+                    step="0.1"
+                    min={0}
+                    className="w-24"
+                    defaultValue={settings.tapa_extra_price ?? 1.5}
+                    onBlur={(e) => update({ tapa_extra_price: Number(e.target.value) || 0 })}
+                  />
+                </label>
+              </div>
+            )}
+          </div>
 
           <div className="rounded-xl border border-border bg-card p-4">
             <p className="font-semibold">Forma de trabajar</p>

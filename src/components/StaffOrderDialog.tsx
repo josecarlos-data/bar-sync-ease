@@ -12,6 +12,7 @@ import { useBarSettings } from "@/hooks/useStaff";
 import { useMenuPopularity } from "@/hooks/useMenuPopularity";
 import { Input } from "@/components/ui/input";
 import type { Category, Item } from "@/lib/types";
+import { cartDrinks, choiceAllowance, houseTapaLines, priceCart, pricedTotal, proposeRounds, roundLabel, tapaMode, type SessionTapaLine } from "@/lib/tapas";
 
 type CartLine = { itemId: string; qty: number; note: string };
 
@@ -64,14 +65,36 @@ export function StaffOrderDialog({
     [items, popularity],
   );
 
-  const total = useMemo(
-    () =>
-      cart.reduce((s, l) => {
-        const it = items.find((i) => i.id === l.itemId);
-        return s + (it ? Number(it.price) * l.qty : 0);
-      }, 0),
-    [cart, items],
-  );
+  const mode = tapaMode(settings);
+  const { data: sessionLines = [] } = useQuery({
+    queryKey: ["staff-session-tapas", tableId],
+    enabled: hasSession && mode !== "off",
+    queryFn: async () => {
+      const { data: ses } = await supabase
+        .from("table_sessions")
+        .select("id")
+        .eq("table_id", tableId)
+        .in("status", ["open", "pending"])
+        .order("opened_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!ses) return [] as SessionTapaLine[];
+      const { data: ords } = await supabase
+        .from("orders")
+        .select("order_items(item_id, qty, tapa_kind, tapa_round, deleted_at)")
+        .eq("session_id", ses.id);
+      return (ords ?? []).flatMap((o) => o.order_items as SessionTapaLine[]);
+    },
+  });
+  const priced = useMemo(() => priceCart(settings, cart, items, sessionLines), [settings, cart, items, sessionLines]);
+  const drinksInCart = cartDrinks(cart, items);
+  const [tapaN, setTapaN] = useState<number | null>(null);
+  const [forceNew, setForceNew] = useState(false);
+  const tapaCount = tapaN ?? drinksInCart;
+  const rounds = mode === "house" ? proposeRounds(tapaCount, sessionLines, forceNew) : [];
+  const houseLines = mode === "house" ? houseTapaLines(settings, rounds, drinksInCart) : [];
+  const allowance = mode === "choice" ? choiceAllowance(cart, items, sessionLines) : null;
+  const total = pricedTotal(priced) + houseLines.reduce((s, l) => s + l.price * l.qty, 0);
 
   function changeQty(itemId: string, delta: number) {
     setCart((prev) => {
@@ -102,8 +125,8 @@ export function StaffOrderDialog({
         .single();
       if (error || !order) throw error ?? new Error("orden");
       const now = new Date().toISOString();
-      const lines = cart.map((l) => {
-        const it = items.find((i) => i.id === l.itemId)!;
+      const lines: Record<string, unknown>[] = priced.map((l) => {
+        const it = l.item;
         const alreadyServed =
           mode === "all-served" || (mode === "drinks-served" && it.destination === "bar");
         return {
@@ -111,17 +134,35 @@ export function StaffOrderDialog({
           order_id: order.id,
           item_id: it.id,
           name_snapshot: it.name,
-          price_snapshot: it.price,
+          price_snapshot: l.price,
           tax_rate_snapshot: it.tax_rate,
           qty: l.qty,
           note: l.note.trim() || null,
           destination: it.destination,
+          tapa_kind: l.tapa_kind,
           ...(alreadyServed
             ? { status: "served" as const, ready_at: now, served_at: now }
             : { status: "pending" as const }),
         };
       });
-      const { error: le } = await supabase.from("order_items").insert(lines);
+      for (const h of houseLines) {
+        lines.push({
+          bar_id: res.barId,
+          order_id: order.id,
+          item_id: null,
+          name_snapshot: h.name,
+          price_snapshot: h.price,
+          tax_rate_snapshot: 10,
+          qty: h.qty,
+          note: null,
+          destination: "kitchen",
+          status: "pending",
+          tapa_kind: h.tapa_kind,
+          tapa_round: h.tapa_round,
+        });
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: le } = await supabase.from("order_items").insert(lines as any);
       if (le) throw le;
       toast.success(`Comanda enviada a la mesa ${tableNumber}`);
       queryClient.invalidateQueries();
@@ -212,6 +253,7 @@ export function StaffOrderDialog({
           items={items.filter((i) => i.available)}
           cart={cart}
           favKey={`comandas:staff-favs:${barId}`}
+          tapaChoice={mode === "choice"}
           onQty={changeQty}
           onNote={(itemId, note) => setCart((p) => p.map((l) => (l.itemId === itemId ? { ...l, note } : l)))}
         />
@@ -252,6 +294,35 @@ export function StaffOrderDialog({
                       renderGroup(null, cart)
                     )}
                   </div>
+                  {mode === "house" && (drinksInCart > 0 || tapaCount > 0) && (
+                    <div className="rounded-lg border border-primary/40 bg-primary/5 p-2 text-sm">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-semibold">Tapas para cocina</span>
+                        <div className="flex items-center gap-2">
+                          <button aria-label="Menos tapas" onClick={() => setTapaN(Math.max(0, tapaCount - 1))} className="rounded-full border border-border p-1"><Minus className="h-3.5 w-3.5" /></button>
+                          <span className="tabular w-5 text-center font-bold">{tapaCount}</span>
+                          <button aria-label="Más tapas" onClick={() => setTapaN(tapaCount + 1)} className="rounded-full border border-border p-1"><Plus className="h-3.5 w-3.5" /></button>
+                        </div>
+                      </div>
+                      <ul className="mt-1">
+                        {houseLines.map((h) => (
+                          <li key={h.name} className="flex justify-between">
+                            <span>{h.qty}× {roundLabel(settings, h.tapa_round)}{h.tapa_kind === "extra" ? " (extra)" : ""}</span>
+                            <span className="text-muted-foreground">{h.price ? formatEUR(h.price * h.qty) : "incluida"}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      <label className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                        <input type="checkbox" checked={forceNew} onChange={(e) => setForceNew(e.target.checked)} />
+                        Empezar ronda nueva (no completar la anterior)
+                      </label>
+                    </div>
+                  )}
+                  {mode === "choice" && allowance && allowance.drinks > 0 && (
+                    <p className="rounded-lg bg-primary/5 p-2 text-sm">
+                      Tapas incluidas: {Math.min(allowance.drinks, allowance.used + priced.filter((l) => l.tapa_kind).reduce((a, l) => a + l.qty, 0))} de {allowance.drinks} bebidas
+                    </p>
+                  )}
                   <div className="flex gap-2">
                     <button onClick={() => setConfirming(false)} className="rounded-lg border border-border px-3 py-2.5 font-semibold">Volver</button>
                     {mixed ? (
