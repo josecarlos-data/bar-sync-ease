@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowDown, ArrowUp, ImagePlus, Plus, Pencil, Printer } from "lucide-react";
+import { ArrowDown, ArrowUp, HelpCircle, ImagePlus, Plus, Pencil, Printer } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { ITEM_TAGS, buildSections } from "@/lib/menu";
 import { StaffShell } from "@/components/StaffShell";
@@ -56,6 +56,7 @@ function ItemsPage() {
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<Draft | null>(null);
   const [saving, setSaving] = useState(false);
+  const [allergenHelpOpen, setAllergenHelpOpen] = useState(false);
 
   const { data } = useQuery({
     queryKey: ["admin-carta", barId],
@@ -373,7 +374,31 @@ function ItemsPage() {
                 onDescription={(v) => setDraft((d) => d && { ...d, description: v })}
               />
               <div>
-                <p className="mb-1 text-sm font-semibold">Alérgenos</p>
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <p className="text-sm font-semibold">Alérgenos</p>
+                  <button
+                    type="button"
+                    title="Ver ejemplos de cada alérgeno"
+                    onClick={() => setAllergenHelpOpen((v) => !v)}
+                    className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-[11px] font-semibold text-muted-foreground"
+                  >
+                    <HelpCircle className="h-3.5 w-3.5" />
+                    Ver ejemplos
+                  </button>
+                </div>
+                {allergenHelpOpen && (
+                  <ul className="mb-2 space-y-1 rounded-lg border border-border bg-muted/40 p-2.5 text-[11px]">
+                    {ALLERGENS.map((a) => (
+                      <li key={a.value}>
+                        <span className="font-semibold">{a.label}:</span>{" "}
+                        <span className="text-muted-foreground">{a.examples}</span>
+                        {(draft.allergens ?? []).includes(a.value) && (
+                          <span className="ml-1 font-semibold text-accent">— marcado</span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
                 <div className="flex flex-wrap gap-1.5">
                   {ALLERGENS.map((a) => {
                     const on = (draft.allergens ?? []).includes(a.value);
