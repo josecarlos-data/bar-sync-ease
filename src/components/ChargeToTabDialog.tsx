@@ -61,9 +61,8 @@ export function ChargeToTabDialog({
       if (error || !data) { setBusy(false); toast.error("No se pudo crear la cuenta"); return; }
       tabId = data.id;
     }
-    const { error } = await supabase.rpc("charge_session_to_tab", {
-      _session: sessionId, _tab: tabId, _split_part: partId ?? undefined, _amount: partId ? amount : undefined,
-    });
+    const { error } = await supabase.rpc("charge_session_to_tab",
+      partId ? { _session: sessionId, _tab: tabId, _split_part: partId, _amount: amount } : { _session: sessionId, _tab: tabId });
     setBusy(false);
     if (error) {
       toast.error(error.message.includes("unassigned") ? "Queda consumo sin asignar: repartidlo antes"
