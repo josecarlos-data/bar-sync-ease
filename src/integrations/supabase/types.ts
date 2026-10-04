@@ -35,6 +35,7 @@ export type Database = {
           public_base_url: string | null
           queue_sort: Database["public"]["Enums"]["queue_sort"]
           require_session_approval: boolean
+          service_mode: string
           show_prices: boolean
           split_bar_kitchen: boolean
           stock_zero_action: string
@@ -63,6 +64,7 @@ export type Database = {
           public_base_url?: string | null
           queue_sort?: Database["public"]["Enums"]["queue_sort"]
           require_session_approval?: boolean
+          service_mode?: string
           show_prices?: boolean
           split_bar_kitchen?: boolean
           stock_zero_action?: string
@@ -91,6 +93,7 @@ export type Database = {
           public_base_url?: string | null
           queue_sort?: Database["public"]["Enums"]["queue_sort"]
           require_session_approval?: boolean
+          service_mode?: string
           show_prices?: boolean
           split_bar_kitchen?: boolean
           stock_zero_action?: string
