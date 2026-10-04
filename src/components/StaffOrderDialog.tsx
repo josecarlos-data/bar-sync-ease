@@ -52,7 +52,8 @@ export function StaffOrderDialog({
   });
   const items = data?.items ?? [];
   const categories = data?.categories ?? [];
-  const popularity = useMenuPopularity(barId, true);
+  const { data: popData } = useMenuPopularity(barId, true);
+  const popularity: Record<string, number> = popData ?? {};
   const topItems = useMemo(
     () =>
       items
