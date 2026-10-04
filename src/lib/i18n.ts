@@ -97,6 +97,10 @@ const T: Record<string, Entry> = {
   joinNameError: { es: "Escribe tu nombre", en: "Please write your name", fr: "Indiquez votre nom", de: "Bitte Namen angeben", it: "Scrivi il tuo nome", pt: "Escreva o seu nome", ca: "Escriu el teu nom" },
   joinFail: { es: "No hemos podido apuntarte. Avisa a alguien del bar.", en: "We couldn't add you. Ask someone at the bar.", fr: "Impossible de vous inscrire. Prévenez quelqu'un au bar.", de: "Eintragung fehlgeschlagen. Fragen Sie an der Theke.", it: "Non siamo riusciti a iscriverti. Avvisa il bar.", pt: "Não foi possível inscrever. Avise alguém do bar.", ca: "No us hem pogut apuntar. Avisa algú del bar." },
   noQr: { es: "¿No tenéis QR? Compartid el enlace", en: "No QR code? Share the link", fr: "Pas de QR ? Partagez le lien", de: "Kein QR-Code? Link teilen", it: "Niente QR? Condividi il link", pt: "Sem QR? Partilhe a ligação", ca: "No teniu QR? Compartiu l'enllaç" },
+  addedBy: { es: "Añadida por el camarero", en: "Added by the waiter", fr: "Ajoutée par le serveur", de: "Vom Service hinzugefügt", it: "Aggiunto dal cameriere", pt: "Adicionado pelo empregado", ca: "Afegida pel cambrer" },
+  preparing: { es: "En preparación", en: "Preparing", fr: "En préparation", de: "In Zubereitung", it: "In preparazione", pt: "Em preparação", ca: "En preparació" },
+  orderOne: { es: "comanda", en: "order", fr: "commande", de: "Bestellung", it: "ordine", pt: "pedido", ca: "comanda" },
+  orderMany: { es: "comandas", en: "orders", fr: "commandes", de: "Bestellungen", it: "ordini", pt: "pedidos", ca: "comandes" },
 };
 
 export function t(key: string, lang: Lang = "es"): string {

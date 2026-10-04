@@ -378,25 +378,25 @@ function GuestPage() {
             Mesa {tableInfo?.number}
             {occupied.nickname ? ` · abierta por "${occupied.nickname}"` : ""}
             {occupied.openedAt
-              ? ` a las ${new Date(occupied.openedAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}`
+              ? ` ${t("at", lang)} ${new Date(occupied.openedAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}`
               : ""}
-            {` · ${occupied.orderCount} comanda${occupied.orderCount === 1 ? "" : "s"}`}
+            {` · ${occupied.orderCount} ${occupied.orderCount === 1 ? t("orderOne", lang) : t("orderMany", lang)}`}
           </p>
           <Button className="w-full" onClick={() => { setPhase("loading"); attempt(undefined, true); }}>
-            Somos del mismo grupo, unirme
+            {t("sameGroup", lang)}
           </Button>
           <Button
             variant="outline"
             className="w-full"
             onClick={async () => {
               await report({ data: { token } }).catch(() => {});
-              setMessage("Mesa abierta. Avisa al camarero. Ya le hemos enviado un aviso.");
+              setMessage(t("tableOpenNotice", lang));
               setPhase("notice");
             }}
           >
-            No, somos otros clientes
+            {t("otherClients", lang)}
           </Button>
-          {occupied.waitlistEnabled && <OccupiedWaitlist barId={occupied.barId} slug={occupied.slug} />}
+          {occupied.waitlistEnabled && <OccupiedWaitlist barId={occupied.barId} slug={occupied.slug} lang={lang} />}
         </div>
       </Centered>
     );
@@ -411,14 +411,13 @@ function GuestPage() {
       <Centered>
         <div className="w-full max-w-sm space-y-4 text-left">
           <h1 className="font-display text-2xl font-extrabold">
-            Mesa {tableInfo?.number} · ¡Bienvenidos!
+            {t("tableWord", lang)} {tableInfo?.number} · {t("welcome", lang)}
           </h1>
           <p className="text-sm text-muted-foreground">
-            Si queréis, poned un nombre para que el camarero os identifique. Si
-            no, entraréis como «Mesa {tableInfo?.number}».
+            {t("nicknameAsk", lang)} {t("orAs", lang)} «{t("tableWord", lang)} {tableInfo?.number}».
           </p>
           <Input
-            placeholder={`Mesa ${tableInfo?.number ?? ""} - Ayuntamiento`}
+            placeholder={`${t("tableWord", lang)} ${tableInfo?.number ?? ""}`}
             value={nickname}
             onChange={(e) => setNickname(e.target.value)}
             onKeyDown={(e) => {
@@ -432,7 +431,7 @@ function GuestPage() {
             }
             className="w-full rounded-lg bg-primary py-3 font-semibold text-primary-foreground"
           >
-            Entrar
+            {t("enterWord", lang)}
           </button>
         </div>
       </Centered>
@@ -448,10 +447,8 @@ function GuestPage() {
     return (
       <Centered>
         <div className="max-w-sm space-y-2">
-          <h1 className="font-display text-2xl font-extrabold">Mesa no aceptada</h1>
-          <p className="text-muted-foreground">
-            Esta mesa no ha sido aceptada. Avisa al camarero.
-          </p>
+          <h1 className="font-display text-2xl font-extrabold">{t("rejectedTitle", lang)}</h1>
+          <p className="text-muted-foreground">{t("rejectedText", lang)}</p>
         </div>
       </Centered>
     );
@@ -463,7 +460,7 @@ function GuestPage() {
         <div className="flex items-center justify-between gap-2">
           <div className="min-w-0">
             <h1 className="font-display truncate text-lg font-extrabold">
-              Mesa {tableInfo?.number}
+              {t("tableWord", lang)} {tableInfo?.number}
             </h1>
             <p className="truncate text-xs text-muted-foreground">{displayNickname(session?.nickname, tableInfo?.number)}</p>
           </div>
@@ -472,9 +469,9 @@ function GuestPage() {
         <div className="mt-2 flex gap-1">
           {(
             [
-              ["carta", "Carta"],
-              ["cuenta", "Cuenta"],
-              ...(showPrices ? ([["ticket", "Ticket"]] as const) : []),
+              ["carta", t("tabCarta", lang)],
+              ["cuenta", t("tabBill", lang)],
+              ...(showPrices ? ([["ticket", t("tabTicket", lang)]] as const) : []),
             ] as const
           ).map(([value, label]) => (
             <button
@@ -488,12 +485,32 @@ function GuestPage() {
             </button>
           ))}
         </div>
+        {(menu?.settings?.menu_languages ?? ["es"]).length > 1 && (
+          <div className="mt-2 flex flex-wrap gap-1">
+            {(menu?.settings?.menu_languages ?? ["es"]).map((code) => (
+              <button
+                key={code}
+                onClick={() => {
+                  const next = code as Lang;
+                  setLang(next);
+                  rememberLang(next);
+                }}
+                className={`rounded-full border px-2 py-0.5 text-[11px] font-bold uppercase ${
+                  lang === code
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border text-muted-foreground"
+                }`}
+              >
+                {code}
+              </button>
+            ))}
+          </div>
+        )}
       </header>
 
       {awaiting && (
         <p className="m-4 rounded-lg bg-warning px-4 py-3 text-sm font-semibold text-warning-foreground">
-          Podéis pedir ya. Vuestras comandas quedan pendientes de confirmar: llegarán a barra y
-          cocina en cuanto el camarero acepte la mesa.
+          {t("awaiting", lang)}
         </p>
       )}
 
@@ -502,11 +519,12 @@ function GuestPage() {
           <div className="space-y-4">
             {menu?.settings && (
               <>
-                {menu.settings.hours_enabled && <HoursBanner settings={menu.settings} />}
+                {menu.settings.hours_enabled && <HoursBanner settings={menu.settings} lang={lang} />}
                 {menu.settings.special_enabled && (
                   <SpecialCard
                     settings={menu.settings}
-                    items={menu.items}
+                    items={shownItems}
+                    lang={lang}
                     showPrices={showPrices}
                     image={(item) => resolveImage(item.image_url, imageMap)}
                   />
@@ -514,9 +532,10 @@ function GuestPage() {
               </>
             )}
             <MenuBrowser
-              categories={menu?.categories ?? []}
+              categories={shownCategories}
               sort={menu?.settings?.menu_sort ?? "alpha"}
-              items={items}
+              items={shownItems}
+              lang={lang}
               cart={cart}
               showPrices={showPrices}
               favKey={`comandas:favs:${session?.sessionId ?? ""}`}
@@ -532,22 +551,22 @@ function GuestPage() {
         {tab === "cuenta" && (
           <div className="space-y-4">
             {(bill ?? []).length === 0 && (
-              <p className="text-sm text-muted-foreground">Todavía no habéis pedido nada.</p>
+              <p className="text-sm text-muted-foreground">{t("emptyBill", lang)}</p>
             )}
             {(bill ?? []).map((order, index) => (
               <article key={order.id} className="rounded-xl border border-border bg-card p-4">
                 <p className="mb-2 text-sm font-bold text-muted-foreground">
                   {awaiting && (
                     <span className="mb-1 block w-fit rounded-full bg-warning px-2 py-0.5 text-xs font-bold text-warning-foreground">
-                      Pendiente de confirmar
+                      {t("pendingConfirm", lang)}
                     </span>
                   )}
-                  Comanda {index + 1} ·{" "}
+                  {t("orderWord", lang)} {index + 1} ·{" "}
                   {new Date(order.created_at).toLocaleTimeString("es-ES", {
                     hour: "2-digit",
                     minute: "2-digit",
                   })}
-                  {order.created_by_role !== "client" && " · Añadida por el camarero"}
+                  {order.created_by_role !== "client" && ` · ${t("addedBy", lang)}`}
                 </p>
                 <ul className="space-y-1">
                   {order.order_items
@@ -557,7 +576,7 @@ function GuestPage() {
                         <span>
                           {line.qty} × {line.name_snapshot}
                           {line.status === "preparing" && (
-                            <span className="ml-2 text-xs font-bold text-warning-foreground">En preparación</span>
+                            <span className="ml-2 text-xs font-bold text-warning-foreground">{t("preparing", lang)}</span>
                           )}
                           {line.status === "ready" && (
                             <span className="ml-2 text-xs font-bold text-success">Listo</span>
