@@ -8,7 +8,8 @@ import { StaffShell } from "@/components/StaffShell";
 import { supabase } from "@/integrations/supabase/client";
 import { useStaff, useBarSettings } from "@/hooks/useStaff";
 import { ALLERGENS, formatEUR } from "@/lib/allergens";
-import { buildSections, type MenuSection } from "@/lib/menu";
+import { buildSections, type MenuSection, type MenuSort } from "@/lib/menu";
+import { useMenuPopularity } from "@/hooks/useMenuPopularity";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import type { Category, Item } from "@/lib/types";
@@ -33,6 +34,7 @@ type Opts = {
   allergens: boolean;
   bleed: boolean;
   hidden: string[];
+  sort: "inherit" | MenuSort;
   title: string;
   slogan: string;
   address: string;
@@ -82,6 +84,8 @@ function PrintMenuPage() {
   });
 
   const [opts, setOpts] = useState<Opts | null>(null);
+  const printSort: MenuSort = !opts?.sort || opts.sort === "inherit" ? ((settings?.menu_sort as MenuSort) ?? "alpha") : opts.sort;
+  const { data: popularity = {} } = useMenuPopularity(barId, printSort === "popular");
   useEffect(() => {
     if (opts || !settings || !data) return;
     const saved = (settings.menu_print ?? {}) as Partial<Opts>;
@@ -93,6 +97,7 @@ function PrintMenuPage() {
       allergens: true,
       bleed: false,
       hidden: [],
+      sort: "inherit",
       title: data.barName,
       slogan: "Tapas y raciones",
       address: settings.address ?? "",
@@ -109,8 +114,8 @@ function PrintMenuPage() {
   }, [opts?.qrUrl]);
 
   const sections = useMemo(
-    () => buildSections((data?.categories ?? []).filter((c) => !opts?.hidden.includes(c.id)), data?.items ?? []),
-    [data, opts?.hidden],
+    () => buildSections((data?.categories ?? []).filter((c) => !opts?.hidden.includes(c.id)), data?.items ?? [], printSort, popularity),
+    [data, opts?.hidden, printSort, popularity],
   );
 
   if (!opts || !data) return <StaffShell title="Carta impresa"><p className="text-muted-foreground">Cargando…</p></StaffShell>;
@@ -175,6 +180,13 @@ function PrintMenuPage() {
             <Toggle label="Mostrar precios" value={opts.prices} onChange={(v) => set({ prices: v })} />
             <Toggle label="Mostrar alérgenos (con leyenda)" value={opts.allergens} onChange={(v) => set({ allergens: v })} />
             <Toggle label="Sangrado y marcas para imprenta" value={opts.bleed} onChange={(v) => set({ bleed: v })} />
+            <p className="pt-1 text-xs font-semibold text-muted-foreground">Orden de los artículos</p>
+            <div className="flex flex-wrap gap-1.5">
+              {([["inherit", "Igual que la carta virtual"], ["alpha", "Alfabético"], ["popular", "Más vendidos"], ["manual", "Manual"]] as const).map(([v, l]) => (
+                <button key={v} onClick={() => set({ sort: v })}
+                  className={`rounded-full border px-3 py-1 text-xs font-semibold ${(opts.sort ?? "inherit") === v ? "border-primary bg-primary text-primary-foreground" : "border-border"}`}>{l}</button>
+              ))}
+            </div>
             <p className="pt-1 text-xs font-semibold text-muted-foreground">Secciones incluidas</p>
             {data.categories.map((c) => (
               <Toggle key={c.id} label={c.name} value={!opts.hidden.includes(c.id)}

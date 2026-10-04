@@ -190,6 +190,7 @@ function ItemsPage() {
           ))}
         </div>
         <p className="mt-2 text-xs text-muted-foreground">Se respeta el orden de secciones y grupos. Más vendidos cuenta las unidades de los últimos 30 días; manual usa las flechas de cada grupo.</p>
+        {menuSort !== "manual" && <p className="mt-1 text-xs font-medium">Cambia a Manual para ordenar a mano.</p>}
       </div>
 
       <div className="space-y-6">
@@ -221,10 +222,11 @@ function ItemsPage() {
                         {formatEUR(item.price)} · {item.destination === "bar" ? "Barra" : "Cocina"}
                       </p>
                     </div>
-                    <div className="flex flex-col">
+                    {menuSort === "popular" && <span className="shrink-0 text-xs text-muted-foreground">{popularity[item.id] ?? 0} uds.</span>}
+                    {menuSort === "manual" && <div className="flex flex-col">
                       <button aria-label="Subir" disabled={idx === 0} onClick={() => move(g.items, idx, -1)} className="p-0.5 disabled:opacity-30"><ArrowUp className="h-3.5 w-3.5" /></button>
                       <button aria-label="Bajar" disabled={idx === g.items.length - 1} onClick={() => move(g.items, idx, 1)} className="p-0.5 disabled:opacity-30"><ArrowDown className="h-3.5 w-3.5" /></button>
-                    </div>
+                    </div>}
                     <Switch
                       checked={item.available}
                       onCheckedChange={() => toggleAvailable(item)}
