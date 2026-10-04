@@ -1,4 +1,4 @@
-import { displayNickname } from "@/lib/tableLabel";
+import { displayNickname, tableLabel } from "@/lib/tableLabel";
 import { computeSplit } from "@/lib/split";
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
@@ -27,7 +27,7 @@ export const Route = createFileRoute("/_authenticated/camarero")({
   component: WaiterPage,
 });
 
-type TableRow = { id: string; number: number; name: string | null; active: boolean };
+type TableRow = { id: string; number: number; name: string | null; active: boolean; kind: string };
 type SessionRow = {
   id: string;
   table_id: string;
@@ -84,9 +84,8 @@ function WaiterPage() {
       const [tables, sessions, calls] = await Promise.all([
         supabase
           .from("tables")
-          .select("id, number, name, active")
+          .select("id, number, name, active, kind")
           .eq("bar_id", barId!)
-          .eq("kind", "table")
           .order("number"),
         supabase
           .from("table_sessions")
@@ -245,10 +244,11 @@ function WaiterPage() {
     queryClient.invalidateQueries();
   }
 
-  const tables = data?.tables ?? [];
+  const allTables = data?.tables ?? [];
+  const tables = allTables.filter((t) => t.kind === "table");
   const solo = settings?.service_mode === "solo";
   const tableBySession = new Map(
-    (data?.sessions ?? []).map((s) => [s.id, tables.find((t) => t.id === s.table_id)?.number ?? 0]),
+    (data?.sessions ?? []).map((s) => [s.id, allTables.find((t) => t.id === s.table_id)?.number ?? 0]),
   );
   const kitchenQueue = solo
     ? (data?.lines ?? [])
@@ -299,7 +299,7 @@ function WaiterPage() {
               <li key={l.id} className="flex items-center justify-between gap-2 rounded-lg bg-secondary px-3 py-2">
                 <span className="min-w-0">
                   <span className="mr-2 rounded bg-foreground px-1.5 py-0.5 text-xs font-bold text-background">
-                    Mesa {tableBySession.get(l.orders?.session_id ?? "") ?? "?"}
+                    {tableLabel(tableBySession.get(l.orders?.session_id ?? ""))}
                   </span>
                   <b className="tabular">{l.qty}×</b> {l.name_snapshot}
                   {l.note && <span className="block text-xs text-muted-foreground">{l.note}</span>}
