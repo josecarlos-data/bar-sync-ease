@@ -12,6 +12,7 @@ import { useItemImages, resolveImage } from "@/lib/images";
 import { useBarSettings } from "@/hooks/useStaff";
 import type { MenuSort } from "@/lib/menu";
 import { useMenuPopularity } from "@/hooks/useMenuPopularity";
+import { AllergenAssistant } from "@/components/AllergenAssistant";
 import { Button } from "@/components/ui/button";
 import { ALLERGENS, formatEUR } from "@/lib/allergens";
 import { Input } from "@/components/ui/input";
@@ -123,6 +124,7 @@ function ItemsPage() {
       is_tapa: draft.is_tapa ?? false,
       group_name: draft.group_name?.trim() || null,
       tags: draft.tags ?? [],
+      ingredients: draft.ingredients?.trim() || null,
     };
     const { error } = draft.id
       ? await supabase.from("items").update(payload).eq("id", draft.id)
@@ -362,6 +364,14 @@ function ItemsPage() {
                 />
               </label>
 
+              <AllergenAssistant
+                barId={barId}
+                name={draft.name}
+                ingredients={draft.ingredients ?? ""}
+                onIngredients={(v) => setDraft((d) => d && { ...d, ingredients: v })}
+                onSuggest={(codes) => setDraft((d) => d && { ...d, allergens: [...new Set([...(d.allergens ?? []), ...codes])] as Item["allergens"] })}
+                onDescription={(v) => setDraft((d) => d && { ...d, description: v })}
+              />
               <div>
                 <p className="mb-1 text-sm font-semibold">Alérgenos</p>
                 <div className="flex flex-wrap gap-1.5">
@@ -370,6 +380,7 @@ function ItemsPage() {
                     return (
                       <button
                         key={a.value}
+                        title={a.examples}
                         onClick={() =>
                           setDraft({
                             ...draft,
