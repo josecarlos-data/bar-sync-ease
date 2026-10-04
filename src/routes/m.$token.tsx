@@ -348,15 +348,22 @@ function GuestPage() {
             Mesa {tableInfo?.number} · ¡Bienvenidos!
           </h1>
           <p className="text-sm text-muted-foreground">
-            Ponle un nombre a vuestro grupo para que el camarero os identifique.
+            Si queréis, poned un nombre para que el camarero os identifique. Si
+            no, entraréis como «Mesa {tableInfo?.number}».
           </p>
           <Input
             placeholder={`Mesa ${tableInfo?.number ?? ""} - Ayuntamiento`}
             value={nickname}
             onChange={(e) => setNickname(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter")
+                attempt(nickname.trim() || `Mesa ${tableInfo?.number ?? ""}`);
+            }}
           />
           <button
-            onClick={() => nickname.trim() && attempt(nickname.trim())}
+            onClick={() =>
+              attempt(nickname.trim() || `Mesa ${tableInfo?.number ?? ""}`)
+            }
             className="w-full rounded-lg bg-primary py-3 font-semibold text-primary-foreground"
           >
             Entrar
