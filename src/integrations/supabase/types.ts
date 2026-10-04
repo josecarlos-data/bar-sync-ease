@@ -990,6 +990,7 @@ export type Database = {
           bar_id: string
           created_at: string
           id: string
+          kind: string
           name: string | null
           number: number
           qr_token: string
@@ -999,6 +1000,7 @@ export type Database = {
           bar_id: string
           created_at?: string
           id?: string
+          kind?: string
           name?: string | null
           number: number
           qr_token: string
@@ -1008,6 +1010,7 @@ export type Database = {
           bar_id?: string
           created_at?: string
           id?: string
+          kind?: string
           name?: string | null
           number?: number
           qr_token?: string
