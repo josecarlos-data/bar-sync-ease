@@ -7,6 +7,7 @@ import { useStaff, useBarSettings } from "@/hooks/useStaff";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import type { BarSettings } from "@/lib/types";
+import { BusinessDataCard } from "@/components/BusinessDataCard";
 
 export const Route = createFileRoute("/_authenticated/admin/ajustes")({
   head: () => ({
@@ -285,32 +286,7 @@ function SettingsPage() {
             />
           </div>
 
-          <div className="rounded-xl border border-border bg-card p-4">
-            <p className="font-semibold">Datos del negocio (salen en tickets y facturas)</p>
-            <div className="mt-2 space-y-2">
-              {(
-                [
-                  ["legal_name", "Razón social"],
-                  ["tax_id", "NIF / CIF"],
-                  ["address", "Dirección"],
-                  ["phone", "Teléfono"],
-                  ["ticket_footer", "Texto al pie del ticket"],
-                ] as const
-              ).map(([key, label]) => (
-                <label key={key} className="block text-sm">
-                  <span className="text-muted-foreground">{label}</span>
-                  <input
-                    defaultValue={settings[key] ?? ""}
-                    onBlur={(e) => {
-                      const v = e.target.value.trim() || null;
-                      if (v !== (settings[key] ?? null)) update({ [key]: v } as Partial<BarSettings>);
-                    }}
-                    className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2"
-                  />
-                </label>
-              ))}
-            </div>
-          </div>
+          <BusinessDataCard settings={settings} onSave={update} />
         </div>
       )}
     </StaffShell>
