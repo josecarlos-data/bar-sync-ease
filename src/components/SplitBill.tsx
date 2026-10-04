@@ -32,7 +32,6 @@ const WAITER_LABEL = "Pendiente con camarero";
 function round2(value: number) {
   return Math.round(value * 100) / 100;
 }
-void round2;
 
 export function SplitBill({
   sessionId,
