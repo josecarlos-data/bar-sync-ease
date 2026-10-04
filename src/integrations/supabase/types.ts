@@ -493,6 +493,7 @@ export type Database = {
           note: string
           price_snapshot: number
           qty: number
+          source_session_id: string | null
           tab_id: string
           tax_rate_snapshot: number
         }
@@ -506,6 +507,7 @@ export type Database = {
           note?: string
           price_snapshot: number
           qty?: number
+          source_session_id?: string | null
           tab_id: string
           tax_rate_snapshot?: number
         }
@@ -519,6 +521,7 @@ export type Database = {
           note?: string
           price_snapshot?: number
           qty?: number
+          source_session_id?: string | null
           tab_id?: string
           tax_rate_snapshot?: number
         }
@@ -535,6 +538,13 @@ export type Database = {
             columns: ["item_id"]
             isOneToOne: false
             referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_tab_lines_source_session_id_fkey"
+            columns: ["source_session_id"]
+            isOneToOne: false
+            referencedRelation: "table_sessions"
             referencedColumns: ["id"]
           },
           {
@@ -1298,6 +1308,7 @@ export type Database = {
       table_sessions: {
         Row: {
           bar_id: string
+          charged_tab_id: string | null
           closed_at: string | null
           closed_by: string | null
           decided_at: string | null
@@ -1313,6 +1324,7 @@ export type Database = {
         }
         Insert: {
           bar_id: string
+          charged_tab_id?: string | null
           closed_at?: string | null
           closed_by?: string | null
           decided_at?: string | null
@@ -1328,6 +1340,7 @@ export type Database = {
         }
         Update: {
           bar_id?: string
+          charged_tab_id?: string | null
           closed_at?: string | null
           closed_by?: string | null
           decided_at?: string | null
@@ -1347,6 +1360,13 @@ export type Database = {
             columns: ["bar_id"]
             isOneToOne: false
             referencedRelation: "bars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "table_sessions_charged_tab_id_fkey"
+            columns: ["charged_tab_id"]
+            isOneToOne: false
+            referencedRelation: "customer_tabs"
             referencedColumns: ["id"]
           },
           {
@@ -1497,6 +1517,15 @@ export type Database = {
         Returns: undefined
       }
       can_view_bar: { Args: { _bar_id: string }; Returns: boolean }
+      charge_session_to_tab: {
+        Args: {
+          _amount?: number
+          _session: string
+          _split_part?: string
+          _tab: string
+        }
+        Returns: number
+      }
       claim_print: { Args: { _order_id: string }; Returns: boolean }
       claim_print_job: { Args: { _id: string }; Returns: boolean }
       close_customer_tab: {
