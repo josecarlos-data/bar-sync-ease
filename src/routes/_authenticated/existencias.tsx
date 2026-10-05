@@ -200,7 +200,7 @@ function PoolHistory({ poolId }: { poolId: string }) {
     <ul className="space-y-0.5 text-xs">
       {data.map((m) => (
         <li key={m.id} className="flex justify-between">
-          <span>{new Date(m.created_at).toLocaleString("es-ES", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })} · {REASONS[m.reason] ?? m.reason}</span>
+          <span>{new Date(m.created_at).toLocaleString("es-ES", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })} · {reasonLabel(m.reason)}</span>
           <b className={Number(m.delta) < 0 ? "text-destructive" : ""}>{Number(m.delta) > 0 ? "+" : ""}{Number(m.delta)}</b>
         </li>
       ))}
