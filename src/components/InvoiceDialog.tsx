@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatEUR } from "@/lib/allergens";
 import { downloadInvoicePdf, invoiceCode, invoiceHtml, printHtml, type InvoiceRow } from "@/lib/ticket";
+import { invoiceQrDataUrl } from "@/lib/verifactu";
 
 type Part = { id: string; label: string; amount: number };
 
@@ -46,17 +47,23 @@ export function InvoiceDialog({
       const { data: s } = await supabase.from("table_sessions").select("bar_id").eq("id", sessionId).single();
       const { data } = await supabase
         .from("bar_settings")
-        .select("printer_width, bizum_enabled, bizum_phone, bizum_label")
+        .select("printer_width, bizum_enabled, bizum_phone, bizum_label, verifactu_enabled, public_base_url")
         .eq("bar_id", s!.bar_id)
         .single();
       return {
         width: data?.printer_width ?? 80,
         bizum: data?.bizum_enabled && data.bizum_phone ? { phone: data.bizum_phone, label: data.bizum_label } : null,
+        verifactu: data?.verifactu_enabled === true,
+        baseUrl: data?.public_base_url ?? null,
       };
     },
   });
   const width = barData?.width ?? 80;
   const bizum = barData?.bizum;
+
+  async function qrFor(invoiceId: string) {
+    return invoiceQrDataUrl(invoiceId, barData?.verifactu === true, barData?.baseUrl);
+  }
 
   async function issue(partId: string | null, full = false): Promise<InvoiceRow | null> {
     setBusy(true);
@@ -84,8 +91,9 @@ export function InvoiceDialog({
   async function act(partId: string | null, what: "print" | "pdf") {
     const inv = await issue(partId);
     if (!inv) return;
-    if (what === "print") printHtml(invoiceHtml(inv, bizum), width);
-    else await downloadInvoicePdf(inv, bizum);
+    const qr = await qrFor(inv.id);
+    if (what === "print") printHtml(invoiceHtml(inv, bizum, qr), width);
+    else await downloadInvoicePdf(inv, bizum, qr);
   }
 
   return (
@@ -137,8 +145,9 @@ export function InvoiceDialog({
                   const inv = await issue(fullFor, true);
                   if (!inv) return;
                   setFullFor(undefined);
-                  if (staff) printHtml(invoiceHtml(inv, bizum), width);
-                  else await downloadInvoicePdf(inv, bizum);
+                  const qr = await qrFor(inv.id);
+                  if (staff) printHtml(invoiceHtml(inv, bizum, qr), width);
+                  else await downloadInvoicePdf(inv, bizum, qr);
                 }}
               >
                 Emitir factura
@@ -161,9 +170,9 @@ export function InvoiceDialog({
                   </span>
                   <span className="tabular">{formatEUR(i.total)}</span>
                   {staff && (
-                    <button aria-label="Imprimir" onClick={() => printHtml(invoiceHtml(i, bizum), width)}><Printer className="h-4 w-4" /></button>
+                    <button aria-label="Imprimir" onClick={async () => printHtml(invoiceHtml(i, bizum, await qrFor(i.id)), width)}><Printer className="h-4 w-4" /></button>
                   )}
-                  <button aria-label="Descargar PDF" onClick={() => downloadInvoicePdf(i, bizum)}><Download className="h-4 w-4" /></button>
+                  <button aria-label="Descargar PDF" onClick={async () => downloadInvoicePdf(i, bizum, await qrFor(i.id))}><Download className="h-4 w-4" /></button>
                 </li>
               ))}
             </ul>
