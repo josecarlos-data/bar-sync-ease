@@ -1,6 +1,7 @@
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from "@stripe/react-stripe-js";
 import { getStripe, getStripeEnvironment } from "@/lib/stripe";
 import { createBillCheckout } from "@/lib/payments.functions";
+import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 
 export function BillPartCheckout({ partId, onClose }: { partId: string; onClose: () => void }) {
   const fetchClientSecret = async (): Promise<string> => {
