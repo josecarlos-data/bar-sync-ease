@@ -13,6 +13,8 @@ import { useBarSettings } from "@/hooks/useStaff";
 import type { MenuSort } from "@/lib/menu";
 import { useMenuPopularity } from "@/hooks/useMenuPopularity";
 import { AllergenAssistant } from "@/components/AllergenAssistant";
+import { ItemStockBadge, ItemStockEditor, useItemStockLinks } from "@/components/ItemStock";
+import { useStockPools } from "@/components/StockAlert";
 import { Button } from "@/components/ui/button";
 import { ALLERGENS, formatEUR } from "@/lib/allergens";
 import { Input } from "@/components/ui/input";
@@ -53,6 +55,8 @@ function ItemsPage() {
   const { data: staff } = useStaff();
   const barId = staff?.barId ?? null;
   const { data: settings } = useBarSettings(barId);
+  const { data: stockPools } = useStockPools(barId);
+  const { data: stockLinks } = useItemStockLinks(barId);
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<Draft | null>(null);
   const [saving, setSaving] = useState(false);
@@ -224,7 +228,8 @@ function ItemsPage() {
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-semibold">{item.name}</p>
                       <p className="text-sm text-muted-foreground">
-                        {formatEUR(item.price)} · {item.destination === "bar" ? "Barra" : "Cocina"}
+                        {formatEUR(item.price)} · {item.destination === "bar" ? "Barra" : "Cocina"}{" "}
+                        <ItemStockBadge pool={stockPools?.find((p) => p.id === stockLinks?.find((l) => l.id === item.id)?.pool_id)} />
                       </p>
                     </div>
                     {menuSort === "popular" && <span className="shrink-0 text-xs text-muted-foreground">{popularity[item.id] ?? 0} uds.</span>}
@@ -468,6 +473,7 @@ function ItemsPage() {
               </label>
             </div>
           )}
+          {draft?.id && barId && <ItemStockEditor barId={barId} itemId={draft.id} itemName={draft.name} />}
           <DialogFooter>
             <button
               onClick={save}

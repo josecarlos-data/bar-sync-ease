@@ -13,3 +13,5 @@
 - Preserve print and admin manual-position ordering through the shared menu grouping helper; virtual-menu sort choices should not rearrange printed layouts or category/group order.
 - Standing/counter accounts are internal `tables` rows with `kind='counter'` (numbers 901+, label via `tableLabel`), hidden from QR/Mesas; reusing tables keeps queue, ticket, stock and invoice flows unchanged.
 - Tapa con la bebida: modos en bar_settings.tapa_mode; precios y rondas se calculan en src/lib/tapas.ts y se guardan en order_items (tapa_kind/tapa_round) — un solo helper para cliente y personal.
+
+- Purchase list rows are created by a DB trigger on stock_pools (below low_threshold/depleted) and closed via RPC mark_purchase_bought, which refills the pool; keeps stock, menu availability and shopping list consistent in one place.

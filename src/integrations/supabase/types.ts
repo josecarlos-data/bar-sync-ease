@@ -1193,6 +1193,66 @@ export type Database = {
           },
         ]
       }
+      purchase_items: {
+        Row: {
+          auto: boolean
+          bar_id: string
+          bought_at: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          pool_id: string | null
+          qty: number
+          status: string
+          supplier: string
+          unit_label: string
+        }
+        Insert: {
+          auto?: boolean
+          bar_id: string
+          bought_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          pool_id?: string | null
+          qty?: number
+          status?: string
+          supplier?: string
+          unit_label?: string
+        }
+        Update: {
+          auto?: boolean
+          bar_id?: string
+          bought_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          pool_id?: string | null
+          qty?: number
+          status?: string
+          supplier?: string
+          unit_label?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_items_bar_id_fkey"
+            columns: ["bar_id"]
+            isOneToOne: false
+            referencedRelation: "bars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_items_pool_id_fkey"
+            columns: ["pool_id"]
+            isOneToOne: false
+            referencedRelation: "stock_pools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_calls: {
         Row: {
           bar_id: string
@@ -1357,6 +1417,8 @@ export type Database = {
           name: string
           quantity: number
           status: string
+          supplier: string
+          target_qty: number
           unit_label: string
           updated_at: string
         }
@@ -1368,6 +1430,8 @@ export type Database = {
           name: string
           quantity?: number
           status?: string
+          supplier?: string
+          target_qty?: number
           unit_label?: string
           updated_at?: string
         }
@@ -1379,6 +1443,8 @@ export type Database = {
           name?: string
           quantity?: number
           status?: string
+          supplier?: string
+          target_qty?: number
           unit_label?: string
           updated_at?: string
         }
@@ -1651,6 +1717,10 @@ export type Database = {
       join_waitlist: {
         Args: { _bar: string; _name: string; _people?: number; _phone?: string }
         Returns: string
+      }
+      mark_purchase_bought: {
+        Args: { _id: string; _qty: number }
+        Returns: undefined
       }
       menu_popularity: {
         Args: { _bar_id: string }
