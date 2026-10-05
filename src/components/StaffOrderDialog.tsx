@@ -60,6 +60,7 @@ export function StaffOrderDialog({
   const offlineEnabled = settings?.offline_mode === true;
   const { data } = useQuery({
     queryKey: ["staff-menu", barId, offlineEnabled],
+    networkMode: offlineEnabled ? "always" : "online",
     queryFn: () => loadStaffMenu(barId, offlineEnabled),
   });
   const items = data?.items ?? [];
@@ -78,6 +79,7 @@ export function StaffOrderDialog({
   const mode = tapaMode(settings);
   const { data: sessionLines = [] } = useQuery({
     queryKey: ["staff-session-tapas", tableId, offlineEnabled],
+    networkMode: offlineEnabled ? "always" : "online",
     enabled: hasSession && mode !== "off",
     queryFn: async () => {
       const r = await cachedFetch(barId, `session-tapas:${tableId}`, offlineEnabled, async () => {
