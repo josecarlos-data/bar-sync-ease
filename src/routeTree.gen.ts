@@ -28,6 +28,7 @@ import { Route as AuthenticatedAdminArticulosRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminCartaImpresaRouteImport } from './routes/_authenticated/admin.carta-impresa'
 import { Route as AuthenticatedAdminMesasRouteImport } from './routes/_authenticated/admin.mesas'
 import { Route as AuthenticatedAdminPersonalRouteImport } from './routes/_authenticated/admin.personal'
+import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -128,6 +129,12 @@ const AuthenticatedAdminPersonalRoute =
     path: '/admin/personal',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicPaymentsWebhookRoute =
+  ApiPublicPaymentsWebhookRouteImport.update({
+    id: '/api/public/payments/webhook',
+    path: '/api/public/payments/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -148,6 +155,7 @@ export interface FileRoutesByFullPath {
   '/admin/carta-impresa': typeof AuthenticatedAdminCartaImpresaRoute
   '/admin/mesas': typeof AuthenticatedAdminMesasRoute
   '/admin/personal': typeof AuthenticatedAdminPersonalRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -168,6 +176,7 @@ export interface FileRoutesByTo {
   '/admin/carta-impresa': typeof AuthenticatedAdminCartaImpresaRoute
   '/admin/mesas': typeof AuthenticatedAdminMesasRoute
   '/admin/personal': typeof AuthenticatedAdminPersonalRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -190,6 +199,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/carta-impresa': typeof AuthenticatedAdminCartaImpresaRoute
   '/_authenticated/admin/mesas': typeof AuthenticatedAdminMesasRoute
   '/_authenticated/admin/personal': typeof AuthenticatedAdminPersonalRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -212,6 +222,7 @@ export interface FileRouteTypes {
     | '/admin/carta-impresa'
     | '/admin/mesas'
     | '/admin/personal'
+    | '/api/public/payments/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -232,6 +243,7 @@ export interface FileRouteTypes {
     | '/admin/carta-impresa'
     | '/admin/mesas'
     | '/admin/personal'
+    | '/api/public/payments/webhook'
   id:
     | '__root__'
     | '/'
@@ -253,6 +265,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/carta-impresa'
     | '/_authenticated/admin/mesas'
     | '/_authenticated/admin/personal'
+    | '/api/public/payments/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -261,6 +274,7 @@ export interface RootRouteChildren {
   ApuntarseRoute: typeof ApuntarseRoute
   AuthRoute: typeof AuthRoute
   MTokenRoute: typeof MTokenRoute
+  ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -398,6 +412,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminPersonalRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/payments/webhook': {
+      id: '/api/public/payments/webhook'
+      path: '/api/public/payments/webhook'
+      fullPath: '/api/public/payments/webhook'
+      preLoaderRoute: typeof ApiPublicPaymentsWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -444,6 +465,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApuntarseRoute: ApuntarseRoute,
   AuthRoute: AuthRoute,
   MTokenRoute: MTokenRoute,
+  ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
