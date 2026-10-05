@@ -10,12 +10,29 @@ import { allergenLabel, formatEUR } from "@/lib/allergens";
 import { MenuBrowser } from "@/components/MenuBrowser";
 import { useBarSettings } from "@/hooks/useStaff";
 import { useMenuPopularity } from "@/hooks/useMenuPopularity";
-import { enqueueOp } from "@/lib/offline";
+import { cachedFetch, enqueueOp } from "@/lib/offline";
 import { Input } from "@/components/ui/input";
 import type { Category, Item } from "@/lib/types";
 import { cartDrinks, choiceAllowance, houseTapaLines, priceCart, pricedTotal, proposeRounds, roundLabel, tapaMode, type SessionTapaLine } from "@/lib/tapas";
 
 type CartLine = { itemId: string; qty: number; note: string };
+
+/** Carta del personal; con el modo sin conexión se guarda para poder pedir sin red. */
+export async function loadStaffMenu(barId: string, offlineEnabled: boolean) {
+  const r = await cachedFetch(barId, "staff-menu", offlineEnabled, async () => {
+    const [cats, items] = await Promise.all([
+      supabase.from("categories").select("*").eq("bar_id", barId).order("position"),
+      supabase.from("items").select("*").eq("bar_id", barId).order("position"),
+    ]);
+    if (cats.error) throw cats.error;
+    if (items.error) throw items.error;
+    return {
+      categories: (cats.data ?? []) as Category[],
+      items: (items.data ?? []) as unknown as Item[],
+    };
+  });
+  return r.data;
+}
 
 export function StaffOrderDialog({
   barId,
@@ -40,18 +57,11 @@ export function StaffOrderDialog({
   const [sending, setSending] = useState(false);
   const { data: settings } = useBarSettings(barId);
 
+  const offlineEnabled = settings?.offline_mode === true;
   const { data } = useQuery({
-    queryKey: ["staff-menu", barId],
-    queryFn: async () => {
-      const [cats, items] = await Promise.all([
-        supabase.from("categories").select("*").eq("bar_id", barId).order("position"),
-        supabase.from("items").select("*").eq("bar_id", barId).order("position"),
-      ]);
-      return {
-        categories: (cats.data ?? []) as Category[],
-        items: (items.data ?? []) as unknown as Item[],
-      };
-    },
+    queryKey: ["staff-menu", barId, offlineEnabled],
+    networkMode: offlineEnabled ? "always" : "online",
+    queryFn: () => loadStaffMenu(barId, offlineEnabled),
   });
   const items = data?.items ?? [];
   const categories = data?.categories ?? [];
@@ -68,23 +78,29 @@ export function StaffOrderDialog({
 
   const mode = tapaMode(settings);
   const { data: sessionLines = [] } = useQuery({
-    queryKey: ["staff-session-tapas", tableId],
+    queryKey: ["staff-session-tapas", tableId, offlineEnabled],
+    networkMode: offlineEnabled ? "always" : "online",
     enabled: hasSession && mode !== "off",
     queryFn: async () => {
-      const { data: ses } = await supabase
-        .from("table_sessions")
-        .select("id")
-        .eq("table_id", tableId)
-        .in("status", ["open", "pending"])
-        .order("opened_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (!ses) return [] as SessionTapaLine[];
-      const { data: ords } = await supabase
-        .from("orders")
-        .select("order_items(item_id, qty, tapa_kind, tapa_round, deleted_at)")
-        .eq("session_id", ses.id);
-      return (ords ?? []).flatMap((o) => o.order_items as SessionTapaLine[]);
+      const r = await cachedFetch(barId, `session-tapas:${tableId}`, offlineEnabled, async () => {
+        const { data: ses, error } = await supabase
+          .from("table_sessions")
+          .select("id")
+          .eq("table_id", tableId)
+          .in("status", ["open", "pending"])
+          .order("opened_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (error) throw error;
+        if (!ses) return [] as SessionTapaLine[];
+        const { data: ords, error: e2 } = await supabase
+          .from("orders")
+          .select("order_items(item_id, qty, tapa_kind, tapa_round, deleted_at)")
+          .eq("session_id", ses.id);
+        if (e2) throw e2;
+        return (ords ?? []).flatMap((o) => o.order_items as SessionTapaLine[]);
+      });
+      return r.data;
     },
   });
   const priced = useMemo(() => priceCart(settings, cart, items, sessionLines), [settings, cart, items, sessionLines]);

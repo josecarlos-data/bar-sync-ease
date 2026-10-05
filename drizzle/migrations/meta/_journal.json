@@ -134,6 +134,13 @@
       "when": 1791181755147,
       "tag": "0018_bill_part_amount",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1791233311143,
+      "tag": "0019_issue_invoice_allow_service_role",
+      "breakpoints": true
     }
   ]
 }

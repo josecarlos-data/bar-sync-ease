@@ -1,13 +1,13 @@
 import { PrintToBarButton, TicketPrintAgent } from "@/components/TicketPrintAgent";
 import { displayNickname, tableLabel } from "@/lib/tableLabel";
 import { computeSplit } from "@/lib/split";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { BellRing, Check, FileText, ListChecks, Plus, Receipt, Sparkles, UserRound, X } from "lucide-react";
 import { ChargeToTabDialog } from "@/components/ChargeToTabDialog";
-import { StaffOrderDialog } from "@/components/StaffOrderDialog";
+import { StaffOrderDialog, loadStaffMenu } from "@/components/StaffOrderDialog";
 import { KitchenInstructionDialog } from "@/components/KitchenInstructionDialog";
 import { StaffShell } from "@/components/StaffShell";
 import { SessionApprovalDialog } from "@/components/SessionApprovalDialog";
@@ -86,6 +86,11 @@ function WaiterPage() {
   const [cachedAt, setCachedAt] = useState<string | null>(null);
   const offlineEnabled = settings?.offline_mode === true;
   const offlineNow = () => offlineEnabled && !navigator.onLine;
+
+  // Con el modo sin conexión, guarda la carta en cuanto se abre Mesas para poder pedir sin red.
+  useEffect(() => {
+    if (barId && offlineEnabled && navigator.onLine) void loadStaffMenu(barId, true).catch(() => {});
+  }, [barId, offlineEnabled]);
 
   const { data } = useQuery({
     queryKey: ["waiter-board", barId],
