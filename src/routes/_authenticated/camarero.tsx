@@ -295,6 +295,12 @@ function WaiterPage() {
 
   return (
     <StaffShell title="Mesas">
+      {cachedAt && (
+        <p className="mb-3 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-xs font-semibold text-warning-foreground">
+          Sin conexión: mostrando las mesas guardadas a las{" "}
+          {new Date(cachedAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
+        </p>
+      )}
       {isWaiterish && (
         <div className="mb-3">
           <SoundUnlockButton />
