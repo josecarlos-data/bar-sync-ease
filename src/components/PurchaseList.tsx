@@ -59,9 +59,14 @@ export function PurchaseList({ barId }: { barId: string }) {
     setName(""); setQty("");
     qc.invalidateQueries({ queryKey: ["purchase-items", barId] });
   }
-  async function markBought(i: PurchaseItem, q: number) {
-    const { error } = await supabase.rpc("mark_purchase_bought", { _id: i.id, _qty: q });
-    if (error) { toast.error("No se pudo marcar"); return; }
+  async function markBought(i: PurchaseItem, q: number, price = 0) {
+    if (i.pool_id) {
+      const { error } = await supabase.rpc("restock_pool", { _pool: i.pool_id, _qty: q, _price: price, _supplier: i.supplier });
+      if (error) { toast.error("No se pudo marcar"); return; }
+    } else {
+      const { error } = await supabase.rpc("mark_purchase_bought", { _id: i.id, _qty: q });
+      if (error) { toast.error("No se pudo marcar"); return; }
+    }
     toast.success(i.pool_id ? `${i.name}: existencias recargadas` : `${i.name} comprado`);
     qc.invalidateQueries();
   }
@@ -118,11 +123,12 @@ export function PurchaseList({ barId }: { barId: string }) {
 
 function Row({ i, onBought, onQty, onDel }: {
   i: PurchaseItem;
-  onBought: (i: PurchaseItem, q: number) => void;
+  onBought: (i: PurchaseItem, q: number, price?: number) => void;
   onQty: (i: PurchaseItem, q: number) => void;
   onDel: (i: PurchaseItem) => void;
 }) {
   const [q, setQ] = useState(String(i.qty));
+  const [price, setPrice] = useState("");
   return (
     <div className="flex items-center gap-2 rounded-lg border border-border bg-card p-2">
       <div className="min-w-0 flex-1">
@@ -132,7 +138,11 @@ function Row({ i, onBought, onQty, onDel }: {
       <Input type="number" inputMode="decimal" className="w-16" value={q} onChange={(e) => setQ(e.target.value)}
         onBlur={() => Number(q) > 0 && Number(q) !== i.qty && onQty(i, Number(q))} aria-label="Cantidad" />
       <span className="text-xs text-muted-foreground">{i.unit_label}</span>
-      <button onClick={() => onBought(i, Number(q) || i.qty)} className="rounded-md bg-primary p-2 text-primary-foreground" aria-label="Comprado"><Check className="h-4 w-4" /></button>
+      {i.pool_id && (
+        <Input type="number" inputMode="decimal" className="w-20" placeholder="€ total" value={price}
+          onChange={(e) => setPrice(e.target.value)} aria-label="Precio total" />
+      )}
+      <button onClick={() => onBought(i, Number(q) || i.qty, Number(price) || 0)} className="rounded-md bg-primary p-2 text-primary-foreground" aria-label="Comprado"><Check className="h-4 w-4" /></button>
       <button onClick={() => onDel(i)} className="p-1 text-muted-foreground" aria-label="Quitar"><Trash2 className="h-4 w-4" /></button>
     </div>
   );
