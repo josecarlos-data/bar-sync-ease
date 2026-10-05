@@ -24,7 +24,7 @@ export const Route = createFileRoute("/verificar/$id")({
   }),
   errorComponent: ({ error }: ErrorComponentProps) => (
     <div className="flex min-h-screen items-center justify-center p-6">
-      <p className="text-sm text-muted-foreground">No se pudo comprobar el registro: {error.message}</p>
+      <p className="text-sm text-muted-foreground">No se pudo comprobar el registro: {error instanceof Error ? error.message : String(error)}</p>
     </div>
   ),
   notFoundComponent: () => (
