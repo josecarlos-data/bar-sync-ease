@@ -143,6 +143,14 @@ export function FeatureSwitchesCard({
       />
 
       <Toggle
+        label="Lista de la compra"
+        help="Lo que baje del mínimo en Existencias entra solo en la lista; al marcarlo comprado se recarga el stock y el plato vuelve a la carta."
+        on={!!settings.purchase_list_enabled}
+        onChange={(v) => onSave({ purchase_list_enabled: v })}
+      />
+
+
+      <Toggle
         label="Horario de apertura"
         help="El cliente ve si está abierto y, si no, cuándo abre. No bloquea los pedidos: es un aviso."
         on={!!settings.hours_enabled}
