@@ -216,9 +216,28 @@ function PoolCard({ pool, isAdmin, items, inList, onChange }: {
 }) {
   const [refill, setRefill] = useState("");
   const [showHist, setShowHist] = useState(false);
+  const [restock, setRestock] = useState(false);
+  const [rQty, setRQty] = useState("");
+  const [rPrice, setRPrice] = useState("");
+  const [rSupplier, setRSupplier] = useState(pool.supplier ?? "");
   const linked = items.filter((i) => i.pool_id === pool.id);
   const free = items.filter((i) => !i.pool_id);
   const low = pool.status !== "depleted" && pool.quantity <= pool.low_threshold;
+
+  async function doRestock() {
+    const qty = Number(rQty);
+    if (!(qty > 0)) return;
+    const { error } = await supabase.rpc("restock_pool", {
+      _pool: pool.id,
+      _qty: qty,
+      _price: Number(rPrice) || 0,
+      _supplier: rSupplier.trim(),
+    });
+    if (error) { toast.error("No se pudo reponer"); return; }
+    toast.success(`${pool.name}: +${qty} ${pool.unit_label}`);
+    setRestock(false); setRQty(""); setRPrice("");
+    onChange();
+  }
 
   async function act(a: string, q = 0) {
     if (await stockAction(pool.id, a, q)) onChange();
