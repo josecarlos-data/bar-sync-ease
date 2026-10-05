@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, type ErrorComponentProps } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { CheckCircle2, XCircle, Receipt } from "lucide-react";
 import { getInvoiceRecord } from "@/lib/verifactu.functions";
