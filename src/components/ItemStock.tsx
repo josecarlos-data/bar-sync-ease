@@ -59,7 +59,7 @@ export function ItemStockEditor({
       .insert({ bar_id: barId, name: itemName, unit_label: "uds.", quantity: 0 })
       .select("id")
       .single();
-    if (error || !data) return toast.error("No se pudo crear la existencia");
+    if (error || !data) { toast.error("No se pudo crear la existencia"); return; }
     await setLink(data.id, 1);
     toast.success("Existencia creada: pon la cantidad en Existencias");
   }

@@ -55,13 +55,13 @@ export function PurchaseList({ barId }: { barId: string }) {
   async function add() {
     if (!name.trim()) return;
     const { error } = await supabase.from("purchase_items").insert({ bar_id: barId, name: name.trim(), qty: Number(qty) || 1 });
-    if (error) return toast.error("No se pudo añadir");
+    if (error) { toast.error("No se pudo añadir"); return; }
     setName(""); setQty("");
     qc.invalidateQueries({ queryKey: ["purchase-items", barId] });
   }
   async function markBought(i: PurchaseItem, q: number) {
     const { error } = await supabase.rpc("mark_purchase_bought", { _id: i.id, _qty: q });
-    if (error) return toast.error("No se pudo marcar");
+    if (error) { toast.error("No se pudo marcar"); return; }
     toast.success(i.pool_id ? `${i.name}: existencias recargadas` : `${i.name} comprado`);
     qc.invalidateQueries();
   }

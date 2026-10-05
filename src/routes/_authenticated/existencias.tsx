@@ -78,7 +78,7 @@ function StockPage() {
     const name = newName.trim();
     if (!name || !barId) return;
     const { error } = await supabase.from("stock_pools").insert({ bar_id: barId, name, quantity: Number(newQty) || 0 });
-    if (error) return toast.error("No se pudo crear");
+    if (error) { toast.error("No se pudo crear"); return; }
     setNewName("");
     setNewQty("");
     refresh();
