@@ -514,6 +514,9 @@ export function SplitBill({
           El camarero ya tiene la división. {paymentsEnabled ? "Cada parte puede pagarse aquí." : "Se cobra en la mesa."}
         </p>
       )}
+      {payingPartId && (
+        <BillPartCheckout partId={payingPartId} onClose={() => setPayingPartId(null)} />
+      )}
     </div>
   );
 }
