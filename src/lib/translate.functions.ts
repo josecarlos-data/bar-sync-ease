@@ -39,7 +39,7 @@ export const translateMenu = createServerFn({ method: "POST" })
     try {
       for (const lang of data.langs) {
         const { output } = await generateText({
-          model: lovable.chat("google/gemini-3-flash-preview"),
+          model: lovable.responses("openai/gpt-6-astra"),
           system: `Traduces cartas de bares españoles al ${LANG_NAMES[lang]}. Mantén los nombres propios de platos típicos reconocibles (p. ej. «Patatas bravas» puede quedar igual con una breve aclaración solo en la descripción). No inventes ingredientes. Devuelve todos los ids recibidos.`,
           prompt: JSON.stringify({ categories: cats ?? [], items: items ?? [] }),
           output: Output.object({
