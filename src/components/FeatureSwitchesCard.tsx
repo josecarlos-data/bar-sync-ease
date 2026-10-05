@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
+import { translateMenu } from "@/lib/translate.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
@@ -62,6 +65,22 @@ export function FeatureSwitchesCard({
   });
 
   const langs = settings.menu_languages ?? ["es"];
+  const [translating, setTranslating] = useState(false);
+  const translate = useServerFn(translateMenu);
+  async function runTranslate() {
+    setTranslating(true);
+    try {
+      const res = await translate({
+        data: { barId: settings.bar_id, langs: langs.filter((l) => l !== "es") as ("en" | "fr" | "de" | "it" | "pt" | "ca")[] },
+      });
+      if (res.ok) toast.success(`Carta traducida (${res.count} textos)`);
+      else toast.error(res.error);
+    } catch {
+      toast.error("No se pudo traducir. Prueba de nuevo.");
+    } finally {
+      setTranslating(false);
+    }
+  }
 
   function toggleLang(code: string) {
     if (code === "es") return;
@@ -239,6 +258,20 @@ export function FeatureSwitchesCard({
             );
           })}
         </div>
+        {langs.some((l) => l !== "es") && (
+          <div className="mt-3">
+            <button
+              disabled={translating}
+              onClick={runTranslate}
+              className="rounded-lg bg-secondary px-4 py-2 text-sm font-semibold text-secondary-foreground disabled:opacity-50"
+            >
+              {translating ? "Traduciendo…" : "Traducir carta con IA"}
+            </button>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Traduce platos y secciones a los idiomas activos. Repítelo cuando cambies la carta.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
