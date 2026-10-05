@@ -148,6 +148,13 @@
       "when": 1791235449398,
       "tag": "0020_verifactu_invoice_records_and_reports",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1791236705275,
+      "tag": "0021_stock_purchase_list",
+      "breakpoints": true
     }
   ]
 }
