@@ -77,7 +77,7 @@ export type InvoiceRow = {
 export const invoiceCode = (i: Pick<InvoiceRow, "series" | "number">) =>
   `${i.series}-${String(i.number).padStart(5, "0")}`;
 
-export function invoiceHtml(i: InvoiceRow, bizum?: BizumInfo) {
+export function invoiceHtml(i: InvoiceRow, bizum?: BizumInfo, qr?: string | null) {
   const s = i.snapshot;
   const date = new Date(i.created_at).toLocaleString("es-ES");
   return `<div class="c"><h2>${esc(s.bar.legal_name || s.bar.name)}</h2>
@@ -96,10 +96,11 @@ export function invoiceHtml(i: InvoiceRow, bizum?: BizumInfo) {
       .join("")}</table><hr>
     <table><tr><td class="big">TOTAL</td><td class="r big">${formatEUR(i.total)}</td></tr></table>
     ${bizum?.phone ? `<hr><div class="b">Paga con Bizum: ${esc(bizum.phone)}</div>${bizum.label ? `<div>${esc(bizum.label)}</div>` : ""}<div>Importe: ${formatEUR(i.total)}</div>` : ""}
+    ${qr ? `<hr><div class="c"><img src="${qr}" alt="QR de verificación" style="width:28mm;height:28mm;margin:2mm auto"><div style="font-size:10px">Factura verificable — VERI*FACTU</div></div>` : ""}
     <div class="c" style="margin-top:6px">${esc(s.bar.footer || "¡Gracias por su visita!")}</div>`;
 }
 
-export async function downloadInvoicePdf(i: InvoiceRow, bizum?: BizumInfo) {
+export async function downloadInvoicePdf(i: InvoiceRow, bizum?: BizumInfo, qr?: string | null) {
   const { jsPDF } = await import("jspdf");
   const s = i.snapshot;
   const pdf = new jsPDF({ unit: "mm", format: "a5" });
@@ -138,6 +139,12 @@ export async function downloadInvoicePdf(i: InvoiceRow, bizum?: BizumInfo) {
     line(`Paga con Bizum: ${bizum.phone}`, { bold: true });
     if (bizum.label) line(bizum.label);
     line(`Importe: ${formatEUR(i.total)}`);
+  }
+  if (qr) {
+    y += 2; rule();
+    pdf.addImage(qr, "PNG", 58, y, 32, 32);
+    y += 34;
+    line("Factura verificable — VERI*FACTU", { size: 8 });
   }
   y += 4;
   line(s.bar.footer || "¡Gracias por su visita!");

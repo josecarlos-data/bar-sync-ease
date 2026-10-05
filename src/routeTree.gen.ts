@@ -23,9 +23,11 @@ import { Route as AuthenticatedExistenciasRouteImport } from './routes/_authenti
 import { Route as AuthenticatedFiadoRouteImport } from './routes/_authenticated/fiado'
 import { Route as AuthenticatedHistorialRouteImport } from './routes/_authenticated/historial'
 import { Route as MTokenRouteImport } from './routes/m.$token'
+import { Route as VerificarIdRouteImport } from './routes/verificar.$id'
 import { Route as AuthenticatedAdminAjustesRouteImport } from './routes/_authenticated/admin.ajustes'
 import { Route as AuthenticatedAdminArticulosRouteImport } from './routes/_authenticated/admin.articulos'
 import { Route as AuthenticatedAdminCartaImpresaRouteImport } from './routes/_authenticated/admin.carta-impresa'
+import { Route as AuthenticatedAdminInformesRouteImport } from './routes/_authenticated/admin.informes'
 import { Route as AuthenticatedAdminMesasRouteImport } from './routes/_authenticated/admin.mesas'
 import { Route as AuthenticatedAdminPersonalRouteImport } from './routes/_authenticated/admin.personal'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
@@ -100,6 +102,11 @@ const MTokenRoute = MTokenRouteImport.update({
   path: '/m/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VerificarIdRoute = VerificarIdRouteImport.update({
+  id: '/verificar/$id',
+  path: '/verificar/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAdminAjustesRoute =
   AuthenticatedAdminAjustesRouteImport.update({
     id: '/admin/ajustes',
@@ -116,6 +123,12 @@ const AuthenticatedAdminCartaImpresaRoute =
   AuthenticatedAdminCartaImpresaRouteImport.update({
     id: '/admin/carta-impresa',
     path: '/admin/carta-impresa',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminInformesRoute =
+  AuthenticatedAdminInformesRouteImport.update({
+    id: '/admin/informes',
+    path: '/admin/informes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAdminMesasRoute = AuthenticatedAdminMesasRouteImport.update({
@@ -150,9 +163,11 @@ export interface FileRoutesByFullPath {
   '/fiado': typeof AuthenticatedFiadoRoute
   '/historial': typeof AuthenticatedHistorialRoute
   '/m/$token': typeof MTokenRoute
+  '/verificar/$id': typeof VerificarIdRoute
   '/admin/ajustes': typeof AuthenticatedAdminAjustesRoute
   '/admin/articulos': typeof AuthenticatedAdminArticulosRoute
   '/admin/carta-impresa': typeof AuthenticatedAdminCartaImpresaRoute
+  '/admin/informes': typeof AuthenticatedAdminInformesRoute
   '/admin/mesas': typeof AuthenticatedAdminMesasRoute
   '/admin/personal': typeof AuthenticatedAdminPersonalRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -171,9 +186,11 @@ export interface FileRoutesByTo {
   '/fiado': typeof AuthenticatedFiadoRoute
   '/historial': typeof AuthenticatedHistorialRoute
   '/m/$token': typeof MTokenRoute
+  '/verificar/$id': typeof VerificarIdRoute
   '/admin/ajustes': typeof AuthenticatedAdminAjustesRoute
   '/admin/articulos': typeof AuthenticatedAdminArticulosRoute
   '/admin/carta-impresa': typeof AuthenticatedAdminCartaImpresaRoute
+  '/admin/informes': typeof AuthenticatedAdminInformesRoute
   '/admin/mesas': typeof AuthenticatedAdminMesasRoute
   '/admin/personal': typeof AuthenticatedAdminPersonalRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -194,9 +211,11 @@ export interface FileRoutesById {
   '/_authenticated/fiado': typeof AuthenticatedFiadoRoute
   '/_authenticated/historial': typeof AuthenticatedHistorialRoute
   '/m/$token': typeof MTokenRoute
+  '/verificar/$id': typeof VerificarIdRoute
   '/_authenticated/admin/ajustes': typeof AuthenticatedAdminAjustesRoute
   '/_authenticated/admin/articulos': typeof AuthenticatedAdminArticulosRoute
   '/_authenticated/admin/carta-impresa': typeof AuthenticatedAdminCartaImpresaRoute
+  '/_authenticated/admin/informes': typeof AuthenticatedAdminInformesRoute
   '/_authenticated/admin/mesas': typeof AuthenticatedAdminMesasRoute
   '/_authenticated/admin/personal': typeof AuthenticatedAdminPersonalRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -217,9 +236,11 @@ export interface FileRouteTypes {
     | '/fiado'
     | '/historial'
     | '/m/$token'
+    | '/verificar/$id'
     | '/admin/ajustes'
     | '/admin/articulos'
     | '/admin/carta-impresa'
+    | '/admin/informes'
     | '/admin/mesas'
     | '/admin/personal'
     | '/api/public/payments/webhook'
@@ -238,9 +259,11 @@ export interface FileRouteTypes {
     | '/fiado'
     | '/historial'
     | '/m/$token'
+    | '/verificar/$id'
     | '/admin/ajustes'
     | '/admin/articulos'
     | '/admin/carta-impresa'
+    | '/admin/informes'
     | '/admin/mesas'
     | '/admin/personal'
     | '/api/public/payments/webhook'
@@ -260,9 +283,11 @@ export interface FileRouteTypes {
     | '/_authenticated/fiado'
     | '/_authenticated/historial'
     | '/m/$token'
+    | '/verificar/$id'
     | '/_authenticated/admin/ajustes'
     | '/_authenticated/admin/articulos'
     | '/_authenticated/admin/carta-impresa'
+    | '/_authenticated/admin/informes'
     | '/_authenticated/admin/mesas'
     | '/_authenticated/admin/personal'
     | '/api/public/payments/webhook'
@@ -274,6 +299,7 @@ export interface RootRouteChildren {
   ApuntarseRoute: typeof ApuntarseRoute
   AuthRoute: typeof AuthRoute
   MTokenRoute: typeof MTokenRoute
+  VerificarIdRoute: typeof VerificarIdRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
 }
 
@@ -377,6 +403,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/verificar/$id': {
+      id: '/verificar/$id'
+      path: '/verificar/$id'
+      fullPath: '/verificar/$id'
+      preLoaderRoute: typeof VerificarIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/admin/ajustes': {
       id: '/_authenticated/admin/ajustes'
       path: '/admin/ajustes'
@@ -396,6 +429,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/carta-impresa'
       fullPath: '/admin/carta-impresa'
       preLoaderRoute: typeof AuthenticatedAdminCartaImpresaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/informes': {
+      id: '/_authenticated/admin/informes'
+      path: '/admin/informes'
+      fullPath: '/admin/informes'
+      preLoaderRoute: typeof AuthenticatedAdminInformesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/mesas': {
@@ -435,6 +475,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminAjustesRoute: typeof AuthenticatedAdminAjustesRoute
   AuthenticatedAdminArticulosRoute: typeof AuthenticatedAdminArticulosRoute
   AuthenticatedAdminCartaImpresaRoute: typeof AuthenticatedAdminCartaImpresaRoute
+  AuthenticatedAdminInformesRoute: typeof AuthenticatedAdminInformesRoute
   AuthenticatedAdminMesasRoute: typeof AuthenticatedAdminMesasRoute
   AuthenticatedAdminPersonalRoute: typeof AuthenticatedAdminPersonalRoute
 }
@@ -452,6 +493,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminAjustesRoute: AuthenticatedAdminAjustesRoute,
   AuthenticatedAdminArticulosRoute: AuthenticatedAdminArticulosRoute,
   AuthenticatedAdminCartaImpresaRoute: AuthenticatedAdminCartaImpresaRoute,
+  AuthenticatedAdminInformesRoute: AuthenticatedAdminInformesRoute,
   AuthenticatedAdminMesasRoute: AuthenticatedAdminMesasRoute,
   AuthenticatedAdminPersonalRoute: AuthenticatedAdminPersonalRoute,
 }
@@ -465,6 +507,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApuntarseRoute: ApuntarseRoute,
   AuthRoute: AuthRoute,
   MTokenRoute: MTokenRoute,
+  VerificarIdRoute: VerificarIdRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
 }
 export const routeTree = rootRouteImport
