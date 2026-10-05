@@ -183,8 +183,9 @@ function Stat({ label, value, onClick }: { label: string; value: number | string
 }
 
 const REASONS: Record<string, string> = {
-  order: "Pedido", sale: "Pedido", manual: "Ajuste", waste: "Merma", refill: "Recarga", confirm: "Corrección", reopen: "Reabierto", deplete: "Agotado", cancel: "Línea anulada",
+  order: "Pedido", sale: "Pedido", manual: "Ajuste", waste: "Merma", refill: "Recarga", confirm: "Corrección", reopen: "Reabierto", deplete: "Agotado", cancel: "Línea anulada", purchase: "Compra",
 };
+const reasonLabel = (r: string) => REASONS[r] ?? (r.startsWith("purchase") ? r.replace(/^purchase/, "Compra") : r);
 
 function PoolHistory({ poolId }: { poolId: string }) {
   const { data } = useQuery({
