@@ -1729,6 +1729,10 @@ export type Database = {
           units: number
         }[]
       }
+      restock_pool: {
+        Args: { _pool: string; _price: number; _qty: number; _supplier: string }
+        Returns: undefined
+      }
       sales_by_hour: {
         Args: { _bar_id: string; _from: string; _to: string }
         Returns: {
