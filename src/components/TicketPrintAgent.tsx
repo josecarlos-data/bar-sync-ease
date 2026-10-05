@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { useRealtime } from "@/hooks/useRealtime";
 import { invoiceHtml, printHtml, provisionalTicketHtml, type InvoiceRow } from "@/lib/ticket";
+import { invoiceQrDataUrl } from "@/lib/verifactu";
 import type { BarSettings } from "@/lib/types";
 
 const KEY = "comandas:this-device-prints-tickets";
@@ -17,14 +18,17 @@ type Job = { id: string; session_id: string; invoice_id: string | null; kind: "p
 export async function printJob(job: Pick<Job, "session_id" | "invoice_id" | "kind">, barId: string, width: number) {
   const { data: st } = await supabase
     .from("bar_settings")
-    .select("legal_name, tax_id, address, phone, ticket_footer, bizum_enabled, bizum_phone, bizum_label")
+    .select("legal_name, tax_id, address, phone, ticket_footer, bizum_enabled, bizum_phone, bizum_label, verifactu_enabled, public_base_url")
     .eq("bar_id", barId)
     .single();
   const bizum = st?.bizum_enabled && st.bizum_phone ? { phone: st.bizum_phone, label: st.bizum_label } : null;
 
   if (job.kind === "final" && job.invoice_id) {
     const { data } = await supabase.from("invoices").select("*").eq("id", job.invoice_id).single();
-    if (data) printHtml(invoiceHtml(data as unknown as InvoiceRow, bizum), width);
+    if (data) {
+      const qr = await invoiceQrDataUrl(job.invoice_id, st?.verifactu_enabled === true, st?.public_base_url);
+      printHtml(invoiceHtml(data as unknown as InvoiceRow, bizum, qr), width);
+    }
     return;
   }
   const [{ data: s }, { data: bar }, { data: lines }] = await Promise.all([
