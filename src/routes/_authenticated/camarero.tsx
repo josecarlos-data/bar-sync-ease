@@ -17,6 +17,7 @@ import { InvoiceDialog } from "@/components/InvoiceDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useBarSettings, useStaff } from "@/hooks/useStaff";
 import { useRealtime } from "@/hooks/useRealtime";
+import { cachedFetch, enqueueOp } from "@/lib/offline";
 import { formatEUR } from "@/lib/allergens";
 
 export const Route = createFileRoute("/_authenticated/camarero")({
@@ -82,10 +83,15 @@ function WaiterPage() {
 
   useRealtime("waiter", ["order_items", "orders", "table_sessions", "service_calls", "bill_splits", "bill_split_parts", "bill_split_assignments"], !!barId);
 
+  const [cachedAt, setCachedAt] = useState<string | null>(null);
+  const offlineEnabled = settings?.offline_mode === true;
+  const offlineNow = () => offlineEnabled && !navigator.onLine;
+
   const { data } = useQuery({
     queryKey: ["waiter-board", barId],
     enabled: !!barId,
     queryFn: async () => {
+      const result = await cachedFetch(barId!, "waiter-board", offlineEnabled, async () => {
       const [tables, sessions, calls] = await Promise.all([
         supabase
           .from("tables")
@@ -132,6 +138,9 @@ function WaiterPage() {
         lines,
         splits,
       };
+      });
+      setCachedAt(result.fromCache ? result.cachedAt : null);
+      return result.data;
     },
   });
 
@@ -224,6 +233,18 @@ function WaiterPage() {
   }
 
   async function markPartPaid(partId: string, amount: number, method = "efectivo") {
+    if (offlineNow()) {
+      enqueueOp({
+        kind: "part_paid",
+        barId: barId!,
+        partId,
+        amount,
+        method,
+        label: `Cobro de ${formatEUR(amount)}`,
+      });
+      toast("Sin conexión: el cobro se confirmará al volver la red");
+      return;
+    }
     const { data: part, error } = await supabase
       .from("bill_split_parts")
       .update({ status: "paid", paid_at: new Date().toISOString(), amount, payment_method: method })
@@ -243,6 +264,17 @@ function WaiterPage() {
     if (!ids.length) return;
     const now = new Date().toISOString();
     const patch = status === "served" ? { status, served_at: now } : { status, ready_at: now };
+    if (offlineNow()) {
+      enqueueOp({
+        kind: "line_status",
+        barId: barId!,
+        ids,
+        patch,
+        label: status === "served" ? `Servir ${ids.length} línea(s)` : `Marcar listo ${ids.length} línea(s)`,
+      });
+      toast("Sin conexión: se enviará solo al volver la red");
+      return;
+    }
     const { error } = await supabase.from("order_items").update(patch).in("id", ids);
     if (error) { toast.error("No se pudo actualizar"); return; }
     toast.success(status === "served" ? (ids.length > 1 ? `${ids.length} servidos` : "Servido") : "Listo");
@@ -263,6 +295,12 @@ function WaiterPage() {
 
   return (
     <StaffShell title="Mesas">
+      {cachedAt && (
+        <p className="mb-3 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-xs font-semibold text-warning-foreground">
+          Sin conexión: mostrando las mesas guardadas a las{" "}
+          {new Date(cachedAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
+        </p>
+      )}
       {isWaiterish && (
         <div className="mb-3">
           <SoundUnlockButton />

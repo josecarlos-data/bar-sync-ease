@@ -4,6 +4,7 @@ import { LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ConnectionBadge } from "@/components/ConnectionBadge";
 import { useStaff, useBarSettings } from "@/hooks/useStaff";
+import { useOffline } from "@/hooks/useOffline";
 import { StockAlert } from "@/components/StockAlert";
 import type { BarSettings } from "@/lib/types";
 import type { ReactNode } from "react";
@@ -35,6 +36,7 @@ export function StaffShell({ title, children }: { title: string; children: React
   const { data: settings } = useBarSettings(staff?.barId);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const offline = useOffline(staff?.barId ?? null, settings?.offline_mode === true);
 
   const roles = staff?.roles ?? [];
   const visible = NAV.filter((n) => {
@@ -59,7 +61,7 @@ export function StaffShell({ title, children }: { title: string; children: React
             <p className="text-xs text-muted-foreground">{staff?.fullName ?? staff?.email}</p>
           </div>
           <div className="flex items-center gap-2">
-            <ConnectionBadge />
+            <ConnectionBadge pending={offline.pending} syncing={offline.syncing} />
             <button
               onClick={signOut}
               aria-label="Cerrar sesión"
