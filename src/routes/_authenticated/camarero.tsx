@@ -87,6 +87,11 @@ function WaiterPage() {
   const offlineEnabled = settings?.offline_mode === true;
   const offlineNow = () => offlineEnabled && !navigator.onLine;
 
+  // Con el modo sin conexión, guarda la carta en cuanto se abre Mesas para poder pedir sin red.
+  useEffect(() => {
+    if (barId && offlineEnabled && navigator.onLine) void loadStaffMenu(barId, true).catch(() => {});
+  }, [barId, offlineEnabled]);
+
   const { data } = useQuery({
     queryKey: ["waiter-board", barId],
     enabled: !!barId,
