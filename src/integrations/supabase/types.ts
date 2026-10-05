@@ -66,6 +66,7 @@ export type Database = {
           ticket_printer_width: number
           timezone: string
           updated_at: string
+          verifactu_enabled: boolean
           waiter_can_order: boolean
           waitlist_enabled: boolean
         }
@@ -120,6 +121,7 @@ export type Database = {
           ticket_printer_width?: number
           timezone?: string
           updated_at?: string
+          verifactu_enabled?: boolean
           waiter_can_order?: boolean
           waitlist_enabled?: boolean
         }
@@ -174,6 +176,7 @@ export type Database = {
           ticket_printer_width?: number
           timezone?: string
           updated_at?: string
+          verifactu_enabled?: boolean
           waiter_can_order?: boolean
           waitlist_enabled?: boolean
         }
@@ -640,6 +643,66 @@ export type Database = {
             columns: ["bar_id"]
             isOneToOne: false
             referencedRelation: "bars"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoice_records: {
+        Row: {
+          bar_id: string
+          created_at: string
+          hash: string
+          id: string
+          invoice_id: string
+          issued_at: string
+          kind: string
+          number: number
+          payload: Json
+          prev_hash: string
+          series: string
+          total: number
+        }
+        Insert: {
+          bar_id: string
+          created_at?: string
+          hash: string
+          id?: string
+          invoice_id: string
+          issued_at: string
+          kind: string
+          number: number
+          payload: Json
+          prev_hash: string
+          series: string
+          total: number
+        }
+        Update: {
+          bar_id?: string
+          created_at?: string
+          hash?: string
+          id?: string
+          invoice_id?: string
+          issued_at?: string
+          kind?: string
+          number?: number
+          payload?: Json
+          prev_hash?: string
+          series?: string
+          total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_records_bar_id_fkey"
+            columns: ["bar_id"]
+            isOneToOne: false
+            referencedRelation: "bars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_records_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
             referencedColumns: ["id"]
           },
         ]
@@ -1557,6 +1620,7 @@ export type Database = {
         Args: { _method?: string; _tab: string }
         Returns: string
       }
+      daily_close: { Args: { _bar_id: string; _day: string }; Returns: Json }
       decide_session: {
         Args: { _decision: string; _merge?: boolean; _session_id: string }
         Returns: Json
@@ -1595,11 +1659,43 @@ export type Database = {
           units: number
         }[]
       }
+      sales_by_hour: {
+        Args: { _bar_id: string; _from: string; _to: string }
+        Returns: {
+          hour: number
+          tickets: number
+          total: number
+        }[]
+      }
+      sales_by_method: {
+        Args: { _bar_id: string; _from: string; _to: string }
+        Returns: {
+          method: string
+          parts: number
+          total: number
+        }[]
+      }
+      sales_report: {
+        Args: { _bar_id: string; _from: string; _to: string }
+        Returns: {
+          day: string
+          tickets: number
+          total: number
+        }[]
+      }
       session_is_open: { Args: { _session_id: string }; Returns: boolean }
       split_unassigned: { Args: { _split_id: string }; Returns: number }
       stock_action: {
         Args: { _action: string; _pool: string; _qty?: number }
         Returns: undefined
+      }
+      top_items: {
+        Args: { _bar_id: string; _from: string; _limit?: number; _to: string }
+        Returns: {
+          name: string
+          revenue: number
+          units: number
+        }[]
       }
       waitlist_bar_by_slug: { Args: { _slug: string }; Returns: Json }
     }

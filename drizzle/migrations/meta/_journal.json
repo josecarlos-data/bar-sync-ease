@@ -141,6 +141,13 @@
       "when": 1791233311143,
       "tag": "0019_issue_invoice_allow_service_role",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1791235449398,
+      "tag": "0020_verifactu_invoice_records_and_reports",
+      "breakpoints": true
     }
   ]
 }
