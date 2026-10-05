@@ -1351,6 +1351,7 @@ export type Database = {
           delta: number
           id: string
           item_id: string | null
+          note: string | null
           order_item_id: string | null
           pool_id: string
           reason: string
@@ -1362,6 +1363,7 @@ export type Database = {
           delta: number
           id?: string
           item_id?: string | null
+          note?: string | null
           order_item_id?: string | null
           pool_id: string
           reason: string
@@ -1373,6 +1375,7 @@ export type Database = {
           delta?: number
           id?: string
           item_id?: string | null
+          note?: string | null
           order_item_id?: string | null
           pool_id?: string
           reason?: string
