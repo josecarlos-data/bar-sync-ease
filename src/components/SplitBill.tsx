@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatEUR } from "@/lib/allergens";
 import { Input } from "@/components/ui/input";
 import { computeSplit } from "@/lib/split";
+import { BillPartCheckout } from "@/components/BillPartCheckout";
 
 export type SplitLine = { id: string; name: string; price: number; qty: number };
 
@@ -299,9 +300,10 @@ export function SplitBill({
     queryClient.invalidateQueries({ queryKey: ["bill-split", sessionId] });
   }
 
-  async function payPart(part: PartRow) {
-    toast.info("El pago online se activará cuando el bar conecte la pasarela.");
-    void part;
+  const [payingPartId, setPayingPartId] = useState<string | null>(null);
+
+  function payPart(part: PartRow) {
+    setPayingPartId(part.id);
   }
 
   if (!split) {
