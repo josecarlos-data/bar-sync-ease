@@ -42,9 +42,6 @@ async function handleCheckoutCompleted(session: any) {
       _session_id: split.session_id,
       _split_part_id: partId,
       _kind: "ticket",
-      _customer_name: undefined,
-      _customer_tax_id: undefined,
-      _customer_address: undefined,
     });
   }
 }
