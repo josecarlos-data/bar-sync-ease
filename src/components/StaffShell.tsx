@@ -19,6 +19,7 @@ const NAV = [
   { to: "/cocina", label: "Cocina", roles: ["admin", "waiter", "kitchen"] },
   { to: "/existencias", label: "Existencias", roles: ["admin", "waiter", "bar", "kitchen"] },
   { to: "/historial", label: "Histórico", roles: ["admin", "waiter"] },
+  { to: "/admin/informes", label: "Informes", roles: ["admin"] },
   { to: "/admin/articulos", label: "Carta", roles: ["admin"] },
   { to: "/admin/mesas", label: "QR", roles: ["admin"] },
   { to: "/admin/ajustes", label: "Ajustes", roles: ["admin"] },

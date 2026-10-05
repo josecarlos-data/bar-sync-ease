@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import type { BarSettings } from "@/lib/types";
 
 export const FOOTER_TEMPLATES = {
@@ -150,10 +151,23 @@ export function BusinessDataCard({
             </li>
           </ul>
           <p className="mt-2 text-muted-foreground">
-            VERI*FACTU: en el futuro los tickets deberán llevar un código QR y la leyenda de factura verificable. Lo
-            añadiremos en una fase aparte.
+            Orientativo, no sustituye el asesoramiento de tu gestoría.
           </p>
         </div>
+
+        <label className="flex items-center gap-3 rounded-lg border border-border p-3 text-sm">
+          <Switch
+            checked={settings.verifactu_enabled === true}
+            onCheckedChange={(v) => onSave({ verifactu_enabled: v })}
+          />
+          <span>
+            <span className="font-medium">Registro de facturación verificable (VERI*FACTU)</span>
+            <span className="block text-xs text-muted-foreground">
+              Cada ticket y factura queda registrado con huella encadenada y lleva un QR de verificación. Los registros
+              no se pueden modificar ni borrar.
+            </span>
+          </span>
+        </label>
 
         <div className="flex items-center justify-end gap-3 pt-1">
           <span className="text-xs text-muted-foreground">

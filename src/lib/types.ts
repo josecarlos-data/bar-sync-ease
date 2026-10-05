@@ -35,6 +35,7 @@ export type BarSettings = {
   phone?: string | null;
   ticket_footer?: string | null;
   public_base_url?: string | null;
+  verifactu_enabled?: boolean;
   menu_print?: import("@/integrations/supabase/types").Json;
   menu_sort?: "alpha" | "popular" | "manual";
   tabs_enabled?: boolean;

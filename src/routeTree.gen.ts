@@ -23,6 +23,7 @@ import { Route as AuthenticatedExistenciasRouteImport } from './routes/_authenti
 import { Route as AuthenticatedFiadoRouteImport } from './routes/_authenticated/fiado'
 import { Route as AuthenticatedHistorialRouteImport } from './routes/_authenticated/historial'
 import { Route as MTokenRouteImport } from './routes/m.$token'
+import { Route as VerificarIdRouteImport } from './routes/verificar.$id'
 import { Route as AuthenticatedAdminAjustesRouteImport } from './routes/_authenticated/admin.ajustes'
 import { Route as AuthenticatedAdminArticulosRouteImport } from './routes/_authenticated/admin.articulos'
 import { Route as AuthenticatedAdminCartaImpresaRouteImport } from './routes/_authenticated/admin.carta-impresa'
@@ -100,6 +101,11 @@ const MTokenRoute = MTokenRouteImport.update({
   path: '/m/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VerificarIdRoute = VerificarIdRouteImport.update({
+  id: '/verificar/$id',
+  path: '/verificar/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAdminAjustesRoute =
   AuthenticatedAdminAjustesRouteImport.update({
     id: '/admin/ajustes',
@@ -150,6 +156,7 @@ export interface FileRoutesByFullPath {
   '/fiado': typeof AuthenticatedFiadoRoute
   '/historial': typeof AuthenticatedHistorialRoute
   '/m/$token': typeof MTokenRoute
+  '/verificar/$id': typeof VerificarIdRoute
   '/admin/ajustes': typeof AuthenticatedAdminAjustesRoute
   '/admin/articulos': typeof AuthenticatedAdminArticulosRoute
   '/admin/carta-impresa': typeof AuthenticatedAdminCartaImpresaRoute
@@ -171,6 +178,7 @@ export interface FileRoutesByTo {
   '/fiado': typeof AuthenticatedFiadoRoute
   '/historial': typeof AuthenticatedHistorialRoute
   '/m/$token': typeof MTokenRoute
+  '/verificar/$id': typeof VerificarIdRoute
   '/admin/ajustes': typeof AuthenticatedAdminAjustesRoute
   '/admin/articulos': typeof AuthenticatedAdminArticulosRoute
   '/admin/carta-impresa': typeof AuthenticatedAdminCartaImpresaRoute
@@ -194,6 +202,7 @@ export interface FileRoutesById {
   '/_authenticated/fiado': typeof AuthenticatedFiadoRoute
   '/_authenticated/historial': typeof AuthenticatedHistorialRoute
   '/m/$token': typeof MTokenRoute
+  '/verificar/$id': typeof VerificarIdRoute
   '/_authenticated/admin/ajustes': typeof AuthenticatedAdminAjustesRoute
   '/_authenticated/admin/articulos': typeof AuthenticatedAdminArticulosRoute
   '/_authenticated/admin/carta-impresa': typeof AuthenticatedAdminCartaImpresaRoute
@@ -217,6 +226,7 @@ export interface FileRouteTypes {
     | '/fiado'
     | '/historial'
     | '/m/$token'
+    | '/verificar/$id'
     | '/admin/ajustes'
     | '/admin/articulos'
     | '/admin/carta-impresa'
@@ -238,6 +248,7 @@ export interface FileRouteTypes {
     | '/fiado'
     | '/historial'
     | '/m/$token'
+    | '/verificar/$id'
     | '/admin/ajustes'
     | '/admin/articulos'
     | '/admin/carta-impresa'
@@ -260,6 +271,7 @@ export interface FileRouteTypes {
     | '/_authenticated/fiado'
     | '/_authenticated/historial'
     | '/m/$token'
+    | '/verificar/$id'
     | '/_authenticated/admin/ajustes'
     | '/_authenticated/admin/articulos'
     | '/_authenticated/admin/carta-impresa'
@@ -274,6 +286,7 @@ export interface RootRouteChildren {
   ApuntarseRoute: typeof ApuntarseRoute
   AuthRoute: typeof AuthRoute
   MTokenRoute: typeof MTokenRoute
+  VerificarIdRoute: typeof VerificarIdRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
 }
 
@@ -377,6 +390,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/verificar/$id': {
+      id: '/verificar/$id'
+      path: '/verificar/$id'
+      fullPath: '/verificar/$id'
+      preLoaderRoute: typeof VerificarIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/admin/ajustes': {
       id: '/_authenticated/admin/ajustes'
       path: '/admin/ajustes'
@@ -465,6 +485,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApuntarseRoute: ApuntarseRoute,
   AuthRoute: AuthRoute,
   MTokenRoute: MTokenRoute,
+  VerificarIdRoute: VerificarIdRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
 }
 export const routeTree = rootRouteImport
