@@ -122,9 +122,9 @@ export function houseTapaLines(
   for (const r of rounds) {
     const inc = Math.min(free, r.qty);
     free -= inc;
-    if (inc > 0) lines.push({ name: `Tapa ${roundLabel(settings, r.round)}`, price: 0, qty: inc, tapa_kind: "round", tapa_round: r.round });
+    if (inc > 0) lines.push({ name: roundLabel(settings, r.round), price: 0, qty: inc, tapa_kind: "round", tapa_round: r.round });
     if (r.qty - inc > 0)
-      lines.push({ name: `Tapa extra ${roundLabel(settings, r.round)}`, price: extraPrice, qty: r.qty - inc, tapa_kind: "extra", tapa_round: r.round });
+      lines.push({ name: `${roundLabel(settings, r.round)} (extra)`, price: extraPrice, qty: r.qty - inc, tapa_kind: "extra", tapa_round: r.round });
   }
   return lines;
 }
