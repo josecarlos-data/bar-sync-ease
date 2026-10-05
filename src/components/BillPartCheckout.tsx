@@ -19,6 +19,7 @@ export function BillPartCheckout({ partId, onClose }: { partId: string; onClose:
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-background">
+      <PaymentTestModeBanner />
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <p className="font-semibold">Pagar con tarjeta</p>
         <button
