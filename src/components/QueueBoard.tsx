@@ -6,6 +6,7 @@ import { Check, Flame, Volume2, VolumeX } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useStaff, useBarSettings } from "@/hooks/useStaff";
 import { useRealtime } from "@/hooks/useRealtime";
+import { cachedFetch, enqueueOp } from "@/lib/offline";
 import { useSpeech, useAutoSpeak, isAudioUnlocked, unlockAudio } from "@/hooks/useSpeech";
 import type { Destination, LineStatus } from "@/lib/types";
 import { PrintAgent } from "@/components/PrintAgent";
@@ -39,31 +40,51 @@ export function QueueBoard({ destination }: { destination: Destination }) {
 
   useRealtime("queue", ["order_items", "orders", "table_sessions", "order_instructions"], !!barId);
 
+  const [cachedAt, setCachedAt] = useState<string | null>(null);
+  const offlineEnabled = settings?.offline_mode === true;
+  const offlineNow = () => offlineEnabled && !navigator.onLine;
+
   const singleQueue = settings ? !settings.split_bar_kitchen : false;
   const sort: SortMode = sortOverride ?? settings?.queue_sort ?? "arrival";
+  const queueKey = ["queue", barId, destination, singleQueue] as const;
 
   const { data: lines = [], isLoading } = useQuery({
-    queryKey: ["queue", barId, destination, singleQueue],
+    queryKey: queueKey,
     enabled: !!barId && !!settings,
     queryFn: async () => {
-      let query = supabase
-        .from("order_items")
-        .select(
-          "id, name_snapshot, qty, note, status, destination, created_at, order_id, orders!inner(created_at, session_id, table_sessions!inner(status, nickname, tables!inner(number, name)))",
-        )
-        .eq("bar_id", barId!)
-        .eq("orders.table_sessions.status", "open")
-        .in("status", ["pending", "preparing"])
-        .is("deleted_at", null)
-        .order("created_at", { ascending: true });
+      const result = await cachedFetch(
+        barId!,
+        `queue:${destination}:${singleQueue}`,
+        offlineEnabled,
+        async () => {
+          let query = supabase
+            .from("order_items")
+            .select(
+              "id, name_snapshot, qty, note, status, destination, created_at, order_id, orders!inner(created_at, session_id, table_sessions!inner(status, nickname, tables!inner(number, name)))",
+            )
+            .eq("bar_id", barId!)
+            .eq("orders.table_sessions.status", "open")
+            .in("status", ["pending", "preparing"])
+            .is("deleted_at", null)
+            .order("created_at", { ascending: true });
 
-      if (!singleQueue) query = query.eq("destination", destination);
+          if (!singleQueue) query = query.eq("destination", destination);
 
-      const { data, error } = await query;
-      if (error) throw error;
-      return (data ?? []) as unknown as QueueLine[];
+          const { data, error } = await query;
+          if (error) throw error;
+          return (data ?? []) as unknown as QueueLine[];
+        },
+      );
+      setCachedAt(result.fromCache ? result.cachedAt : null);
+      return result.data;
     },
   });
+
+  function applyLocalStatus(ids: string[], patch: Partial<QueueLine>) {
+    queryClient.setQueryData<QueueLine[]>(queueKey, (old) =>
+      (old ?? []).map((l) => (ids.includes(l.id) ? { ...l, ...patch } : l)),
+    );
+  }
 
   const orderIds = [...new Set(lines.map((l) => l.order_id))].sort();
   const { data: instructions = [] } = useQuery({
@@ -118,9 +139,23 @@ export function QueueBoard({ destination }: { destination: Destination }) {
   }, [lines, isLoading, settings, orderMode, autoSpeakOrder]);
 
   async function markPreparing(ids: string[]) {
+    const patch = { status: "preparing" as const, started_at: new Date().toISOString() };
+    if (offlineNow()) {
+      enqueueOp({
+        kind: "line_status",
+        barId: barId!,
+        ids,
+        patch,
+        matchStatus: "pending",
+        label: `Empezar ${ids.length > 1 ? `${ids.length} líneas` : "1 línea"}`,
+      });
+      applyLocalStatus(ids, patch);
+      toast("Sin conexión: se enviará solo al volver la red");
+      return;
+    }
     const { error } = await supabase
       .from("order_items")
-      .update({ status: "preparing", started_at: new Date().toISOString() })
+      .update(patch)
       .in("id", ids)
       .eq("status", "pending");
     if (error) { toast.error("No se pudo empezar"); return; }
@@ -128,9 +163,22 @@ export function QueueBoard({ destination }: { destination: Destination }) {
   }
 
   async function markReady(ids: string[]) {
+    const patch = { status: "ready" as const, ready_at: new Date().toISOString() };
+    if (offlineNow()) {
+      enqueueOp({
+        kind: "line_status",
+        barId: barId!,
+        ids,
+        patch,
+        label: `Marcar listo ${ids.length > 1 ? `${ids.length} líneas` : "1 línea"}`,
+      });
+      applyLocalStatus(ids, patch);
+      toast("Sin conexión: se enviará solo al volver la red");
+      return;
+    }
     const { error } = await supabase
       .from("order_items")
-      .update({ status: "ready", ready_at: new Date().toISOString() })
+      .update(patch)
       .in("id", ids);
     if (error) {
       toast.error("No se pudo marcar como listo");
@@ -199,6 +247,12 @@ export function QueueBoard({ destination }: { destination: Destination }) {
       </div>
       {barId && settings && <PrintAgent barId={barId} settings={settings} destination={destination} />}
 
+      {cachedAt && (
+        <p className="rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-xs font-semibold text-warning-foreground">
+          Sin conexión: mostrando la cola guardada a las{" "}
+          {new Date(cachedAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
+        </p>
+      )}
       {isLoading && <p className="text-sm text-muted-foreground">Cargando cola…</p>}
       {!isLoading && sorted.length === 0 && (
         <div className="rounded-xl border border-dashed border-border p-8 text-center text-muted-foreground">
