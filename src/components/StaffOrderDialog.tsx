@@ -10,6 +10,7 @@ import { allergenLabel, formatEUR } from "@/lib/allergens";
 import { MenuBrowser } from "@/components/MenuBrowser";
 import { useBarSettings } from "@/hooks/useStaff";
 import { useMenuPopularity } from "@/hooks/useMenuPopularity";
+import { enqueueOp } from "@/lib/offline";
 import { Input } from "@/components/ui/input";
 import type { Category, Item } from "@/lib/types";
 import { cartDrinks, choiceAllowance, houseTapaLines, priceCart, pricedTotal, proposeRounds, roundLabel, tapaMode, type SessionTapaLine } from "@/lib/tapas";
@@ -179,43 +180,7 @@ export function StaffOrderDialog({
         .select("id")
         .single();
       if (error || !order) throw error ?? new Error("orden");
-      const now = new Date().toISOString();
-      const lines: Record<string, unknown>[] = priced.map((l) => {
-        const it = l.item;
-        const alreadyServed =
-          mode === "all-served" || (mode === "drinks-served" && it.destination === "bar");
-        return {
-          bar_id: res.barId,
-          order_id: order.id,
-          item_id: it.id,
-          name_snapshot: it.name,
-          price_snapshot: l.price,
-          tax_rate_snapshot: it.tax_rate,
-          qty: l.qty,
-          note: l.note.trim() || null,
-          destination: it.destination,
-          tapa_kind: l.tapa_kind,
-          ...(alreadyServed
-            ? { status: "served" as const, ready_at: now, served_at: now }
-            : { status: "pending" as const }),
-        };
-      });
-      for (const h of houseLines) {
-        lines.push({
-          bar_id: res.barId,
-          order_id: order.id,
-          item_id: null,
-          name_snapshot: h.name,
-          price_snapshot: h.price,
-          tax_rate_snapshot: 10,
-          qty: h.qty,
-          note: null,
-          destination: "kitchen",
-          status: "pending",
-          tapa_kind: h.tapa_kind,
-          tapa_round: h.tapa_round,
-        });
-      }
+      const lines = buildLines({ barId: res.barId, orderId: order.id });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error: le } = await supabase.from("order_items").insert(lines as any);
       if (le) throw le;

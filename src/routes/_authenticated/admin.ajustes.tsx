@@ -42,6 +42,11 @@ const TOGGLES: { key: keyof BarSettings; label: string; help: string }[] = [
     label: "Pago online con tarjeta",
     help: "El cliente puede pagar su parte de la cuenta con tarjeta desde el móvil. Requiere tener los pagos activados en el panel de Lovable.",
   },
+  {
+    key: "offline_mode",
+    label: "Modo sin conexión",
+    help: "El personal puede consultar mesas, cobrar y apuntar comandas aunque se caiga internet; todo se sincroniza solo al volver la red.",
+  },
 ];
 
 function SettingsPage() {
