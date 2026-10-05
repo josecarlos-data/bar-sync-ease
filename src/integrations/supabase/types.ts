@@ -1351,6 +1351,7 @@ export type Database = {
           delta: number
           id: string
           item_id: string | null
+          note: string | null
           order_item_id: string | null
           pool_id: string
           reason: string
@@ -1362,6 +1363,7 @@ export type Database = {
           delta: number
           id?: string
           item_id?: string | null
+          note?: string | null
           order_item_id?: string | null
           pool_id: string
           reason: string
@@ -1373,6 +1375,7 @@ export type Database = {
           delta?: number
           id?: string
           item_id?: string | null
+          note?: string | null
           order_item_id?: string | null
           pool_id?: string
           reason?: string
@@ -1728,6 +1731,10 @@ export type Database = {
           item_id: string
           units: number
         }[]
+      }
+      restock_pool: {
+        Args: { _pool: string; _price: number; _qty: number; _supplier: string }
+        Returns: undefined
       }
       sales_by_hour: {
         Args: { _bar_id: string; _from: string; _to: string }

@@ -183,8 +183,9 @@ function Stat({ label, value, onClick }: { label: string; value: number | string
 }
 
 const REASONS: Record<string, string> = {
-  order: "Pedido", sale: "Pedido", manual: "Ajuste", waste: "Merma", refill: "Recarga", confirm: "Corrección", reopen: "Reabierto", deplete: "Agotado", cancel: "Línea anulada",
+  order: "Pedido", sale: "Pedido", manual: "Ajuste", waste: "Merma", refill: "Recarga", confirm: "Corrección", reopen: "Reabierto", deplete: "Agotado", cancel: "Línea anulada", purchase: "Compra",
 };
+const reasonLabel = (r: string) => REASONS[r] ?? (r.startsWith("purchase") ? r.replace(/^purchase/, "Compra") : r);
 
 function PoolHistory({ poolId }: { poolId: string }) {
   const { data } = useQuery({
@@ -199,7 +200,7 @@ function PoolHistory({ poolId }: { poolId: string }) {
     <ul className="space-y-0.5 text-xs">
       {data.map((m) => (
         <li key={m.id} className="flex justify-between">
-          <span>{new Date(m.created_at).toLocaleString("es-ES", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })} · {REASONS[m.reason] ?? m.reason}</span>
+          <span>{new Date(m.created_at).toLocaleString("es-ES", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })} · {reasonLabel(m.reason)}</span>
           <b className={Number(m.delta) < 0 ? "text-destructive" : ""}>{Number(m.delta) > 0 ? "+" : ""}{Number(m.delta)}</b>
         </li>
       ))}
@@ -216,9 +217,28 @@ function PoolCard({ pool, isAdmin, items, inList, onChange }: {
 }) {
   const [refill, setRefill] = useState("");
   const [showHist, setShowHist] = useState(false);
+  const [restock, setRestock] = useState(false);
+  const [rQty, setRQty] = useState("");
+  const [rPrice, setRPrice] = useState("");
+  const [rSupplier, setRSupplier] = useState(pool.supplier ?? "");
   const linked = items.filter((i) => i.pool_id === pool.id);
   const free = items.filter((i) => !i.pool_id);
   const low = pool.status !== "depleted" && pool.quantity <= pool.low_threshold;
+
+  async function doRestock() {
+    const qty = Number(rQty);
+    if (!(qty > 0)) return;
+    const { error } = await supabase.rpc("restock_pool", {
+      _pool: pool.id,
+      _qty: qty,
+      _price: Number(rPrice) || 0,
+      _supplier: rSupplier.trim(),
+    });
+    if (error) { toast.error("No se pudo reponer"); return; }
+    toast.success(`${pool.name}: +${qty} ${pool.unit_label}`);
+    setRestock(false); setRQty(""); setRPrice("");
+    onChange();
+  }
 
   async function act(a: string, q = 0) {
     if (await stockAction(pool.id, a, q)) onChange();
@@ -283,7 +303,28 @@ function PoolCard({ pool, isAdmin, items, inList, onChange }: {
         <Input type="number" inputMode="decimal" placeholder="Recarga: cantidad total" value={refill} onChange={(e) => setRefill(e.target.value)} />
         <button disabled={!(Number(refill) > 0)} onClick={() => { act("refill", Number(refill)); setRefill(""); }}
           className="rounded-md bg-primary px-3 text-sm font-bold text-primary-foreground disabled:opacity-50">Recargar</button>
+        <button onClick={() => { setRSupplier(pool.supplier ?? ""); setRestock(true); }}
+          className="rounded-md bg-accent px-3 text-sm font-bold text-accent-foreground">Reponer</button>
       </div>
+
+      {restock && (
+        <div className="space-y-2 rounded-lg border border-primary bg-primary/5 p-3">
+          <p className="text-sm font-bold">Reponer «{pool.name}» desde el proveedor</p>
+          <div className="flex gap-2">
+            <Input type="number" inputMode="decimal" placeholder={`Cantidad (${pool.unit_label})`} value={rQty} onChange={(e) => setRQty(e.target.value)} autoFocus />
+            <Input type="number" inputMode="decimal" placeholder="Precio total € (opcional)" value={rPrice} onChange={(e) => setRPrice(e.target.value)} />
+          </div>
+          <Input placeholder="Proveedor" value={rSupplier} onChange={(e) => setRSupplier(e.target.value)} />
+          <div className="flex gap-2">
+            <button onClick={() => setRestock(false)} className="flex-1 rounded-md border border-border py-2 text-sm font-semibold">Cancelar</button>
+            <button disabled={!(Number(rQty) > 0)} onClick={doRestock}
+              className="flex-1 rounded-md bg-primary py-2 text-sm font-bold text-primary-foreground disabled:opacity-50">
+              Sumar al stock
+            </button>
+          </div>
+          <p className="text-xs text-muted-foreground">El stock sube al momento y los platos vuelven a la carta solos.</p>
+        </div>
+      )}
 
       <div className="space-y-1 border-t border-border pt-2">
         <p className="text-xs font-semibold text-muted-foreground">En la carta</p>
