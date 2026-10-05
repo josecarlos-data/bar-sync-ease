@@ -1540,6 +1540,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      bill_part_amount: { Args: { _part_id: string }; Returns: number }
       can_view_bar: { Args: { _bar_id: string }; Returns: boolean }
       charge_session_to_tab: {
         Args: {

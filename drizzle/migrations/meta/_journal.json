@@ -127,6 +127,13 @@
       "when": 1791155789164,
       "tag": "0017_tapa_with_drink",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1791181755147,
+      "tag": "0018_bill_part_amount",
+      "breakpoints": true
     }
   ]
 }
