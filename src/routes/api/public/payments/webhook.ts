@@ -41,7 +41,7 @@ async function handleCheckoutCompleted(session: any) {
     await supabaseAdmin.rpc("issue_invoice", {
       _session_id: split.session_id,
       _split_part_id: partId,
-      _kind: "ticket",
+      _kind: "simplified",
     });
   }
 }
