@@ -119,7 +119,9 @@ function saveOps(barId: string, ops: OfflineOp[]) {
   notify();
 }
 
-export function enqueueOp(op: Omit<OfflineOp, "id" | "at"> & { barId: string }) {
+type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
+
+export function enqueueOp(op: DistributiveOmit<OfflineOp, "id" | "at">) {
   const full = {
     ...op,
     id: crypto.randomUUID(),
@@ -137,8 +139,10 @@ export function pendingCount(barId: string): number {
 
 async function replayOp(op: OfflineOp): Promise<void> {
   if (op.kind === "line_status") {
-    let q = supabase.from("order_items").update(op.patch).in("id", op.ids);
-    if (op.matchStatus) q = q.eq("status", op.matchStatus);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let q = supabase.from("order_items").update(op.patch as any).in("id", op.ids);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (op.matchStatus) q = q.eq("status", op.matchStatus as any);
     const { error } = await q;
     if (error) throw new Error(error.message);
     return;

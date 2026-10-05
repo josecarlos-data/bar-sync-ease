@@ -115,7 +115,7 @@ export function StaffOrderDialog({
     try {
       const buildLines = (withOrder: { barId: string; orderId: string } | null): Record<string, unknown>[] => {
         const now = new Date().toISOString();
-        const base = priced.map((l) => {
+        const base: Record<string, unknown>[] = priced.map((l) => {
           const it = l.item;
           const alreadyServed =
             mode === "all-served" || (mode === "drinks-served" && it.destination === "bar");
@@ -129,7 +129,6 @@ export function StaffOrderDialog({
             note: l.note.trim() || null,
             destination: it.destination,
             tapa_kind: l.tapa_kind,
-            tapa_round: l.tapa_round ?? null,
             ...(alreadyServed
               ? { status: "served" as const, ready_at: now, served_at: now }
               : { status: "pending" as const }),
