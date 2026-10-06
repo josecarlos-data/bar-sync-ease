@@ -191,7 +191,7 @@ function PoolHistory({ poolId }: { poolId: string }) {
   const { data } = useQuery({
     queryKey: ["stock-moves", poolId],
     queryFn: async () => {
-      const { data } = await supabase.from("stock_movements").select("id, delta, reason, created_at").eq("pool_id", poolId).order("created_at", { ascending: false }).limit(12);
+      const { data } = await supabase.from("stock_movements").select("id, delta, reason, note, created_at").eq("pool_id", poolId).order("created_at", { ascending: false }).limit(12);
       return data ?? [];
     },
   });
@@ -200,7 +200,7 @@ function PoolHistory({ poolId }: { poolId: string }) {
     <ul className="space-y-0.5 text-xs">
       {data.map((m) => (
         <li key={m.id} className="flex justify-between">
-          <span>{new Date(m.created_at).toLocaleString("es-ES", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })} · {reasonLabel(m.reason)}</span>
+          <span>{new Date(m.created_at).toLocaleString("es-ES", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })} · {reasonLabel(m.reason)}{(m as { note?: string | null }).note ? ` · ${(m as { note?: string | null }).note}` : ""}</span>
           <b className={Number(m.delta) < 0 ? "text-destructive" : ""}>{Number(m.delta) > 0 ? "+" : ""}{Number(m.delta)}</b>
         </li>
       ))}
