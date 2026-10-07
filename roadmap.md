@@ -42,6 +42,7 @@
 
 ## Fase 3
 - [ ] Pasarela de pago y offline completo
+- [x] Etiquetas QR de mesa 60 × 90 mm en PNG/PDF y PDF A4 conjunto con líneas de corte
 
 ## Impresión y tickets (completado)
 - [x] Impresora de cocina configurable (cuándo, zona, ancho) + "Este dispositivo imprime"

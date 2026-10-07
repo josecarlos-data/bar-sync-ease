@@ -2,11 +2,17 @@ import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import QRCode from "qrcode";
-import { Download, Plus } from "lucide-react";
+import { Download, FileDown, ImageDown, Plus } from "lucide-react";
 import { StaffShell } from "@/components/StaffShell";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useBarSettings, useStaff } from "@/hooks/useStaff";
+import {
+  createTableLabelDataUrl,
+  downloadDataUrl,
+  TABLE_LABEL_HEIGHT_MM,
+  TABLE_LABEL_WIDTH_MM,
+} from "@/lib/table-label";
 import type { BarTable } from "@/lib/types";
 
 export const Route = createFileRoute("/_authenticated/admin/mesas")({
@@ -14,6 +20,10 @@ export const Route = createFileRoute("/_authenticated/admin/mesas")({
     meta: [
       { title: "Mesas y QR — Comandas de bar" },
       { name: "description", content: "Crea mesas y descarga su código QR." },
+      { property: "og:title", content: "Mesas y QR — Comandas de bar" },
+      { property: "og:description", content: "Crea mesas y descarga sus etiquetas QR imprimibles." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: TablesPage,
@@ -30,6 +40,7 @@ function TablesPage() {
   const barId = staff?.barId ?? null;
   const { data: settings } = useBarSettings(barId);
   const queryClient = useQueryClient();
+  const [downloadingAll, setDownloadingAll] = useState(false);
 
   const { data: tables = [] } = useQuery({
     queryKey: ["admin-mesas", barId],
@@ -38,7 +49,7 @@ function TablesPage() {
       const { data } = await supabase
         .from("tables")
         .select("*")
-        .eq("bar_id", barId!)
+        .eq("bar_id", barId ?? "")
         .eq("kind", "table")
         .order("number");
       return (data ?? []) as BarTable[];
@@ -46,10 +57,11 @@ function TablesPage() {
   });
 
   async function addTable() {
+    if (!barId) return;
     const next = (tables.at(-1)?.number ?? 0) + 1;
     const { error } = await supabase
       .from("tables")
-      .insert({ bar_id: barId!, number: next, qr_token: randomToken(), active: true });
+      .insert({ bar_id: barId, number: next, qr_token: randomToken(), active: true });
     if (error) { toast.error("No se pudo crear la mesa"); return; }
     queryClient.invalidateQueries();
   }
@@ -67,6 +79,38 @@ function TablesPage() {
   const base = settings?.public_base_url || (typeof window === "undefined" ? "" : window.location.origin);
   const isPrivate = /id-preview--|preview--|lovableproject\.com|localhost/.test(base);
 
+  async function downloadAllLabels() {
+    if (!base || tables.length === 0) return;
+    setDownloadingAll(true);
+    try {
+      const { jsPDF } = await import("jspdf");
+      const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+      const pageWidth = 210;
+      const pageHeight = 297;
+      const left = (pageWidth - TABLE_LABEL_WIDTH_MM * 3) / 2;
+      const top = (pageHeight - TABLE_LABEL_HEIGHT_MM * 3) / 2;
+
+      for (let index = 0; index < tables.length; index += 1) {
+        if (index > 0 && index % 9 === 0) pdf.addPage("a4", "portrait");
+        const slot = index % 9;
+        const x = left + (slot % 3) * TABLE_LABEL_WIDTH_MM;
+        const y = top + Math.floor(slot / 3) * TABLE_LABEL_HEIGHT_MM;
+        const table = tables[index];
+        if (!table) continue;
+        const dataUrl = await createTableLabelDataUrl(table.number, `${base}/m/${table.qr_token}`);
+        pdf.addImage(dataUrl, "PNG", x, y, TABLE_LABEL_WIDTH_MM, TABLE_LABEL_HEIGHT_MM, undefined, "FAST");
+        pdf.setDrawColor(180);
+        pdf.setLineWidth(0.15);
+        pdf.rect(x, y, TABLE_LABEL_WIDTH_MM, TABLE_LABEL_HEIGHT_MM);
+      }
+      pdf.save("etiquetas-mesas.pdf");
+    } catch {
+      toast.error("No se pudo crear el PDF de etiquetas");
+    } finally {
+      setDownloadingAll(false);
+    }
+  }
+
   return (
     <StaffShell title="Mesas y QR">
       {isPrivate && (
@@ -75,12 +119,14 @@ function TablesPage() {
           <p>Apuntan a la vista previa privada. Publica la app y escribe su dirección en Ajustes → «Dirección pública de la carta».</p>
         </div>
       )}
-      <button
-        onClick={addTable}
-        className="mb-4 flex items-center gap-1 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground"
-      >
-        <Plus className="h-4 w-4" /> Añadir mesa
-      </button>
+      <div className="mb-4 flex flex-wrap gap-2">
+        <Button onClick={addTable}>
+          <Plus /> Añadir mesa
+        </Button>
+        <Button variant="outline" onClick={downloadAllLabels} disabled={!base || tables.length === 0 || downloadingAll}>
+          <FileDown /> {downloadingAll ? "Preparando PDF…" : "Descargar todas en PDF"}
+        </Button>
+      </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
         {tables.map((table) => (
@@ -93,35 +139,51 @@ function TablesPage() {
 
 function TableCard({ table, base, onRegenerate }: { table: BarTable; base: string; onRegenerate: () => void }) {
   const [dataUrl, setDataUrl] = useState<string | null>(null);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
   const url = base ? `${base}/m/${table.qr_token}` : "";
 
   useEffect(() => {
-    if (!url) return;
-    QRCode.toDataURL(url, { width: 512, margin: 1 }).then(setDataUrl).catch(() => setDataUrl(null));
-  }, [url]);
+    let cancelled = false;
+    if (!url) { setDataUrl(null); return; }
+    void createTableLabelDataUrl(table.number, url)
+      .then((result) => { if (!cancelled) setDataUrl(result); })
+      .catch(() => { if (!cancelled) setDataUrl(null); });
+    return () => { cancelled = true; };
+  }, [table.number, url]);
+
+  async function downloadPdf() {
+    if (!dataUrl) return;
+    setDownloadingPdf(true);
+    try {
+      const { jsPDF } = await import("jspdf");
+      const pdf = new jsPDF({ unit: "mm", format: [TABLE_LABEL_WIDTH_MM, TABLE_LABEL_HEIGHT_MM], orientation: "portrait" });
+      pdf.addImage(dataUrl, "PNG", 0, 0, TABLE_LABEL_WIDTH_MM, TABLE_LABEL_HEIGHT_MM, undefined, "FAST");
+      pdf.save(`mesa-${table.number}.pdf`);
+    } catch {
+      toast.error("No se pudo crear el PDF");
+    } finally {
+      setDownloadingPdf(false);
+    }
+  }
 
   return (
     <article className="rounded-xl border border-border bg-card p-4 text-center">
       <p className="font-display text-2xl font-extrabold">Mesa {table.number}</p>
       {dataUrl && (
-        <img src={dataUrl} alt={`Código QR de la mesa ${table.number}`} className="mx-auto w-40" />
+        <img src={dataUrl} alt={`Etiqueta QR de la mesa ${table.number}`} className="mx-auto my-3 w-40 border border-border" />
       )}
-      <div className="mt-2 flex justify-center gap-2">
+      <div className="mt-2 flex flex-wrap justify-center gap-2">
         {dataUrl && (
-          <a
-            href={dataUrl}
-            download={`mesa-${table.number}.png`}
-            className="flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-sm font-semibold"
-          >
-            <Download className="h-4 w-4" /> Descargar
-          </a>
+          <Button variant="outline" size="sm" onClick={() => downloadDataUrl(dataUrl, `mesa-${table.number}.png`)}>
+            <ImageDown /> PNG
+          </Button>
         )}
-        <button
-          onClick={onRegenerate}
-          className="rounded-lg border border-border px-3 py-2 text-sm font-semibold"
-        >
+        <Button variant="outline" size="sm" onClick={downloadPdf} disabled={!dataUrl || downloadingPdf}>
+          <Download /> {downloadingPdf ? "Creando…" : "PDF"}
+        </Button>
+        <Button variant="outline" size="sm" onClick={onRegenerate}>
           Renovar
-        </button>
+        </Button>
       </div>
     </article>
   );

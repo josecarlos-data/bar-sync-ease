@@ -15,3 +15,4 @@
 - Tapa con la bebida: modos en bar_settings.tapa_mode; precios y rondas se calculan en src/lib/tapas.ts y se guardan en order_items (tapa_kind/tapa_round) — un solo helper para cliente y personal.
 
 - Purchase list rows are created by a DB trigger on stock_pools (below low_threshold/depleted) and closed via RPC mark_purchase_bought, which refills the pool; keeps stock, menu availability and shopping list consistent in one place.
+- Generate table QR labels through the shared canvas helper so PNG previews and individual/batch PDFs always preserve identical sizing, quiet zones, and overlay limits.
