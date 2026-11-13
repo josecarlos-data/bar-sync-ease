@@ -110,21 +110,55 @@ export function roundLabel(settings: Partial<BarSettings> | null | undefined, r:
   return `${r}.ª tapa${n ? ` · ${n}` : ""}`;
 }
 
-/** Líneas de cocina para el modo Granada. Las que superan las bebidas con tapa se cobran como extra. */
+const norm = (x: string) => x.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+
+/** Plato de la carta cuyo nombre coincide con la tapa de esa ronda (enlace con existencias). */
+export function roundItem(settings: Partial<BarSettings> | null | undefined, r: number, items: Item[] = []) {
+  const n = roundName(settings, r);
+  if (!n) return undefined;
+  return items.find((i) => norm(i.name) === norm(n));
+}
+
+/** Primera ronda desde r cuya tapa no esté agotada (las rondas sin plato enlazado cuentan como disponibles). */
+export function nextAvailableRound(settings: Partial<BarSettings> | null | undefined, r: number, items: Item[] = []) {
+  const len = Array.isArray(settings?.tapa_rounds) ? (settings!.tapa_rounds as unknown[]).length : 0;
+  for (let k = 0; k < Math.max(1, len); k++) {
+    const it = roundItem(settings, r + k, items);
+    if (!it || it.available) return r + k;
+  }
+  return r;
+}
+
+export type HouseLine = {
+  name: string;
+  price: number;
+  qty: number;
+  tapa_kind: "round" | "extra";
+  tapa_round: number;
+  tapa_item_id: string | null;
+  skipped_from?: number | undefined;
+};
+
+/** Líneas de cocina para el modo Granada. Las que superan las bebidas con tapa se cobran como extra. Salta rondas agotadas. */
 export function houseTapaLines(
   settings: Partial<BarSettings> | null | undefined,
   rounds: { round: number; qty: number }[],
   includedDrinks: number,
+  items: Item[] = [],
 ) {
   let free = includedDrinks;
   const extraPrice = Number(settings?.tapa_extra_price ?? 0);
-  const lines: { name: string; price: number; qty: number; tapa_kind: "round" | "extra"; tapa_round: number }[] = [];
-  for (const r of rounds) {
+  const lines: HouseLine[] = [];
+  for (const r0 of rounds) {
+    const round = nextAvailableRound(settings, r0.round, items);
+    const r = { round, qty: r0.qty };
+    const tapa_item_id = roundItem(settings, round, items)?.id ?? null;
+    const skipped_from = round !== r0.round ? r0.round : undefined;
     const inc = Math.min(free, r.qty);
     free -= inc;
-    if (inc > 0) lines.push({ name: roundLabel(settings, r.round), price: 0, qty: inc, tapa_kind: "round", tapa_round: r.round });
+    if (inc > 0) lines.push({ name: roundLabel(settings, r.round), price: 0, qty: inc, tapa_kind: "round", tapa_round: r.round, tapa_item_id, skipped_from });
     if (r.qty - inc > 0)
-      lines.push({ name: `${roundLabel(settings, r.round)} (extra)`, price: extraPrice, qty: r.qty - inc, tapa_kind: "extra", tapa_round: r.round });
+      lines.push({ name: `${roundLabel(settings, r.round)} (extra)`, price: extraPrice, qty: r.qty - inc, tapa_kind: "extra", tapa_round: r.round, tapa_item_id, skipped_from });
   }
   return lines;
 }

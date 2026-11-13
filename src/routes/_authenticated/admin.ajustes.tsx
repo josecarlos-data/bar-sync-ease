@@ -108,6 +108,7 @@ function SettingsPage() {
             {settings.tapa_mode === "house" && (
               <div className="mt-3 space-y-2">
                 <label className="block text-sm font-semibold">Tapas por ronda (una por línea: 1.ª, 2.ª, 3.ª…)</label>
+                <p className="text-xs text-muted-foreground">Si escribes el nombre exacto de un plato de la carta, la tapa gasta de sus existencias y, si está agotada, se pasa a la siguiente ronda.</p>
                 <textarea
                   className="w-full rounded-md border border-input bg-background p-2 text-sm"
                   rows={4}

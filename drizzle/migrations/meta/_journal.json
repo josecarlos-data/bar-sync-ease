@@ -169,6 +169,13 @@
       "when": 1791237363641,
       "tag": "0023_stock_movements_purchase_reason",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1794576072868,
+      "tag": "0024_tapa_stock_link",
+      "breakpoints": true
     }
   ]
 }

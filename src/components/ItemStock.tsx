@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useStockPools, type StockPool } from "@/components/StockAlert";
 import { Input } from "@/components/ui/input";
 
-export type ItemStockLink = { id: string; pool_id: string | null; pool_portions: number };
+export type ItemStockLink = { id: string; pool_id: string | null; pool_portions: number; tapa_portions: number | null };
 
 /** Vínculos plato → existencia de todo el bar (para mostrar el stock en la carta). */
 export function useItemStockLinks(barId: string | null | undefined) {
@@ -12,7 +12,7 @@ export function useItemStockLinks(barId: string | null | undefined) {
     queryKey: ["item-stock-links", barId],
     enabled: !!barId,
     queryFn: async () => {
-      const { data } = await supabase.from("items").select("id, pool_id, pool_portions").eq("bar_id", barId!);
+      const { data } = await supabase.from("items").select("id, pool_id, pool_portions, tapa_portions").eq("bar_id", barId!);
       return (data ?? []) as ItemStockLink[];
     },
   });
@@ -80,6 +80,23 @@ export function ItemStockEditor({
               className="w-20"
               defaultValue={link?.pool_portions ?? 1}
               onBlur={(e) => Number(e.target.value) > 0 && setLink(pool.id, Number(e.target.value))}
+            />
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <span className="flex-1 text-muted-foreground">Porciones como tapa (con bebida)</span>
+            <Input
+              type="number"
+              inputMode="decimal"
+              step="0.05"
+              className="w-20"
+              placeholder="igual"
+              defaultValue={link?.tapa_portions ?? ""}
+              onBlur={async (e) => {
+                const v = e.target.value === "" ? null : Number(e.target.value);
+                if (v !== null && !(v > 0)) return;
+                await supabase.from("items").update({ tapa_portions: v }).eq("id", itemId);
+                qc.invalidateQueries();
+              }}
             />
           </div>
           <button type="button" onClick={() => setLink(null)} className="text-xs font-semibold text-destructive">

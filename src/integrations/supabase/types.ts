@@ -847,6 +847,7 @@ export type Database = {
           position: number
           price: number
           tags: string[]
+          tapa_portions: number | null
           tapa_supplement: number
           tax_rate: number
         }
@@ -871,6 +872,7 @@ export type Database = {
           position?: number
           price?: number
           tags?: string[]
+          tapa_portions?: number | null
           tapa_supplement?: number
           tax_rate?: number
         }
@@ -895,6 +897,7 @@ export type Database = {
           position?: number
           price?: number
           tags?: string[]
+          tapa_portions?: number | null
           tapa_supplement?: number
           tax_rate?: number
         }
@@ -985,6 +988,7 @@ export type Database = {
           served_at: string | null
           started_at: string | null
           status: Database["public"]["Enums"]["line_status"]
+          tapa_item_id: string | null
           tapa_kind: string | null
           tapa_round: number | null
           tax_rate_snapshot: number
@@ -1006,6 +1010,7 @@ export type Database = {
           served_at?: string | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["line_status"]
+          tapa_item_id?: string | null
           tapa_kind?: string | null
           tapa_round?: number | null
           tax_rate_snapshot?: number
@@ -1027,6 +1032,7 @@ export type Database = {
           served_at?: string | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["line_status"]
+          tapa_item_id?: string | null
           tapa_kind?: string | null
           tapa_round?: number | null
           tax_rate_snapshot?: number
@@ -1051,6 +1057,13 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_tapa_item_id_fkey"
+            columns: ["tapa_item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
             referencedColumns: ["id"]
           },
         ]

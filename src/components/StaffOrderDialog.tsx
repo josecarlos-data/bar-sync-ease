@@ -109,7 +109,7 @@ export function StaffOrderDialog({
   const [forceNew, setForceNew] = useState(false);
   const tapaCount = tapaN ?? drinksInCart;
   const rounds = mode === "house" ? proposeRounds(tapaCount, sessionLines, forceNew) : [];
-  const houseLines = mode === "house" ? houseTapaLines(settings, rounds, drinksInCart) : [];
+  const houseLines = mode === "house" ? houseTapaLines(settings, rounds, drinksInCart, items) : [];
   const allowance = mode === "choice" ? choiceAllowance(cart, items, sessionLines) : null;
   const total = pricedTotal(priced) + houseLines.reduce((s, l) => s + l.price * l.qty, 0);
 
@@ -163,6 +163,7 @@ export function StaffOrderDialog({
             status: "pending",
             tapa_kind: h.tapa_kind,
             tapa_round: h.tapa_round,
+            tapa_item_id: h.tapa_item_id,
           });
         }
         return base;
@@ -341,8 +342,11 @@ export function StaffOrderDialog({
                       </div>
                       <ul className="mt-1">
                         {houseLines.map((h) => (
-                          <li key={h.name} className="flex justify-between">
-                            <span>{h.qty}× {roundLabel(settings, h.tapa_round)}{h.tapa_kind === "extra" ? " (extra)" : ""}</span>
+                          <li key={h.name} className="flex flex-wrap justify-between">
+                            <span>
+                              {h.qty}× {roundLabel(settings, h.tapa_round)}{h.tapa_kind === "extra" ? " (extra)" : ""}
+                              {h.skipped_from && <span className="block text-xs text-warning">{roundLabel(settings, h.skipped_from)} agotada: se pone la siguiente</span>}
+                            </span>
                             <span className="text-muted-foreground">{h.price ? formatEUR(h.price * h.qty) : "incluida"}</span>
                           </li>
                         ))}

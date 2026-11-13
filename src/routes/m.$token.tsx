@@ -275,7 +275,7 @@ function GuestPage() {
   const houseLines = useMemo(() => {
     if (tmode !== "house") return [];
     const n = cartDrinks(cart, items);
-    return houseTapaLines(settings, proposeRounds(n, sessionTapaLines), n);
+    return houseTapaLines(settings, proposeRounds(n, sessionTapaLines), n, items);
   }, [tmode, settings, cart, items, sessionTapaLines]);
   const cartTotal = pricedTotal(priced);
 
@@ -349,6 +349,7 @@ function GuestPage() {
         destination: "kitchen",
         tapa_kind: h.tapa_kind,
         tapa_round: h.tapa_round,
+        tapa_item_id: h.tapa_item_id,
       });
     }
 

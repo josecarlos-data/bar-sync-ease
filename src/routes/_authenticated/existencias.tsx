@@ -21,7 +21,7 @@ export const Route = createFileRoute("/_authenticated/existencias")({
 });
 
 type Filter = "all" | "low" | "depleted";
-type StockItem = { id: string; name: string; pool_id: string | null; pool_portions: number; category_id: string | null; available: boolean };
+type StockItem = { id: string; name: string; pool_id: string | null; pool_portions: number; tapa_portions: number | null; category_id: string | null; available: boolean };
 
 function StockPage() {
   const { data: staff } = useStaff();
@@ -45,7 +45,7 @@ function StockPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("items")
-        .select("id, name, pool_id, pool_portions, category_id, available")
+        .select("id, name, pool_id, pool_portions, tapa_portions, category_id, available")
         .eq("bar_id", barId!)
         .order("name");
       return (data ?? []) as StockItem[];
@@ -331,7 +331,14 @@ function PoolCard({ pool, isAdmin, items, inList, onChange }: {
         {linked.length === 0 && <p className="text-xs text-muted-foreground">Ningún plato gasta de aquí.</p>}
         {linked.map((i) => (
           <div key={i.id} className="flex items-center gap-2 text-sm">
-            <span className="flex-1">{i.name}{!i.available && <span className="ml-1 text-xs text-destructive">· no disponible</span>}</span>
+            <span className="flex-1">{i.name}{!i.available && <span className="ml-1 text-xs text-destructive">· no disponible</span>}
+              {Number(pool.quantity) > 0 && (
+                <span className="ml-1 text-xs text-muted-foreground">
+                  · ~{Math.floor(Number(pool.quantity) / Number(i.pool_portions || 1))} raciones
+                  {i.tapa_portions ? ` / ~${Math.floor(Number(pool.quantity) / Number(i.tapa_portions))} tapas` : ""}
+                </span>
+              )}
+            </span>
             {isAdmin && (
               <>
                 <Input type="number" className="w-16" defaultValue={i.pool_portions} aria-label="Porciones"

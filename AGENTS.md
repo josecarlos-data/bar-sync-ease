@@ -16,3 +16,4 @@
 
 - Purchase list rows are created by a DB trigger on stock_pools (below low_threshold/depleted) and closed via RPC mark_purchase_bought, which refills the pool; keeps stock, menu availability and shopping list consistent in one place.
 - Generate table QR labels through the shared canvas helper so PNG previews and individual/batch PDFs always preserve identical sizing, quiet zones, and overlay limits.
+- Granada tapa rounds link to menu items by exact (accent-insensitive) name; round lines store order_items.tapa_item_id so the stock trigger deducts items.tapa_portions (fallback pool_portions) — keeps stock logic in one DB trigger.
