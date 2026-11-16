@@ -1,3 +1,4 @@
+import { newRequestId, placeOrder, placeOrderErrorMessage } from "@/lib/placeOrder";
 import { cartDrinks, choiceAllowance, houseTapaLines, priceCart, pricedTotal, proposeRounds, tapaMode } from "@/lib/tapas";
 import { displayNickname } from "@/lib/tableLabel";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -75,6 +76,7 @@ function GuestPage() {
   const [cart, setCart] = useState<CartLine[]>([]);
   const [tab, setTab] = useState<"carta" | "cuenta" | "ticket">("carta");
   const [confirming, setConfirming] = useState(false);
+  const [requestId, setRequestId] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
 
   async function attempt(nick?: string, confirmJoin?: boolean, skipNickname?: boolean) {
@@ -304,66 +306,24 @@ function GuestPage() {
   async function sendOrder() {
     if (!session || cart.length === 0) return;
     setSending(true);
-    const { data: userData } = await supabase.auth.getUser();
-    const { data: order, error } = await supabase
-      .from("orders")
-      .insert({
-        bar_id: session.barId,
-        session_id: session.sessionId,
-        created_by: userData.user?.id ?? null,
-      })
-      .select("id")
-      .single();
-
-    if (error || !order) {
-      setSending(false);
-      toast.error("No se pudo enviar la comanda");
-      return;
-    }
-
-    const lines: Record<string, unknown>[] = priced.map((line) => {
-      const item = line.item;
-      return {
-        bar_id: session.barId,
-        order_id: order.id,
-        item_id: item.id,
-        name_snapshot: item.name,
-        price_snapshot: line.price,
-        tax_rate_snapshot: item.tax_rate,
-        qty: line.qty,
-        note: line.note.trim() || null,
-        destination: item.destination,
-        tapa_kind: line.tapa_kind,
-      };
-    });
-    for (const h of houseLines) {
-      lines.push({
-        bar_id: session.barId,
-        order_id: order.id,
-        item_id: null,
-        name_snapshot: h.name,
-        price_snapshot: h.price,
-        tax_rate_snapshot: 10,
-        qty: h.qty,
-        note: null,
-        destination: "kitchen",
-        tapa_kind: h.tapa_kind,
-        tapa_round: h.tapa_round,
-        tapa_item_id: h.tapa_item_id,
+    const rid = requestId ?? newRequestId();
+    try {
+      // El servidor pone precio, IVA, destino y tapas; aquí solo va qué y cuánto.
+      const res = await placeOrder({
+        sessionId: session.sessionId,
+        requestId: rid,
+        lines: cart.map((c) => ({ item_id: c.itemId, qty: c.qty, note: c.note })),
       });
+      setCart([]);
+      setConfirming(false);
+      setRequestId(null);
+      toast.success(showPrices ? `Comanda enviada · ${formatEUR(Number(res.total))}` : "Comanda enviada");
+      queryClient.invalidateQueries();
+    } catch (e) {
+      toast.error(placeOrderErrorMessage(e instanceof Error ? e.message : null));
+    } finally {
+      setSending(false);
     }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error: lineError } = await supabase.from("order_items").insert(lines as any);
-    setSending(false);
-    setConfirming(false);
-    if (lineError) {
-      toast.error("No se pudo enviar la comanda");
-      return;
-    }
-    setCart([]);
-    toast.success("Comanda enviada");
-    queryClient.invalidateQueries();
   }
 
   async function call(type: "waiter" | "bill") {
@@ -701,7 +661,10 @@ function GuestPage() {
             </div>
             <button
               disabled={sending}
-              onClick={() => setConfirming(true)}
+              onClick={() => {
+                setRequestId(newRequestId());
+                setConfirming(true);
+              }}
               className="flex items-center gap-2 rounded-lg bg-primary px-5 py-3 font-semibold text-primary-foreground disabled:opacity-50"
             >
               <UtensilsCrossed className="h-4 w-4" /> {t("sendOrder", lang)}

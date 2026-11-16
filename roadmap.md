@@ -75,3 +75,9 @@
 ## Tapa con la bebida
 - [x] Modos Desactivado / Granada (rondas) / Almería (elige con suplemento), ajustes y artículos
 - [x] Integrar en Añadir comanda (camarero/De pie) y carta del cliente
+
+## Auditoría externa — Hallazgo 1 (precio en servidor)
+- [ ] Fase A: place_order (bloqueo de sesión, idempotencia, límites 20/99) y app usándola
+- [ ] Fase B: quitar INSERT directo — espera confirmación del usuario
+- [ ] Hallazgo aparte: syncQueue descarta operaciones fallidas
+- [ ] Hallazgo aparte: permisos de escritura sobrantes de anon

@@ -1071,6 +1071,7 @@ export type Database = {
       orders: {
         Row: {
           bar_id: string
+          client_request_id: string | null
           created_at: string
           created_by: string | null
           created_by_role: string
@@ -1081,6 +1082,7 @@ export type Database = {
         }
         Insert: {
           bar_id: string
+          client_request_id?: string | null
           created_at?: string
           created_by?: string | null
           created_by_role?: string
@@ -1091,6 +1093,7 @@ export type Database = {
         }
         Update: {
           bar_id?: string
+          client_request_id?: string | null
           created_at?: string
           created_by?: string | null
           created_by_role?: string
@@ -1745,6 +1748,21 @@ export type Database = {
           units: number
         }[]
       }
+      place_order: {
+        Args: {
+          _force_new_round?: boolean
+          _lines: Json
+          _request_id: string
+          _served?: string
+          _session_id: string
+          _tapas?: number
+        }
+        Returns: Json
+      }
+      place_order_result: {
+        Args: { _duplicate: boolean; _order: string; _warnings: string[] }
+        Returns: Json
+      }
       restock_pool: {
         Args: { _pool: string; _price: number; _qty: number; _supplier: string }
         Returns: undefined
@@ -1778,6 +1796,11 @@ export type Database = {
       stock_action: {
         Args: { _action: string; _pool: string; _qty?: number }
         Returns: undefined
+      }
+      tapa_norm: { Args: { _x: string }; Returns: string }
+      tapa_round_name: {
+        Args: { _after: string; _r: number; _rounds: Json }
+        Returns: string
       }
       top_items: {
         Args: { _bar_id: string; _from: string; _limit?: number; _to: string }
