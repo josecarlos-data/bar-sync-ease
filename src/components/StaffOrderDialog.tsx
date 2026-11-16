@@ -11,6 +11,7 @@ import { MenuBrowser } from "@/components/MenuBrowser";
 import { useBarSettings } from "@/hooks/useStaff";
 import { useMenuPopularity } from "@/hooks/useMenuPopularity";
 import { cachedFetch, enqueueOp } from "@/lib/offline";
+import { newRequestId, placeOrder, placeOrderErrorMessage, type ServedMode } from "@/lib/placeOrder";
 import { Input } from "@/components/ui/input";
 import type { Category, Item } from "@/lib/types";
 import { cartDrinks, choiceAllowance, houseTapaLines, priceCart, pricedTotal, proposeRounds, roundLabel, tapaMode, type SessionTapaLine } from "@/lib/tapas";
@@ -129,44 +130,13 @@ export function StaffOrderDialog({
     if (!cart.length) return;
     setSending(true);
     try {
-      const buildLines = (withOrder: { barId: string; orderId: string } | null): Record<string, unknown>[] => {
-        const now = new Date().toISOString();
-        const base: Record<string, unknown>[] = priced.map((l) => {
-          const it = l.item;
-          const alreadyServed =
-            mode === "all-served" || (mode === "drinks-served" && it.destination === "bar");
-          return {
-            ...(withOrder ? { bar_id: withOrder.barId, order_id: withOrder.orderId } : {}),
-            item_id: it.id,
-            name_snapshot: it.name,
-            price_snapshot: l.price,
-            tax_rate_snapshot: it.tax_rate,
-            qty: l.qty,
-            note: l.note.trim() || null,
-            destination: it.destination,
-            tapa_kind: l.tapa_kind,
-            ...(alreadyServed
-              ? { status: "served" as const, ready_at: now, served_at: now }
-              : { status: "pending" as const }),
-          };
-        });
-        for (const h of houseLines) {
-          base.push({
-            ...(withOrder ? { bar_id: withOrder.barId, order_id: withOrder.orderId } : {}),
-            item_id: null,
-            name_snapshot: h.name,
-            price_snapshot: h.price,
-            tax_rate_snapshot: 10,
-            qty: h.qty,
-            note: null,
-            destination: "kitchen",
-            status: "pending",
-            tapa_kind: h.tapa_kind,
-            tapa_round: h.tapa_round,
-            tapa_item_id: h.tapa_item_id,
-          });
-        }
-        return base;
+      // Solo qué y cuánto: precio, IVA, destino y tapas los calcula el servidor.
+      const request = {
+        requestId: newRequestId(),
+        lines: cart.map((c) => ({ item_id: c.itemId, qty: c.qty, note: c.note })),
+        tapas: tapaMode(settings) === "house" ? tapaCount : null,
+        forceNewRound: forceNew,
+        served: (mode === "all-served" ? "all" : mode === "drinks-served" ? "drinks" : "none") as ServedMode,
       };
 
       if (settings?.offline_mode === true && !navigator.onLine) {
@@ -176,7 +146,7 @@ export function StaffOrderDialog({
           tableId,
           nickname,
           userId,
-          lines: buildLines(null),
+          request,
           label: `Comanda de la mesa ${tableNumber}`,
         });
         toast("Comanda guardada sin conexión: se enviará sola al volver la red");
@@ -185,26 +155,13 @@ export function StaffOrderDialog({
       }
 
       const res = await openSession({ data: { tableId, nickname } });
-      const { data: order, error } = await supabase
-        .from("orders")
-        .insert({
-          bar_id: res.barId,
-          session_id: res.sessionId,
-          created_by: userId,
-          created_by_role: res.role ?? "waiter",
-        })
-        .select("id")
-        .single();
-      if (error || !order) throw error ?? new Error("orden");
-      const lines = buildLines({ barId: res.barId, orderId: order.id });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error: le } = await supabase.from("order_items").insert(lines as any);
-      if (le) throw le;
-      toast.success(`Comanda enviada a la mesa ${tableNumber}`);
+      const out = await placeOrder({ sessionId: res.sessionId, ...request });
+      toast.success(`Comanda enviada a la mesa ${tableNumber} · ${formatEUR(Number(out.total))}`);
+      for (const w of out.warnings ?? []) toast.warning(w);
       queryClient.invalidateQueries();
       onClose();
     } catch (e) {
-      toast.error(e instanceof Error && e.message ? e.message : "No se pudo enviar la comanda");
+      toast.error(placeOrderErrorMessage(e instanceof Error ? e.message : null));
     } finally {
       setSending(false);
     }

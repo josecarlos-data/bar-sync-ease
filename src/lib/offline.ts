@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { openSessionForTable } from "@/lib/bar.functions";
+import { placeOrder, type OrderRequestLine, type ServedMode } from "@/lib/placeOrder";
 
 /**
  * Modo sin conexión para el personal: caché local de lo esencial
@@ -36,7 +37,16 @@ export type OfflineOp =
       tableId: string;
       nickname: string;
       userId: string;
-      lines: Record<string, unknown>[];
+      /** Formato nuevo: solo artículos y cantidades; el servidor pone precios al sincronizar. */
+      request?: {
+        requestId: string;
+        lines: OrderRequestLine[];
+        tapas: number | null;
+        forceNewRound: boolean;
+        served: ServedMode;
+      };
+      /** Formato antiguo (comandas guardadas antes del cambio); se convierte al sincronizar. */
+      lines?: Record<string, unknown>[];
       label: string;
     };
 
@@ -161,23 +171,38 @@ async function replayOp(op: OfflineOp): Promise<void> {
     if (error) throw new Error(error.message);
     return;
   }
-  // kind === "order": rehace la comanda completa contra la base de datos
+  // kind === "order": se reenvía por place_order (precio vigente al sincronizar)
   const res = await openSessionForTable({ data: { tableId: op.tableId, nickname: op.nickname } });
-  const { data: order, error } = await supabase
-    .from("orders")
-    .insert({
-      bar_id: res.barId,
-      session_id: res.sessionId,
-      created_by: op.userId,
-      created_by_role: res.role ?? "waiter",
-    })
-    .select("id")
-    .single();
-  if (error || !order) throw new Error(error?.message ?? "No se pudo crear la comanda");
-  const lines = op.lines.map((l) => ({ ...l, bar_id: res.barId, order_id: order.id }));
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error: le } = await supabase.from("order_items").insert(lines as any);
-  if (le) throw new Error(le.message);
+  const request = op.request ?? legacyOrderRequest(op.id, op.lines ?? []);
+  await placeOrder({ sessionId: res.sessionId, ...request });
+}
+
+/** Convierte una comanda sin conexión del formato antiguo (líneas con precio) al nuevo. */
+export function legacyOrderRequest(opId: string, lines: Record<string, unknown>[]) {
+  const qty = new Map<string, { qty: number; note: string }>();
+  let served = 0;
+  let items = 0;
+  let tapas = 0;
+  for (const l of lines) {
+    const id = l["item_id"] as string | null;
+    const kind = l["tapa_kind"] as string | null;
+    if (!id) {
+      if (kind === "round" || kind === "extra") tapas += Number(l["qty"]) || 0;
+      continue;
+    }
+    const prev = qty.get(id);
+    qty.set(id, { qty: (prev?.qty ?? 0) + (Number(l["qty"]) || 0), note: (l["note"] as string) || prev?.note || "" });
+    items += 1;
+    if (l["status"] === "served") served += 1;
+  }
+  return {
+    // El id de la operación sirve de identificador: si se sincroniza dos veces, entra una sola vez.
+    requestId: /^[0-9a-f-]{36}$/i.test(opId) ? opId : crypto.randomUUID(),
+    lines: [...qty.entries()].map(([item_id, v]) => ({ item_id, qty: v.qty, note: v.note })),
+    tapas: tapas > 0 ? tapas : null,
+    forceNewRound: false,
+    served: (served === 0 ? "none" : served === items ? "all" : "drinks") as ServedMode,
+  };
 }
 
 export type SyncResult = { synced: number; failed: { label: string; reason: string }[] };
