@@ -33,7 +33,7 @@ order_items.status por defecto 'pending'       (el cliente puede enviar otro val
 2. **El cliente puede enviar líneas ya marcadas como «servidas»** (o con `deleted_at`). No pasarían por cocina y podrían no cobrarse bien.
 3. **Reintentos sin red:** si la red se corta tras guardar, al reintentar la comanda puede entrar dos veces. Hoy no hay nada que lo impida.
 
-No he lanzado un pedido manipulado contra la base real para no ensuciar los datos. Las tres pruebas de arriba bastan para demostrarlo. Durante la implementación lo reproduciré antes del arreglo y repetiré después, en una mesa de prueba que luego cerraré.
+No he lanzado un pedido manipulado contra la base real para no ensuciar los datos. Lo reproduciré dentro de una transacción que se deshace al final (ver «Cómo lo pruebo»).
 
 ## Respuesta a «Para rebatir»
 
@@ -46,37 +46,51 @@ No he lanzado un pedido manipulado contra la base real para no ensuciar los dato
 - Una prueba automática compara la vista previa con lo que devuelve el servidor en los casos ya acordados: 2 cañas + agua dan 2 primeras; 2 cañas más dan 2 segundas; 3 tapas con 2 bebidas dan 1 extra a 1,50 €; Almería con 2 bebidas da «2 de 2» y cobra el suplemento.
 - Si algún día no coinciden, cobra el servidor y la pantalla muestra el total final devuelto.
 
-**Cola sin conexión del personal:** la comanda guardada sin red pasa a enviar solo artículos, cantidades, notas, petición de tapas y un identificador único. Al volver la red se llama a la misma función. Consecuencia: si el precio de carta cambia mientras no hay red, se cobra el precio vigente al sincronizar. Me parece lo correcto, pero confírmalo.
+**Cola sin conexión del personal:** la comanda guardada sin red pasa a enviar solo artículos, cantidades, notas, petición de tapas y un identificador único. Al volver la red se llama a la misma función. Consecuencia: si el precio de carta cambia mientras no hay red, se cobra el precio vigente al sincronizar. Confirmado por ti.
+
+## Tus condiciones: las acepto todas
+No rebato ninguna. Dos precisiones:
+- **Condición 2:** si el personal pide un artículo agotado, la comanda entra y el stock puede quedar en negativo. Es lo que ya ocurre hoy y queda reflejado en Existencias. El aviso que devuelve la función nombra los artículos.
+- **Condición 5:** en una comanda guardada sin red, el identificador se crea al guardarla en el móvil. Así, aunque se sincronice dos veces, solo entra una.
 
 ## Plan
 
-### Base de datos (una migración)
-1. Columna nueva `orders.client_request_id` (opcional, única por bar) para que un reintento no duplique la comanda.
-2. Función `place_order(session_id, lines, tapa_request, client_request_id, already_served)`, que se ejecuta como un único paso de todo o nada:
-   - comprueba que quien pide es miembro de la sesión o personal del bar, y que la sesión está abierta o pendiente;
-   - pone `created_by_role` según el puesto real (`user_roles`), nunca según lo que envía el móvil;
-   - lee de la carta nombre, precio, IVA, destino y disponibilidad, y rechaza artículos agotados, de otro bar o con cantidades no válidas;
-   - calcula las tapas (Granada y Almería) y su precio;
-   - «Ya servido» solo se acepta si pide el personal;
-   - inserta la comanda y sus líneas, actualiza `last_activity_at` y devuelve el id y el total;
-   - si ya existe ese `client_request_id`, devuelve la comanda existente.
-3. Quitar el permiso de INSERT directo en `orders` y `order_items` a `anon` y `authenticated`, y borrar sus dos reglas de inserción. Los disparadores de existencias, aprobación automática e impresión siguen funcionando igual porque se disparan con la inserción que hace la función.
+### Fase A — una migración, sin quitar nada
+1. Columna `orders.client_request_id uuid` (opcional) con índice único por `(session_id, client_request_id)`.
+2. Función `place_order(_session_id, _request_id, _lines, _tapas, _force_new_round, _already_served)`:
+   - **Seguridad:** `SECURITY DEFINER`, `SET search_path = public`. `REVOKE EXECUTE ... FROM public, anon` y `GRANT EXECUTE ... TO authenticated`. El bar sale de la sesión y el autor de `auth.uid()`. `created_by_role` sale de `user_roles`: si no tiene puesto, es `client`.
+   - **Acceso:** debe ser personal del bar de la sesión o miembro de la sesión. La sesión debe estar abierta o pendiente.
+   - **Identificador obligatorio:** si ya existe en esa sesión, devuelve esa comanda sin crear otra. Si existe en otra sesión, da error.
+   - **Límites:** máximo 30 por línea, máximo 40 líneas por comanda, notas de hasta 200 caracteres y como mucho 30 tapas por petición. Todo lo que pase de ahí se rechaza con un mensaje claro.
+   - **Carta:** nombre, precio, IVA y destino se leen de `items` del mismo bar; si un artículo es de otro bar o no existe, se rechaza. Si está agotado: al cliente se le rechaza la comanda entera con `{sold_out:[nombres]}`; al personal se le acepta y se le devuelve un aviso.
+   - **Tapas:** las reglas de `tapas.ts` se trasladan a SQL. Almería: el cupo se calcula en servidor y lo que lo supera se cobra a precio de carta. Granada: el número de tapas pedido se limita a 30; las que superan las bebidas con tapa se cobran como extra a `tapa_extra_price`, nunca gratis, y se saltan las rondas agotadas. Si pide un cliente, se ignoran `_force_new_round` y `_already_served`.
+   - **Todo o nada:** inserta la comanda y sus líneas en una sola operación y actualiza `last_activity_at`.
+   - **Devuelve:** `{order_id, total, lines:[{name, qty, price, tapa_kind, tapa_round}], warnings:[...]}`.
+3. **App:** `m.$token.tsx` (el identificador se genera al abrir la confirmación), `StaffOrderDialog.tsx` y `offline.ts` llaman a `place_order` y muestran las líneas y el total que devuelve. Las comandas guardadas sin red con el formato antiguo se convierten al nuevo al sincronizar.
+4. **Deshacer la Fase A:** volver a la versión anterior de la app y borrar la función (`DROP FUNCTION place_order`). La columna nueva puede quedarse porque no molesta. Nada se ha quitado todavía, así que las versiones antiguas siguen pidiendo.
 
-### App
-- `m.$token.tsx`, `StaffOrderDialog.tsx` y `offline.ts`: sustituir los dos inserts por una sola llamada a `place_order`.
-- No toco nada más del bloque: divisiones, cobros y facturas quedan como están.
+### Fase B — migración aparte, solo cuando confirmes que la app publicada funciona
+- `REVOKE INSERT ON orders, order_items FROM anon, authenticated` y `DROP POLICY orders_insert`, `DROP POLICY order_items_insert`.
+- **Deshacer la Fase B:** `GRANT INSERT` de nuevo y volver a crear las dos reglas con su texto literal, el que aparece en la Prueba 1.
 
 ## Qué puede romperse
-- **Versiones antiguas de la app abiertas en móviles:** al quitar el INSERT directo dejarán de poder pedir hasta recargar la página. Se mitiga publicando app y base de datos a la vez.
-- **Comandas ya guardadas sin red con el formato antiguo:** las convierto al sincronizar (vuelven a ser artículos y cantidades) para no perderlas.
-- **Pequeñas diferencias de redondeo o de rondas entre la vista previa y el servidor:** las cubre la prueba de comparación.
+- **Diferencias entre la vista previa y el servidor al calcular tapas:** las cubre la prueba de comparación. La pantalla siempre muestra lo que devuelve el servidor.
+- **Comandas antiguas guardadas sin red:** se convierten al nuevo formato al sincronizar.
+- **Personas que pedían más de 30 unidades de algo:** las rechazará el límite. Si te parece poco para tu bar, cambio la cifra.
 
 ## Cómo lo pruebo
-1. **Antes del arreglo**, en una mesa de prueba: un cliente envía un artículo a 0 € y con `created_by_role: 'waiter'`. Debe entrar; pegaré el resultado.
-2. **Después del arreglo:** el mismo intento se rechaza. También se rechaza un artículo agotado. Si fuerzo el fallo de una línea, no queda ninguna comanda vacía. Pegaré los resultados.
-3. Pruebas automáticas de las reglas de tapa (vista previa contra servidor) y del reintento con el mismo identificador (una sola comanda).
-4. Recorrido en el navegador: un cliente por QR pide; un camarero pide con «Ya servido»; un camarero pide sin red y sincroniza; tapas Granada y Almería. Compruebo totales, colas de cocina y barra, y existencias.
-5. Al terminar, cierro la mesa de prueba y dejo los ajustes como estaban.
+1. **El ataque, sin dejar rastro:** en una sola transacción, `BEGIN`, actuar como un cliente de la mesa de prueba (`SET LOCAL role authenticated` y `request.jwt.claims`), insertar a 0 € con `created_by_role='waiter'`, leer el resultado y `ROLLBACK`. El `ROLLBACK` deshace también el stock y los movimientos que haya creado el disparador. Pegaré la salida literal antes y después de la Fase B. Si la herramienta no permite transacciones, uso un artículo sin existencias enlazadas y borro a mano la comanda de prueba; te lo diré y pegaré lo borrado.
+2. **`place_order` directamente:** precio de carta aunque el móvil envíe otro; cliente con un artículo agotado (rechazo con el nombre); personal con agotado (acepta con aviso); el mismo identificador dos veces (una sola comanda); identificador de otra sesión (error); límites superados; cliente que intenta forzar ronda o «ya servido» (se ignora); fallo de una línea (no queda comanda vacía). Todo con `ROLLBACK`.
+3. **Pruebas automáticas** de las reglas de tapa, comparando la vista previa con el servidor en los casos acordados.
+4. **Recorrido en el navegador:** cliente por QR, camarero con «Ya servido», camarero sin red y sincronización, tapas Granada y Almería. Compruebo totales, colas y existencias, cierro la mesa de prueba y dejo los ajustes como estaban.
+
+## Respuesta: permisos de escritura de anon (solo lista, sin arreglar)
+`anon` tiene INSERT, UPDATE, DELETE y TRUNCATE en las **29 tablas** de `public`: bar_settings, bars, bill_split_assignments, bill_split_parts, bill_splits, categories, category_translations, customer_tab_invoices, customer_tab_lines, customer_tabs, invoice_counters, invoice_records, invoices, item_translations, items, order_instructions, order_items, orders, print_jobs, profiles, purchase_items, service_calls, session_members, stock_movements, stock_pools, table_sessions, tables, user_roles y waitlist_entries.
+
+**Por qué no es explotable hoy:** solo hay 3 reglas que incluyen a `anon`, y las tres son de lectura (`item_translations`, `category_translations` e `invoice_records`). Sin una regla de escritura, la base de datos rechaza cualquier escritura de `anon`. Los clientes del QR entran con sesión anónima, que cuenta como `authenticated` y no como `anon`.
+
+**Por qué conviene revisarlo como hallazgo aparte:** TRUNCATE no pasa por esas reglas. La API pública no lo ofrece, pero es un permiso que sobra. Probablemente viene de los permisos por defecto del esquema.
 
 ## Fuera de este bloque (anotado, sin tocar)
-- `syncQueue` descarta las operaciones que fallan tras avisar. Lo trataré si me lo pasas como hallazgo.
+- `syncQueue` descarta operaciones que fallan (hallazgo aparte).
+- Permisos de escritura sobrantes de `anon` (hallazgo aparte).
